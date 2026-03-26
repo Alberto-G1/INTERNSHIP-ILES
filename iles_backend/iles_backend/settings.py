@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',           # For building REST APIs
     'rest_framework_simplejwt', # For JWT authentication
     'corsheaders',              # For handling CORS (frontend-backend communication)
+    'rest_framework_simplejwt.token_blacklist',  # For token blacklisting
 
     # Local apps
     'accounts',
@@ -173,7 +174,7 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # Refresh token valid for 7 days
     'ROTATE_REFRESH_TOKENS': True,                  # Get new refresh token on refresh
     'BLACKLIST_AFTER_ROTATION': True,               # Blacklist old refresh tokens
-    'ALGORITHM': 'HS256',
+    'ALGORITHM': 'HS256',                           # Enables token blacklisting
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }

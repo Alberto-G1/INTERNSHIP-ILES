@@ -1,17 +1,6 @@
-// src/context/AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
-
-/**
- * Auth Context for global authentication state
- * 
- * Provides authentication state and methods to all components
- * without prop drilling. Manages:
- * - User session
- * - Token storage
- * - Loading states
- */
 
 const AuthContext = createContext(undefined);
 
@@ -32,6 +21,7 @@ export const AuthProvider = ({ children }) => {
           setIsAuthenticated(true);
         } catch (error) {
           console.error('Failed to load user:', error);
+          // Clear invalid tokens
           localStorage.clear();
           setUser(null);
           setIsAuthenticated(false);
@@ -82,10 +72,13 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      // Try to call logout endpoint if we have a refresh token
       await authAPI.logout();
     } catch (error) {
-      console.error('Logout error:', error);
+      // Even if the API call fails, we still want to clear local storage
+      console.error('Logout API error:', error);
     } finally {
+      // Always clear local storage and state
       localStorage.clear();
       setUser(null);
       setIsAuthenticated(false);
@@ -114,7 +107,6 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Custom hook to use auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

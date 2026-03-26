@@ -1,3 +1,5 @@
+// src/components/Layout/Navbar.jsx
+
 import { AppBar, Toolbar, Typography, Button, Box, Avatar, Menu, MenuItem } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -5,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const Navbar = ({ user }) => {
   const [anchorEl, setAnchorEl] = useState(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -17,9 +20,18 @@ const Navbar = ({ user }) => {
   };
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-    handleClose();
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if there's an error, we still want to redirect
+      navigate('/login');
+    } finally {
+      setIsLoggingOut(false);
+      handleClose();
+    }
   };
 
   return (
@@ -37,13 +49,14 @@ const Navbar = ({ user }) => {
             <Button
               onClick={handleMenu}
               color="inherit"
+              disabled={isLoggingOut}
               startIcon={
                 <Avatar sx={{ width: 32, height: 32 }}>
                   {user.first_name?.[0] || user.username[0]}
                 </Avatar>
               }
             >
-              {user.first_name || user.username}
+              {isLoggingOut ? 'Logging out...' : (user.first_name || user.username)}
             </Button>
             <Menu
               anchorEl={anchorEl}
@@ -51,7 +64,9 @@ const Navbar = ({ user }) => {
               onClose={handleClose}
             >
               <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
-              <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              <MenuItem onClick={handleLogout} disabled={isLoggingOut}>
+                {isLoggingOut ? 'Logging out...' : 'Logout'}
+              </MenuItem>
             </Menu>
           </Box>
         ) : (

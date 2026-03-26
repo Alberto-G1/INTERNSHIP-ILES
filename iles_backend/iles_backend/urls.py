@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework_simplejwt.views import TokenRefreshView
 
 """
 Main URL Configuration.
@@ -33,7 +34,8 @@ urlpatterns = [
     
     # API endpoints
     path('api/auth/', include('accounts.urls')),  # All auth endpoints under /api/auth/
-    
+    path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # Add this
+
     # Future apps will be added here:
     # path('api/placements/', include('placements.urls')),
     # path('api/logs/', include('logs.urls')),
