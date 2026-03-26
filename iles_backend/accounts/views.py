@@ -9,7 +9,8 @@ from .serializers import (
     RegisterSerializer, LoginSerializer, 
     UserSerializer, ChangePasswordSerializer
 )
-
+from rest_framework_simplejwt.exceptions import TokenError
+import logging
 # Create your views here.
 
 
@@ -72,7 +73,57 @@ class LoginView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+logger = logging.getLogger(__name__)
+
 class LogoutView(APIView):
+    """
+    User Logout View.
+    
+    Blacklist the refresh token to invalidate it.
+    Permission: IsAuthenticated - only logged-in users can logout.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        """
+        Handle POST request for logout.
+        
+        Process:
+        1. Get refresh token from request
+        2. Blacklist it
+        3. Return success response
+        """
+        try:
+            # Get refresh token from request data
+            refresh_token = request.data.get('refresh')
+            
+            if not refresh_token:
+                return Response(
+                    {'error': 'Refresh token is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Blacklist the token
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            
+            return Response(
+                {'message': 'Successfully logged out'},
+                status=status.HTTP_200_OK
+            )
+            
+        except TokenError as e:
+            logger.error(f"Token error during logout: {str(e)}")
+            return Response(
+                {'error': 'Invalid or expired token'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error during logout: {str(e)}")
+            return Response(
+                {'error': 'Logout failed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
     """
     User Logout View.
     

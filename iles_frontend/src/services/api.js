@@ -5,12 +5,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 /**
  * Axios instance configured for our API
- * 
- * Why: Centralized configuration for all HTTP requests
- * Features:
- * - Automatic token injection
- * - Request/response interceptors
- * - Error handling
  */
 const api = axios.create({
   baseURL: API_URL,
@@ -45,6 +39,12 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem('refresh_token');
+        
+        // Make sure we have a refresh token before trying to refresh
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+        
         const response = await axios.post(`${API_URL}/auth/refresh/`, {
           refresh: refreshToken,
         });
@@ -63,8 +63,14 @@ api.interceptors.response.use(
     }
 
     // Show error toast for user-friendly messages
-    const errorMessage = error.response?.data?.error || error.response?.data?.message || 'An error occurred';
-    toast.error(errorMessage);
+    const errorMessage = error.response?.data?.error || 
+                         error.response?.data?.message || 
+                         'An error occurred';
+    
+    // Don't show toast for 401 errors (handled above)
+    if (error.response?.status !== 401) {
+      toast.error(errorMessage);
+    }
     
     return Promise.reject(error);
   }
@@ -74,7 +80,14 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (userData) => api.post('/auth/register/', userData),
   login: (credentials) => api.post('/auth/login/', credentials),
-  logout: () => api.post('/auth/logout/', { refresh: localStorage.getItem('refresh_token') }),
+  logout: () => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) {
+      // If no refresh token, just clear local storage
+      return Promise.resolve();
+    }
+    return api.post('/auth/logout/', { refresh: refreshToken });
+  },
   getProfile: () => api.get('/auth/profile/'),
   updateProfile: (data) => api.put('/auth/profile/', data),
   changePassword: (data) => api.post('/auth/change-password/', data),
