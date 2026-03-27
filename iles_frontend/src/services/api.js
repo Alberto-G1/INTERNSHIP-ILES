@@ -93,4 +93,12 @@ export const authAPI = {
   changePassword: (data) => api.post('/auth/change-password/', data),
 };
 
+
+// Profile API endpoints
+export const profileAPI = {
+  getProfile: () => api.get('/auth/profile/'),
+  updateProfile: (data) => api.put('/auth/profile/', data),
+  getCompletion: () => api.get('/auth/profile/completion/'),
+};
+
 export default api;

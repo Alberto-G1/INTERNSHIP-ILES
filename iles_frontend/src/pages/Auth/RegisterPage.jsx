@@ -1,3 +1,5 @@
+// frontend/src/pages/Auth/RegisterPage.jsx
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
@@ -9,6 +11,8 @@ import {
   Box,
   Alert,
   MenuItem,
+  Grid,
+  CircularProgress
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 
@@ -22,8 +26,14 @@ const RegisterPage = () => {
     last_name: '',
     role: 'student',
     phone: '',
+    // Student fields
     department: '',
+    // Supervisor fields
+    organization_name: '',
+    position: '',
+    company: '',  // For workplace supervisors
   });
+  
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -47,14 +57,47 @@ const RegisterPage = () => {
     setLoading(true);
     setError('');
     
+    // Prepare data for submission
+    const submitData = {
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      password2: formData.password2,
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      role: formData.role,
+      phone: formData.phone,
+    };
+    
+    // Add role-specific fields
+    if (formData.role === 'student') {
+      submitData.department = formData.department;
+    } else if (formData.role === 'academic_supervisor') {
+      submitData.organization_name = formData.organization_name;
+      submitData.position = formData.position;
+      submitData.department = formData.department;
+    } else if (formData.role === 'workplace_supervisor') {
+      submitData.organization_name = formData.organization_name;
+      submitData.position = formData.position;
+      submitData.company = formData.company;
+    }
+    
     try {
-      await register(formData);
+      await register(submitData);
       navigate('/dashboard');
     } catch (err) {
       // Handle validation errors from backend
       if (err.response?.data) {
-        const errors = Object.values(err.response.data).flat();
-        setError(errors.join(', '));
+        // Format error messages
+        const errors = [];
+        for (const [field, messages] of Object.entries(err.response.data)) {
+          if (Array.isArray(messages)) {
+            errors.push(`${field}: ${messages.join(', ')}`);
+          } else {
+            errors.push(messages);
+          }
+        }
+        setError(errors.join('\n'));
       } else {
         setError('Registration failed. Please try again.');
       }
@@ -72,124 +115,200 @@ const RegisterPage = () => {
           </Typography>
           
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 2, whiteSpace: 'pre-line' }}>
               {error}
             </Alert>
           )}
           
           <form onSubmit={handleSubmit}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="Username"
-              name="username"
-              autoComplete="username"
-              value={formData.username}
-              onChange={handleChange}
-            />
-            
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="Email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-            
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="First Name"
-              name="first_name"
-              value={formData.first_name}
-              onChange={handleChange}
-            />
-            
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="Last Name"
-              name="last_name"
-              value={formData.last_name}
-              onChange={handleChange}
-            />
-            
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              select
-              label="Role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-            >
-              {roles.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-            
-            {formData.role === 'workplace_supervisor' && (
-              <TextField
-                margin="normal"
-                fullWidth
-                label="Company"
-                name="company"
-                value={formData.company}
-                onChange={handleChange}
-              />
-            )}
-            
-            {(formData.role === 'student' || formData.role === 'academic_supervisor') && (
-              <TextField
-                margin="normal"
-                fullWidth
-                label="Department"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-              />
-            )}
-            
-            <TextField
-              margin="normal"
-              fullWidth
-              label="Phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-            />
-            
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="Password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-            />
-            
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="Confirm Password"
-              name="password2"
-              type="password"
-              value={formData.password2}
-              onChange={handleChange}
-            />
+            <Grid container spacing={2}>
+              {/* Basic Information */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  required
+                  label="First Name"
+                  name="first_name"
+                  value={formData.first_name}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Last Name"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleChange}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Username"
+                  name="username"
+                  autoComplete="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  required
+                  select
+                  label="Role"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                >
+                  {roles.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                />
+              </Grid>
+              
+              {/* Student Specific Fields */}
+              {formData.role === 'student' && (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                  />
+                </Grid>
+              )}
+              
+              {/* Academic Supervisor Fields */}
+              {formData.role === 'academic_supervisor' && (
+                <>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      required
+                      label="Institution / University"
+                      name="organization_name"
+                      value={formData.organization_name}
+                      onChange={handleChange}
+                      helperText="Your academic institution"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      required
+                      label="Department"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      helperText="Your academic department"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      required
+                      label="Position / Title"
+                      name="position"
+                      value={formData.position}
+                      onChange={handleChange}
+                      helperText="e.g., Professor, Lecturer, Head of Department"
+                    />
+                  </Grid>
+                </>
+              )}
+              
+              {/* Workplace Supervisor Fields */}
+              {formData.role === 'workplace_supervisor' && (
+                <>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      required
+                      label="Company Name"
+                      name="organization_name"
+                      value={formData.organization_name}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      required
+                      label="Position"
+                      name="position"
+                      value={formData.position}
+                      onChange={handleChange}
+                      helperText="Your job title"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Company Department"
+                      name="company"
+                      value={formData.company}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                </>
+              )}
+              
+              {/* Password Fields */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Confirm Password"
+                  name="password2"
+                  type="password"
+                  value={formData.password2}
+                  onChange={handleChange}
+                />
+              </Grid>
+            </Grid>
             
             <Button
               type="submit"
@@ -198,7 +317,7 @@ const RegisterPage = () => {
               sx={{ mt: 3, mb: 2 }}
               disabled={loading}
             >
-              {loading ? 'Creating Account...' : 'Sign Up'}
+              {loading ? <CircularProgress size={24} /> : 'Sign Up'}
             </Button>
             
             <Box textAlign="center">
