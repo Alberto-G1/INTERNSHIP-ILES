@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AILES — Internship Logging & Evaluation System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-900: #1A5C3A;
+    --green-600: #2E8B5B;
+    --green-400: #4DB87A;
+    --green-100: #D6F2E4;
+    --green-50:  #EEF9F3;
+
+    --amber-800: #B45309;
+    --amber-500: #F59E0B;
+    --amber-100: #FEF3C7;
+    --amber-50:  #FFFBEB;
+
+    --slate-800: #334D6E;
+    --slate-500: #5B82A6;
+    --slate-100: #DDEAF6;
+    --slate-50:  #F0F5FA;
+
+    --coral-700: #C0392B;
+    --coral-100: #FDE8E6;
+
+    --ink:      #111827;
+    --gray-600: #4B5563;
+    --gray-400: #9CA3AF;
+    --gray-200: #E5E7EB;
+    --gray-100: #F3F4F6;
+    --surface:  #F9FAFB;
+    --white:    #FFFFFF;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+
+    --sidebar-w: 220px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  [data-theme="dark"] {
+    --ink:      #F1F5F9;
+    --gray-600: #CBD5E1;
+    --gray-400: #64748B;
+    --gray-200: #1E293B;
+    --gray-100: #0F172A;
+    --surface:  #0D1117;
+    --white:    #161F2E;
+
+    --green-900: #4DB87A;
+    --green-600: #2E8B5B;
+    --green-100: #0D2E1E;
+    --green-50:  #091A12;
+
+    --amber-800: #FBB040;
+    --amber-500: #F59E0B;
+    --amber-100: #2D1E02;
+    --amber-50:  #1C1200;
+
+    --slate-800: #93B4D4;
+    --slate-500: #5B82A6;
+    --slate-100: #0E1D2C;
+    --slate-50:  #090F18;
+
+    --coral-700: #F87171;
+    --coral-100: #2D0A0A;
+
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--surface);
+    color: var(--ink);
+    display: flex;
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--white);
+    border-right: 1px solid var(--gray-200);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .sidebar-logo {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .logo-mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--green-900);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+  }
+  .logo-text { font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -0.3px; }
+  .logo-sub  { font-size: 10px; color: var(--gray-400); font-family: var(--mono); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 1px; }
+
+  .sidebar-section { padding: 14px 12px 4px; }
+  .sidebar-section-label { font-size: 10px; font-weight: 500; color: var(--gray-400); letter-spacing: 0.8px; text-transform: uppercase; padding: 0 8px; margin-bottom: 4px; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--gray-600);
+    font-size: 13.5px;
+    font-weight: 400;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--gray-100); color: var(--ink); }
+  .nav-item.active { background: var(--green-50); color: var(--green-900); font-weight: 500; }
+  .nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+  .nav-badge { margin-left: auto; background: var(--amber-500); color: #fff; font-size: 10px; font-weight: 600; border-radius: 99px; padding: 1px 6px; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 14px 12px;
+    border-top: 1px solid var(--gray-200);
+  }
+  .user-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .user-card:hover { background: var(--gray-100); }
+  .avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0;
+  }
+  .user-name { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .user-role { font-size: 11px; color: var(--gray-400); }
+
+  /* ── Main ── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+    padding: 0 28px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    transition: background 0.3s;
+  }
+  .topbar-title { font-size: 16px; font-weight: 600; color: var(--ink); letter-spacing: -0.3px; }
+  .topbar-sub   { font-size: 12px; color: var(--gray-400); margin-left: 4px; }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+  .role-switcher {
+    display: flex;
+    gap: 2px;
+    background: var(--gray-100);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+  }
+  .role-btn {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--gray-600);
+    transition: all 0.15s;
+    font-family: var(--font);
+  }
+  .role-btn.active { background: var(--white); color: var(--ink); box-shadow: var(--shadow-sm); }
+
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--gray-600);
+    transition: background 0.15s, color 0.15s;
+  }
+  .icon-btn:hover { background: var(--gray-100); color: var(--ink); }
+
+  /* ── Content ── */
+  .content { padding: 24px 28px; flex: 1; }
+
+  /* ── Stat Cards ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  .stat-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card:hover { box-shadow: var(--shadow-md); }
+  .stat-label { font-size: 11.5px; color: var(--gray-400); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 28px; font-weight: 600; letter-spacing: -1px; margin: 6px 0 2px; line-height: 1; }
+  .stat-delta { font-size: 12px; color: var(--gray-400); }
+  .stat-delta.up { color: var(--green-600); }
+  .stat-accent {
+    position: absolute;
+    top: 0; right: 0;
+    width: 4px; height: 100%;
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  }
+
+  /* ── Grid layout ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .card-action { font-size: 12px; color: var(--slate-500); cursor: pointer; font-weight: 500; }
+  .card-action:hover { color: var(--green-600); }
+  .card-body { padding: 16px 20px; }
+
+  /* ── Progress bar ── */
+  .progress-wrap { margin-bottom: 14px; }
+  .progress-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12.5px; }
+  .progress-label { color: var(--gray-600); font-weight: 500; }
+  .progress-pct   { color: var(--ink); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .progress-track { background: var(--gray-200); border-radius: 99px; height: 7px; overflow: hidden; }
+  .progress-fill  { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+
+  /* ── Log table ── */
+  .log-table { width: 100%; border-collapse: collapse; }
+  .log-table th {
+    font-size: 11px; font-weight: 500; color: var(--gray-400);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 8px 12px; text-align: left;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .log-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--gray-200);
+    font-size: 13px;
+    color: var(--ink);
+    vertical-align: middle;
+  }
+  .log-table tr:last-child td { border-bottom: none; }
+  .log-table tr:hover td { background: var(--gray-100); }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 99px; padding: 3px 9px;
+    font-size: 11px; font-weight: 500; white-space: nowrap;
+  }
+  .badge::before { content:''; width:5px; height:5px; border-radius:50%; }
+  .badge-green  { background: var(--green-100); color: var(--green-900); }
+  .badge-green::before  { background: var(--green-600); }
+  .badge-amber  { background: var(--amber-100); color: var(--amber-800); }
+  .badge-amber::before  { background: var(--amber-500); }
+  .badge-coral  { background: var(--coral-100); color: var(--coral-700); }
+  .badge-coral::before  { background: var(--coral-700); }
+  .badge-slate  { background: var(--slate-100); color: var(--slate-800); }
+  .badge-slate::before  { background: var(--slate-500); }
+
+  /* ── Intern list ── */
+  .intern-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .intern-row:last-child { border-bottom: none; }
+  .intern-name { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+  .intern-dept { font-size: 11.5px; color: var(--gray-400); }
+  .intern-score {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  /* ── Notification ── */
+  .notif {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .notif:last-child { border-bottom: none; }
+  .notif-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+  .notif-text { font-size: 13px; color: var(--ink); line-height: 1.4; }
+  .notif-time { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+  /* ── Score ring ── */
+  .score-ring-wrap {
+    display: flex; align-items: center; justify-content: center;
+    padding: 10px 0 14px;
+    gap: 28px;
+  }
+  .ring-svg { transform: rotate(-90deg); }
+  .ring-label { text-anchor: middle; dominant-baseline: middle; }
+  .score-legend { display: flex; flex-direction: column; gap: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--gray-600); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-val { margin-left: auto; font-weight: 600; font-family: var(--mono); font-size: 13px; color: var(--ink); }
+
+  /* ── Eval form ── */
+  .eval-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .eval-item:last-child { border-bottom: none; }
+  .eval-criterion { flex: 1; font-size: 13px; color: var(--ink); }
+  .stars { display: flex; gap: 3px; }
+  .star { font-size: 16px; cursor: pointer; transition: transform 0.1s; }
+  .star:hover { transform: scale(1.2); }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    border: none;
+    font-family: var(--font);
+    transition: opacity 0.15s, box-shadow 0.15s;
+  }
+  .btn:hover { opacity: 0.88; }
+  .btn-primary { background: var(--green-900); color: #fff; }
+  .btn-amber   { background: var(--amber-500); color: #7A3600; }
+  .btn-ghost   { background: transparent; color: var(--gray-600); border: 1px solid var(--gray-200); }
+  .btn-ghost:hover { background: var(--gray-100); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--gray-200); padding: 0 20px; }
+  .tab {
+    padding: 10px 14px;
+    font-size: 13px; font-weight: 500;
+    color: var(--gray-400);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab.active { color: var(--green-900); border-bottom-color: var(--green-600); }
+  .tab:hover { color: var(--ink); }
+
+  /* ── Week pills ── */
+  .week-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+  .week-pill {
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11.5px; font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.1s;
+    font-family: var(--mono);
+  }
+  .week-pill:hover { transform: scale(1.05); }
+  .week-done   { background: var(--green-100); color: var(--green-900); }
+  .week-late   { background: var(--amber-100); color: var(--amber-800); }
+  .week-miss   { background: var(--coral-100); color: var(--coral-700); }
+  .week-future { background: var(--gray-100); color: var(--gray-400); }
+  .week-active { background: var(--green-900); color: #fff; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 99px; }
+
+  /* view panels */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* section title */
+  .section-title {
+    font-size: 12px; font-weight: 500; color: var(--gray-400);
+    text-transform: uppercase; letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+
+  /* search box */
+  .search-box {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-size: 13px; color: var(--gray-600);
+    cursor: text;
+  }
+  .search-box input {
+    background: transparent; border: none; outline: none;
+    font-family: var(--font); font-size: 13px; color: var(--ink);
+    width: 160px;
+  }
+  .search-box input::placeholder { color: var(--gray-400); }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">A</div>
+      <div>
+        <div class="logo-text">AILES</div>
+        <div class="logo-sub">v2.4.0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Overview</div>
+    <div class="nav-item active" onclick="setNav(this,'overview')">
+      <span class="nav-icon">◈</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="setNav(this,'logs')">
+      <span class="nav-icon">☰</span> Logs
+    </div>
+    <div class="nav-item" onclick="setNav(this,'evaluations')">
+      <span class="nav-icon">◎</span> Evaluations
+      <span class="nav-badge">3</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Management</div>
+    <div class="nav-item" onclick="setNav(this,'interns')">
+      <span class="nav-icon">⊞</span> Interns
+    </div>
+    <div class="nav-item" onclick="setNav(this,'reports')">
+      <span class="nav-icon">↗</span> Reports
+    </div>
+    <div class="nav-item" onclick="setNav(this,'notifications')">
+      <span class="nav-icon">◉</span> Notifications
+      <span class="nav-badge">5</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">System</div>
+    <div class="nav-item">
+      <span class="nav-icon">⚙</span> Settings
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="avatar" style="background:var(--slate-500)">AD</div>
+      <div>
+        <div class="user-name">Admin User</div>
+        <div class="user-role">Administrator</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main">
+  <header class="topbar">
+    <div>
+      <span class="topbar-title" id="page-title">Dashboard</span>
+      <span class="topbar-sub" id="page-sub">— Good morning, Spring 2025 cohort</span>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" placeholder="Search interns, logs…">
+      </div>
+      <div class="role-switcher">
+        <button class="role-btn active" onclick="switchRole('admin',this)">Admin</button>
+        <button class="role-btn" onclick="switchRole('supervisor',this)">Supervisor</button>
+        <button class="role-btn" onclick="switchRole('intern',this)">Intern</button>
+      </div>
+      <div class="icon-btn" onclick="toggleTheme()" title="Toggle dark mode">🌙</div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ── OVERVIEW ── -->
+    <div class="view active" id="view-overview">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-accent" style="background:var(--green-600)"></div>
+          <div class="stat-label">Total Interns</div>
+          <div class="stat-value" style="color:var(--green-900)">48</div>
+          <div class="stat-delta up">↑ 6 from last cohort</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-accent" style="background:var(--amber-500)"></div>
+          <div class="stat-label">Logs Submitted</div>
+          <div class="stat-value" style="color:var(--amber-800)">312</div>
+          <div class="stat-delta">of 384 expected</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-accent" style="background:var(--slate-500)"></div>
+          <div class="stat-label">Avg. Score</div>
+          <div class="stat-value" style="color:var(--slate-800)">83.4</div>
+          <div class="stat-delta up">↑ 2.1 pts vs last term</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-accent" style="background:var(--coral-700)"></div>
+          <div class="stat-label">Pending Reviews</div>
+          <div class="stat-value" style="color:var(--coral-700)">9</div>
+          <div class="stat-delta">across 5 supervisors</div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <!-- Log activity -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Recent Logs</span>
+            <span class="card-action" onclick="setNavById('logs')">View all →</span>
+          </div>
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th>Intern</th>
+                <th>Week</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>Amara Osei</b></td>
+                <td><span style="font-family:var(--mono);font-size:12px">W11</span></td>
+                <td style="color:var(--gray-400);font-size:12px">2h ago</td>
+                <td><span class="badge badge-amber">Pending</span></td>
+                <td><button class="btn btn-ghost btn-sm" onclick="setNavById('evaluations')">Review</button></td>
+              </tr>
+              <tr>
+                <td><b>Kofi Mensah</b></td>
+                <td><span style="font-family:var(--mono);font-size:12px">W11</span></td>
+                <td style="color:var(--gray-400);font-size:12px">5h ago</td>
+                <td><span class="badge badge-green">Approved</span></td>
+                <td><button class="btn btn-ghost btn-sm">View</button></td>
+              </tr>
+              <tr>
+                <td><b>Fatima Al-Amin</b></td>
+                <td><span style="font-family:var(--mono);font-size:12px">W10</span></td>
+                <td style="color:var(--gray-400);font-size:12px">1d ago</td>
+                <td><span class="badge badge-coral">Revision</span></td>
+                <td><button class="btn btn-ghost btn-sm">View</button></td>
+              </tr>
+              <tr>
+                <td><b>David Nkosi</b></td>
+                <td><span style="font-family:var(--mono);font-size:12px">W11</span></td>
+                <td style="color:var(--gray-400);font-size:12px">1d ago</td>
+                <td><span class="badge badge-green">Approved</span></td>
+                <td><button class="btn btn-ghost btn-sm">View</button></td>
+              </tr>
+              <tr>
+                <td><b>Ines Duarte</b></td>
+                <td><span style="font-family:var(--mono);font-size:12px">W11</span></td>
+                <td style="color:var(--gray-400);font-size:12px">2d ago</td>
+                <td><span class="badge badge-slate">Submitted</span></td>
+                <td><button class="btn btn-ghost btn-sm" onclick="setNavById('evaluations')">Review</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Notifications -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Notifications</span>
+            <span class="card-action" onclick="setNavById('notifications')">All →</span>
+          </div>
+          <div class="card-body" style="padding-top:6px;padding-bottom:6px">
+            <div class="notif">
+              <div class="notif-dot" style="background:var(--amber-500)"></div>
+              <div>
+                <div class="notif-text">3 logs awaiting your review this week</div>
+                <div class="notif-time">Today, 09:14</div>
+              </div>
+            </div>
+            <div class="notif">
+              <div class="notif-dot" style="background:var(--coral-700)"></div>
+              <div>
+                <div class="notif-text">Fatima Al-Amin's W10 log was sent back for revision</div>
+                <div class="notif-time">Yesterday, 16:30</div>
+              </div>
+            </div>
+            <div class="notif">
+              <div class="notif-dot" style="background:var(--green-600)"></div>
+              <div>
+                <div class="notif-text">Mid-term evaluations deadline: 5 days remaining</div>
+                <div class="notif-time">Yesterday, 10:00</div>
+              </div>
+            </div>
+            <div class="notif">
+              <div class="notif-dot" style="background:var(--slate-500)"></div>
+              <div>
+                <div class="notif-text">New intern added: Samuel Eze (Engineering)</div>
+                <div class="notif-time">Mon, 08:45</div>
+              </div>
+            </div>
+            <div class="notif">
+              <div class="notif-dot" style="background:var(--green-600)"></div>
+              <div>
+                <div class="notif-text">Cohort average score improved to 83.4</div>
+                <div class="notif-time">Mon, 08:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Top interns -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Intern Rankings</span>
+            <span class="card-action" onclick="setNavById('interns')">View all →</span>
+          </div>
+          <div class="card-body" style="padding-top:4px;padding-bottom:4px">
+            <div class="intern-row">
+              <div class="avatar" style="background:var(--amber-500);font-size:11px">KM</div>
+              <div>
+                <div class="intern-name">Kofi Mensah</div>
+                <div class="intern-dept">Engineering · Week 11</div>
+              </div>
+              <span class="badge badge-green">11/11 logs</span>
+              <div class="intern-score" style="color:var(--green-900)">94</div>
+            </div>
+            <div class="intern-row">
+              <div class="avatar" style="background:var(--slate-500);font-size:11px">AO</div>
+              <div>
+                <div class="intern-name">Amara Osei</div>
+                <div class="intern-dept">Finance · Week 11</div>
+              </div>
+              <span class="badge badge-amber">10/11 logs</span>
+              <div class="intern-score" style="color:var(--green-600)">89</div>
+            </div>
+            <div class="intern-row">
+              <div class="avatar" style="background:var(--green-600);font-size:11px">DN</div>
+              <div>
+                <div class="intern-name">David Nkosi</div>
+                <div class="intern-dept">Marketing · Week 11</div>
+              </div>
+              <span class="badge badge-green">11/11 logs</span>
+              <div class="intern-score" style="color:var(--green-600)">87</div>
+            </div>
+            <div class="intern-row">
+              <div class="avatar" style="background:var(--coral-700);font-size:11px">ID</div>
+              <div>
+                <div class="intern-name">Ines Duarte</div>
+                <div class="intern-dept">Design · Week 11</div>
+              </div>
+              <span class="badge badge-slate">10/11 logs</span>
+              <div class="intern-score" style="color:var(--slate-800)">82</div>
+            </div>
+            <div class="intern-row">
+              <div class="avatar" style="background:var(--green-900);font-size:11px">FA</div>
+              <div>
+                <div class="intern-name">Fatima Al-Amin</div>
+                <div class="intern-dept">Legal · Week 11</div>
+              </div>
+              <span class="badge badge-coral">9/11 logs</span>
+              <div class="intern-score" style="color:var(--coral-700)">74</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Score breakdown -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Cohort Score Breakdown</span>
+          </div>
+          <div class="card-body">
+            <div class="progress-wrap">
+              <div class="progress-header">
+                <span class="progress-label">Technical Skills</span>
+                <span class="progress-pct">85%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" style="width:85%;background:var(--green-600)"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-header">
+                <span class="progress-label">Communication</span>
+                <span class="progress-pct">78%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" style="width:78%;background:var(--slate-500)"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-header">
+                <span class="progress-label">Teamwork</span>
+                <span class="progress-pct">91%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" style="width:91%;background:var(--green-400)"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-header">
+                <span class="progress-label">Initiative</span>
+                <span class="progress-pct">72%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" style="width:72%;background:var(--amber-500)"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-header">
+                <span class="progress-label">Punctuality</span>
+                <span class="progress-pct">88%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" style="width:88%;background:var(--green-600)"></div></div>
+            </div>
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;color:var(--gray-400)">Overall average</span>
+              <span style="font-size:18px;font-weight:600;color:var(--green-900);font-family:var(--mono)">83.4 / 100</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LOGS VIEW ── -->
+    <div class="view" id="view-logs">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <span class="card-title">Internship Progress — Week 11 of 16</span>
+          <button class="btn btn-primary btn-sm">+ Submit Log</button>
+        </div>
+        <div class="card-body">
+          <div style="margin-bottom:12px;font-size:12.5px;color:var(--gray-400)">Click any week to view the log entry</div>
+          <div class="week-grid">
+            <div class="week-pill week-done">W1</div>
+            <div class="week-pill week-done">W2</div>
+            <div class="week-pill week-done">W3</div>
+            <div class="week-pill week-done">W4</div>
+            <div class="week-pill week-done">W5</div>
+            <div class="week-pill week-done">W6</div>
+            <div class="week-pill week-late">W7</div>
+            <div class="week-pill week-done">W8</div>
+            <div class="week-pill week-done">W9</div>
+            <div class="week-pill week-miss">W10</div>
+            <div class="week-pill week-active">W11</div>
+            <div class="week-pill week-future">W12</div>
+            <div class="week-pill week-future">W13</div>
+            <div class="week-pill week-future">W14</div>
+            <div class="week-pill week-future">W15</div>
+            <div class="week-pill week-future">W16</div>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:14px;flex-wrap:wrap">
+            <span style="font-size:11.5px;color:var(--gray-400);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:var(--green-100);display:inline-block"></span>Submitted</span>
+            <span style="font-size:11.5px;color:var(--gray-400);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:var(--amber-100);display:inline-block"></span>Late</span>
+            <span style="font-size:11.5px;color:var(--gray-400);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:var(--coral-100);display:inline-block"></span>Missing</span>
+            <span style="font-size:11.5px;color:var(--gray-400);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:var(--green-900);display:inline-block"></span>Current</span>
+            <span style="font-size:11.5px;color:var(--gray-400);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:var(--gray-100);display:inline-block"></span>Upcoming</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Log Entries</span>
+          <div style="display:flex;gap:8px">
+            <select style="font-family:var(--font);font-size:12px;padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--gray-200);background:var(--white);color:var(--ink)">
+              <option>All statuses</option>
+              <option>Approved</option>
+              <option>Pending</option>
+              <option>Revision</option>
+            </select>
+          </div>
+        </div>
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Week</th>
+              <th>Title</th>
+              <th>Hours</th>
+              <th>Submitted</th>
+              <th>Score</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><span style="font-family:var(--mono)">W11</span></td><td>Client Meeting & Report Drafting</td><td>40h</td><td style="color:var(--gray-400);font-size:12px">Mar 14</td><td style="font-family:var(--mono)">—</td><td><span class="badge badge-amber">Pending</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+            <tr><td><span style="font-family:var(--mono)">W10</span></td><td>Data Analysis Sprint</td><td>38h</td><td style="color:var(--gray-400);font-size:12px">Mar 7</td><td style="font-family:var(--mono);color:var(--coral-700)">—</td><td><span class="badge badge-coral">Revision</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+            <tr><td><span style="font-family:var(--mono)">W9</span></td><td>Product Roadmap Presentation</td><td>42h</td><td style="color:var(--gray-400);font-size:12px">Feb 28</td><td style="font-family:var(--mono);color:var(--green-900)">91</td><td><span class="badge badge-green">Approved</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+            <tr><td><span style="font-family:var(--mono)">W8</span></td><td>Stakeholder Interviews</td><td>40h</td><td style="color:var(--gray-400);font-size:12px">Feb 21</td><td style="font-family:var(--mono);color:var(--green-900)">87</td><td><span class="badge badge-green">Approved</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+            <tr><td><span style="font-family:var(--mono)">W7</span></td><td>Research & Benchmarking</td><td>36h</td><td style="color:var(--gray-400);font-size:12px">Feb 16 <span style="color:var(--amber-800)">(late)</span></td><td style="font-family:var(--mono);color:var(--green-600)">82</td><td><span class="badge badge-green">Approved</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── EVALUATIONS VIEW ── -->
+    <div class="view" id="view-evaluations">
+      <div class="tabs">
+        <div class="tab active">Pending (3)</div>
+        <div class="tab">Completed</div>
+        <div class="tab">My Scores</div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-header">
+            <div>
+              <span class="card-title">Amara Osei</span>
+              <span style="font-size:12px;color:var(--gray-400);margin-left:8px">Finance · Week 11 Log</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost btn-sm">Send back</button>
+              <button class="btn btn-primary btn-sm">Approve</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding-top:4px;padding-bottom:4px">
+            <div class="eval-item">
+              <span class="eval-criterion">Technical Quality</span>
+              <div class="stars">
+                <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star" style="color:var(--gray-200)">★</span>
+              </div>
+              <span style="font-family:var(--mono);font-size:12px;color:var(--gray-600);min-width:28px;text-align:right">4/5</span>
+            </div>
+            <div class="eval-item">
+              <span class="eval-criterion">Communication & Clarity</span>
+              <div class="stars">
+                <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+              </div>
+              <span style="font-family:var(--mono);font-size:12px;color:var(--gray-600);min-width:28px;text-align:right">5/5</span>
+            </div>
+            <div class="eval-item">
+              <span class="eval-criterion">Initiative & Problem Solving</span>
+              <div class="stars">
+                <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star" style="color:var(--gray-200)">★</span><span class="star" style="color:var(--gray-200)">★</span>
+              </div>
+              <span style="font-family:var(--mono);font-size:12px;color:var(--gray-600);min-width:28px;text-align:right">3/5</span>
+            </div>
+            <div class="eval-item">
+              <span class="eval-criterion">Punctuality & Professionalism</span>
+              <div class="stars">
+                <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star" style="color:var(--gray-200)">★</span>
+              </div>
+              <span style="font-family:var(--mono);font-size:12px;color:var(--gray-600);min-width:28px;text-align:right">4/5</span>
+            </div>
+            <div style="padding:12px 0;border-top:1px solid var(--gray-200);margin-top:4px">
+              <div style="font-size:12px;color:var(--gray-400);margin-bottom:6px">Supervisor feedback</div>
+              <textarea style="width:100%;font-family:var(--font);font-size:13px;color:var(--ink);background:var(--gray-100);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:10px;resize:vertical;min-height:70px;outline:none" placeholder="Add your comments here…">Amara demonstrated excellent written communication this week. The financial analysis section was thorough. Could push further on proactive problem-solving.</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── INTERNS VIEW ── -->
+    <div class="view" id="view-interns">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Interns — Spring 2025</span>
+          <button class="btn btn-primary btn-sm">+ Add Intern</button>
+        </div>
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Department</th>
+              <th>Supervisor</th>
+              <th>Logs</th>
+              <th>Avg Score</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:var(--amber-500);width:26px;height:26px;font-size:10px">KM</div><b>Kofi Mensah</b></div></td><td>Engineering</td><td>Dr. Owusu</td><td style="font-family:var(--mono)">11/11</td><td style="font-family:var(--mono);color:var(--green-900);font-weight:600">94</td><td><span class="badge badge-green">On track</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:var(--slate-500);width:26px;height:26px;font-size:10px">AO</div><b>Amara Osei</b></div></td><td>Finance</td><td>Ms. Adjei</td><td style="font-family:var(--mono)">10/11</td><td style="font-family:var(--mono);color:var(--green-600);font-weight:600">89</td><td><span class="badge badge-green">On track</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:var(--green-600);width:26px;height:26px;font-size:10px">DN</div><b>David Nkosi</b></div></td><td>Marketing</td><td>Mr. Boateng</td><td style="font-family:var(--mono)">11/11</td><td style="font-family:var(--mono);color:var(--green-600);font-weight:600">87</td><td><span class="badge badge-green">On track</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:var(--coral-700);width:26px;height:26px;font-size:10px">ID</div><b>Ines Duarte</b></div></td><td>Design</td><td>Ms. Patel</td><td style="font-family:var(--mono)">10/11</td><td style="font-family:var(--mono);color:var(--slate-800);font-weight:600">82</td><td><span class="badge badge-slate">Submitted</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:var(--green-900);width:26px;height:26px;font-size:10px">FA</div><b>Fatima Al-Amin</b></div></td><td>Legal</td><td>Dr. Hassan</td><td style="font-family:var(--mono)">9/11</td><td style="font-family:var(--mono);color:var(--amber-800);font-weight:600">74</td><td><span class="badge badge-amber">At risk</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:var(--slate-800);width:26px;height:26px;font-size:10px">SE</div><b>Samuel Eze</b></div></td><td>Engineering</td><td>Dr. Owusu</td><td style="font-family:var(--mono)">8/11</td><td style="font-family:var(--mono);color:var(--coral-700);font-weight:600">68</td><td><span class="badge badge-coral">At risk</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── REPORTS VIEW ── -->
+    <div class="view" id="view-reports">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Cohort Overview</span><span class="card-action">Export PDF</span></div>
+          <div class="card-body">
+            <div class="score-ring-wrap">
+              <svg width="110" height="110" class="ring-svg">
+                <circle cx="55" cy="55" r="44" fill="none" stroke="var(--gray-200)" stroke-width="10"/>
+                <circle cx="55" cy="55" r="44" fill="none" stroke="var(--green-600)" stroke-width="10"
+                  stroke-dasharray="276.46" stroke-dashoffset="46.79" stroke-linecap="round"/>
+              </svg>
+              <div style="position:absolute;text-align:center;pointer-events:none">
+                <div style="font-size:22px;font-weight:600;color:var(--green-900);font-family:var(--mono)">83.4</div>
+                <div style="font-size:11px;color:var(--gray-400)">avg score</div>
+              </div>
+              <div class="score-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:var(--green-600)"></div>On track <span class="legend-val">38</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--amber-500)"></div>At risk <span class="legend-val">7</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--coral-700)"></div>Critical <span class="legend-val">3</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Submission Rate by Dept.</span></div>
+          <div class="card-body">
+            <div class="progress-wrap">
+              <div class="progress-header"><span class="progress-label">Engineering</span><span class="progress-pct">96%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:96%;background:var(--green-600)"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-header"><span class="progress-label">Finance</span><span class="progress-pct">90%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:90%;background:var(--green-400)"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-header"><span class="progress-label">Marketing</span><span class="progress-pct">84%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:84%;background:var(--slate-500)"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-header"><span class="progress-label">Design</span><span class="progress-pct">78%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:78%;background:var(--amber-500)"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-header"><span class="progress-label">Legal</span><span class="progress-pct">70%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:70%;background:var(--coral-700)"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── NOTIFICATIONS VIEW ── -->
+    <div class="view" id="view-notifications">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Notifications</span>
+          <span class="card-action">Mark all read</span>
+        </div>
+        <div class="card-body" style="padding-top:4px;padding-bottom:4px">
+          <div class="notif"><div class="notif-dot" style="background:var(--amber-500)"></div><div><div class="notif-text"><b>3 logs</b> are awaiting your review this week</div><div class="notif-time">Today, 09:14</div></div></div>
+          <div class="notif"><div class="notif-dot" style="background:var(--coral-700)"></div><div><div class="notif-text"><b>Fatima Al-Amin's</b> W10 log was returned for revision</div><div class="notif-time">Yesterday, 16:30</div></div></div>
+          <div class="notif"><div class="notif-dot" style="background:var(--green-600)"></div><div><div class="notif-text">Mid-term evaluation deadline: <b>5 days remaining</b></div><div class="notif-time">Yesterday, 10:00</div></div></div>
+          <div class="notif"><div class="notif-dot" style="background:var(--slate-500)"></div><div><div class="notif-text">New intern added: <b>Samuel Eze</b> (Engineering)</div><div class="notif-time">Mon, 08:45</div></div></div>
+          <div class="notif"><div class="notif-dot" style="background:var(--green-600)"></div><div><div class="notif-text">Cohort average score improved to <b>83.4</b></div><div class="notif-time">Mon, 08:00</div></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  const navMap = {
+    overview: {title:'Dashboard', sub:'— Good morning, Spring 2025 cohort'},
+    logs: {title:'Logs', sub:'— Amara Osei · Finance'},
+    evaluations: {title:'Evaluations', sub:'— 3 pending reviews'},
+    interns: {title:'Interns', sub:'— Spring 2025 cohort · 48 total'},
+    reports: {title:'Reports', sub:'— Cohort analytics'},
+    notifications: {title:'Notifications', sub:'— 5 unread'},
+  };
+
+  function setNav(el, view) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const target = document.getElementById('view-' + view);
+    if (target) target.classList.add('active');
+    const info = navMap[view] || {title: view, sub: ''};
+    document.getElementById('page-title').textContent = info.title;
+    document.getElementById('page-sub').textContent = info.sub;
+  }
+
+  function setNavById(view) {
+    const navItems = document.querySelectorAll('.nav-item');
+    const views = ['overview','logs','evaluations','interns','reports','notifications'];
+    const idx = views.indexOf(view);
+    if (idx !== -1) setNav(navItems[idx], view);
+  }
+
+  function switchRole(role, btn) {
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const roleInfo = {
+      admin: {name:'Admin User', role:'Administrator', color:'var(--slate-500)', initials:'AD'},
+      supervisor: {name:'Dr. Owusu', role:'Supervisor', color:'var(--green-900)', initials:'DO'},
+      intern: {name:'Amara Osei', role:'Intern · Finance', color:'var(--amber-500)', initials:'AO'}
+    };
+    const r = roleInfo[role];
+    document.querySelector('.user-name').textContent = r.name;
+    document.querySelector('.user-role').textContent = r.role;
+    const av = document.querySelector('.sidebar-footer .avatar');
+    av.textContent = r.initials;
+    av.style.background = r.color;
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    document.querySelector('.icon-btn').textContent = isDark ? '🌙' : '☀️';
+  }
+
+  // star rating interaction
+  document.querySelectorAll('.stars').forEach(group => {
+    const stars = group.querySelectorAll('.star');
+    stars.forEach((star, i) => {
+      star.addEventListener('click', () => {
+        stars.forEach((s, j) => s.style.color = j <= i ? 'var(--amber-500)' : 'var(--gray-200)');
+      });
+    });
+  });
+
+  // score ring center label workaround
+  const ringWrap = document.querySelector('.score-ring-wrap');
+  if (ringWrap) ringWrap.style.position = 'relative';
+</script>
+</body>
+</html>

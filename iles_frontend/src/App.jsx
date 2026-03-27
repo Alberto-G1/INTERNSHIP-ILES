@@ -4,20 +4,20 @@ import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-
-// Context - MAKE SURE THIS IMPORT EXISTS
 import { AuthProvider, useAuth } from './context/AuthContext';  // ← Add useAuth here
-
 // Components
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import Layout from './components/Layout/Layout';
-
 // Pages
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 import StudentDashboard from './pages/Dashboard/StudentDashboard';
 import SupervisorDashboard from './pages/Dashboard/SupervisorDashboard';
 import AdminDashboard from './pages/Dashboard/AdminDashboard';
+// Profile pages
+import ProfilePage from './pages/Profile/ProfilePage';
+import EditProfilePage from './pages/Profile/EditProfilePage';
+
 
 // Create React Query client
 const queryClient = new QueryClient();
@@ -82,7 +82,8 @@ function App() {
                 {/* Placeholder routes for future modules */}
                 <Route path="placements" element={<div>Placements Module (Coming Soon)</div>} />
                 <Route path="logs" element={<div>Logs Module (Coming Soon)</div>} />
-                <Route path="profile" element={<div>Profile Page (Coming Soon)</div>} />
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="profile/edit" element={<EditProfilePage />} />
               </Route>
             </Routes>
           </AuthProvider>

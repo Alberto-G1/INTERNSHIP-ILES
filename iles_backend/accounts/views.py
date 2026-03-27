@@ -3,14 +3,19 @@ from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
 from django.contrib.auth import authenticate
 from .models import User
-from .serializers import (
-    RegisterSerializer, LoginSerializer, 
-    UserSerializer, ChangePasswordSerializer
-)
 from rest_framework_simplejwt.exceptions import TokenError
 import logging
+from rest_framework.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
+from .models import User, StudentProfile, SupervisorProfile
+from .serializers import (
+    LoginSerializer, ChangePasswordSerializer, UserRegistrationSerializer,
+    UserSerializer, UserProfileSerializer, RegisterSerializer,
+    StudentProfileSerializer, SupervisorProfileSerializer, ProfileUpdateSerializer
+)
 # Create your views here.
 
 
@@ -127,7 +132,7 @@ class LogoutView(APIView):
     """
     User Logout View.
     
-    Why: Blacklist the refresh token to invalidate it.
+    Blacklist the refresh token to invalidate it.
     Permission: IsAuthenticated - only logged-in users can logout.
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -152,7 +157,7 @@ class ProfileView(APIView):
     """
     User Profile View.
     
-    Why: Allow users to view and update their profile.
+    Allow users to view and update their profile.
     Permission: IsAuthenticated - only logged-in users.
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -168,7 +173,7 @@ class ProfileView(APIView):
         """
         PUT: Update user profile.
         
-        Why: Allow users to update their information.
+        Allow users to update their information.
         """
         serializer = UserSerializer(request.user, data=request.data, partial=True)
         
@@ -182,7 +187,7 @@ class ChangePasswordView(APIView):
     """
     Password Change View.
     
-    Why: Allow users to change their password securely.
+    Allow users to change their password securely.
     Permission: IsAuthenticated - only logged-in users.
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -217,3 +222,112 @@ class ChangePasswordView(APIView):
             )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RegisterView(generics.CreateAPIView):
+    """User Registration with automatic profile creation"""
+    permission_classes = [permissions.AllowAny]
+    serializer_class = UserRegistrationSerializer
+
+
+class UserProfileView(APIView):
+    """Get and update current user's complete profile"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """Get current user's profile"""
+        serializer = UserProfileSerializer(request.user)
+        return Response(serializer.data)
+    
+    def put(self, request):
+        """Update current user's profile"""
+        user = request.user
+        profile_data = request.data
+        
+        # Update user fields
+        user_fields = ['first_name', 'last_name', 'phone']
+        for field in user_fields:
+            if field in profile_data:
+                setattr(user, field, profile_data[field])
+        user.save()
+        
+        # Update role-specific profile
+        if user.role == 'student' and hasattr(user, 'student_profile'):
+            profile = user.student_profile
+            profile_serializer = StudentProfileSerializer(
+                profile, 
+                data=profile_data, 
+                partial=True
+            )
+            if profile_serializer.is_valid():
+                profile_serializer.save()
+            else:
+                return Response(profile_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+        elif user.role in ['workplace_supervisor', 'academic_supervisor'] and hasattr(user, 'supervisor_profile'):
+            profile = user.supervisor_profile
+            profile_serializer = SupervisorProfileSerializer(
+                profile, 
+                data=profile_data, 
+                partial=True
+            )
+            if profile_serializer.is_valid():
+                profile_serializer.save()
+            else:
+                return Response(profile_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Return updated profile
+        serializer = UserProfileSerializer(user)
+        return Response(serializer.data)
+
+
+class ProfileCompletionView(APIView):
+    """Check and update profile completion status"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """Get profile completion status"""
+        user = request.user
+        
+        if user.role == 'student' and hasattr(user, 'student_profile'):
+            profile = user.student_profile
+            completion = profile.completion_percentage()
+            return Response({
+                'completed': profile.profile_completed,
+                'percentage': completion,
+                'required_fields': ['registration_number', 'institution', 'course', 'year_of_study', 'expected_graduation_year']
+            })
+            
+        elif user.role in ['workplace_supervisor', 'academic_supervisor'] and hasattr(user, 'supervisor_profile'):
+            profile = user.supervisor_profile
+            completion = profile.completion_percentage()
+            return Response({
+                'completed': profile.profile_completed,
+                'percentage': completion,
+                'required_fields': ['supervisor_type', 'organization_name', 'position']
+            })
+        
+        return Response({
+            'completed': True,
+            'percentage': 100,
+            'message': 'Admin profile always complete'
+        })
+
+
+class AdminProfileListView(APIView):
+    """Admin view to list all user profiles"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """List all profiles (admin only)"""
+        if request.user.role != 'admin':
+            raise PermissionDenied("Only administrators can access this endpoint")
+        
+        role = request.query_params.get('role')
+        users = User.objects.all()
+        
+        if role:
+            users = users.filter(role=role)
+        
+        serializer = UserProfileSerializer(users, many=True)
+        return Response(serializer.data)
