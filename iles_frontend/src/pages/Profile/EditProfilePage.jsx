@@ -1,5 +1,4 @@
 // frontend/src/pages/Profile/EditProfilePage.jsx
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -12,8 +11,15 @@ import {
   Alert,
   CircularProgress,
   MenuItem,
-  Grid
+  Grid,
+  Divider,
+  Avatar,
+  IconButton,
 } from '@mui/material';
+import {
+  ArrowBack as ArrowBackIcon,
+  PhotoCamera as PhotoCameraIcon,
+} from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { profileAPI } from '../../services/api';
 import toast from 'react-hot-toast';
@@ -43,7 +49,7 @@ const EditProfilePage = () => {
     work_email: '',
     office_phone: '',
     specialization: '',
-    years_of_experience: ''
+    years_of_experience: '',
   });
 
   useEffect(() => {
@@ -75,7 +81,7 @@ const EditProfilePage = () => {
         work_email: profile.supervisor_profile?.work_email || '',
         office_phone: profile.supervisor_profile?.office_phone || '',
         specialization: profile.supervisor_profile?.specialization || '',
-        years_of_experience: profile.supervisor_profile?.years_of_experience || ''
+        years_of_experience: profile.supervisor_profile?.years_of_experience || '',
       });
     } catch (err) {
       setError('Failed to load profile data');
@@ -86,7 +92,7 @@ const EditProfilePage = () => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -109,13 +115,26 @@ const EditProfilePage = () => {
     }
   };
 
+  const genders = [
+    { value: '', label: 'Prefer not to say' },
+    { value: 'M', label: 'Male' },
+    { value: 'F', label: 'Female' },
+    { value: 'O', label: 'Other' },
+  ];
+
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Edit Profile
-        </Typography>
-        <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+    <Container maxWidth="md">
+      <Paper sx={{ p: 4, borderRadius: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+          <IconButton onClick={() => navigate('/profile')} sx={{ color: 'text.secondary' }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h4" sx={{ fontWeight: 600 }}>
+            Edit Profile
+          </Typography>
+        </Box>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           Update your personal and professional information
         </Typography>
 
@@ -125,11 +144,42 @@ const EditProfilePage = () => {
           </Alert>
         )}
 
+        {/* Profile Picture Placeholder */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+          <Box sx={{ position: 'relative' }}>
+            <Avatar
+              sx={{
+                width: 100,
+                height: 100,
+                bgcolor: 'primary.main',
+                fontSize: 36,
+                fontWeight: 600,
+              }}
+            >
+              {formData.first_name?.[0] || user?.username?.[0]?.toUpperCase() || 'U'}
+            </Avatar>
+            <IconButton
+              sx={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                bgcolor: 'background.paper',
+                boxShadow: 1,
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+              size="small"
+            >
+              <PhotoCameraIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </Box>
+
         <form onSubmit={handleSubmit}>
           {/* Basic Information */}
-          <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
             Basic Information
           </Typography>
+          <Divider sx={{ mb: 2 }} />
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -138,6 +188,7 @@ const EditProfilePage = () => {
                 name="first_name"
                 value={formData.first_name}
                 onChange={handleChange}
+                variant="outlined"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -147,6 +198,7 @@ const EditProfilePage = () => {
                 name="last_name"
                 value={formData.last_name}
                 onChange={handleChange}
+                variant="outlined"
               />
             </Grid>
             <Grid item xs={12}>
@@ -156,6 +208,7 @@ const EditProfilePage = () => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
+                variant="outlined"
               />
             </Grid>
           </Grid>
@@ -163,9 +216,10 @@ const EditProfilePage = () => {
           {/* Student Specific Fields */}
           {user?.role === 'student' && (
             <>
-              <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+              <Typography variant="h6" gutterBottom sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
                 Academic Information
               </Typography>
+              <Divider sx={{ mb: 2 }} />
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <TextField
@@ -176,6 +230,7 @@ const EditProfilePage = () => {
                     value={formData.registration_number}
                     onChange={handleChange}
                     helperText="Format: 6-20 alphanumeric characters"
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -186,6 +241,7 @@ const EditProfilePage = () => {
                     name="institution"
                     value={formData.institution}
                     onChange={handleChange}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -195,6 +251,7 @@ const EditProfilePage = () => {
                     name="faculty"
                     value={formData.faculty}
                     onChange={handleChange}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -205,6 +262,7 @@ const EditProfilePage = () => {
                     name="course"
                     value={formData.course}
                     onChange={handleChange}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -217,6 +275,7 @@ const EditProfilePage = () => {
                     value={formData.year_of_study}
                     onChange={handleChange}
                     inputProps={{ min: 1, max: 6 }}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -228,6 +287,7 @@ const EditProfilePage = () => {
                     name="expected_graduation_year"
                     value={formData.expected_graduation_year}
                     onChange={handleChange}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -239,6 +299,7 @@ const EditProfilePage = () => {
                     value={formData.date_of_birth}
                     onChange={handleChange}
                     InputLabelProps={{ shrink: true }}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -249,12 +310,13 @@ const EditProfilePage = () => {
                     name="gender"
                     value={formData.gender}
                     onChange={handleChange}
+                    variant="outlined"
                   >
-                    <MenuItem value="">Prefer not to say</MenuItem>
-                    <MenuItem value="M">Male</MenuItem>
-                    <MenuItem value="F">Female</MenuItem>
-                    <MenuItem value="O">Other</MenuItem>
-                    <MenuItem value="P">Prefer not to say</MenuItem>
+                    {genders.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
                   </TextField>
                 </Grid>
               </Grid>
@@ -264,9 +326,10 @@ const EditProfilePage = () => {
           {/* Supervisor Specific Fields */}
           {(user?.role === 'workplace_supervisor' || user?.role === 'academic_supervisor') && (
             <>
-              <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+              <Typography variant="h6" gutterBottom sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
                 Professional Information
               </Typography>
+              <Divider sx={{ mb: 2 }} />
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <TextField
@@ -276,6 +339,7 @@ const EditProfilePage = () => {
                     name="organization_name"
                     value={formData.organization_name}
                     onChange={handleChange}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -285,6 +349,7 @@ const EditProfilePage = () => {
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -295,6 +360,7 @@ const EditProfilePage = () => {
                     name="position"
                     value={formData.position}
                     onChange={handleChange}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -305,6 +371,7 @@ const EditProfilePage = () => {
                     name="work_email"
                     value={formData.work_email}
                     onChange={handleChange}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -314,6 +381,7 @@ const EditProfilePage = () => {
                     name="office_phone"
                     value={formData.office_phone}
                     onChange={handleChange}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -323,6 +391,7 @@ const EditProfilePage = () => {
                     name="specialization"
                     value={formData.specialization}
                     onChange={handleChange}
+                    variant="outlined"
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -334,6 +403,7 @@ const EditProfilePage = () => {
                     value={formData.years_of_experience}
                     onChange={handleChange}
                     inputProps={{ min: 0 }}
+                    variant="outlined"
                   />
                 </Grid>
               </Grid>
@@ -345,6 +415,7 @@ const EditProfilePage = () => {
               variant="outlined"
               onClick={() => navigate('/profile')}
               disabled={loading}
+              sx={{ borderRadius: 2, textTransform: 'none' }}
             >
               Cancel
             </Button>
@@ -352,6 +423,7 @@ const EditProfilePage = () => {
               type="submit"
               variant="contained"
               disabled={loading}
+              sx={{ borderRadius: 2, textTransform: 'none', minWidth: 120 }}
             >
               {loading ? <CircularProgress size={24} /> : 'Save Changes'}
             </Button>

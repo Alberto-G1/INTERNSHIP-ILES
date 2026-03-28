@@ -1,17 +1,19 @@
+// frontend/src/components/Layout/Layout.jsx
 import { Outlet } from 'react-router-dom';
-import { Box, Container } from '@mui/material';
-import Navbar from './Navbar';
-import { useAuth } from '../../context/AuthContext';
+import { Box } from '@mui/material';
+import Sidebar from './Sidebar';
+import Topbar from './Topbar';
 
 const Layout = () => {
-  const { user } = useAuth();
-
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar user={user} />
-      <Container component="main" sx={{ flex: 1, py: 3 }}>
-        <Outlet />
-      </Container>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <Sidebar />
+      <Box sx={{ flex: 1, ml: '240px' }}>
+        <Topbar />
+        <Box component="main" sx={{ p: 3 }}>
+          <Outlet />
+        </Box>
+      </Box>
     </Box>
   );
 };
