@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AILES — Auth</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Variables ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green-900: #1A5C3A;
+  --green-700: #236B44;
+  --green-600: #2E8B5B;
+  --green-400: #4DB87A;
+  --green-100: #D6F2E4;
+  --green-50:  #EEF9F3;
+
+  --amber-500: #F59E0B;
+  --amber-100: #FEF3C7;
+
+  --coral-700: #C0392B;
+  --coral-100: #FDE8E6;
+
+  --ink:       #111827;
+  --gray-700:  #374151;
+  --gray-500:  #6B7280;
+  --gray-300:  #D1D5DB;
+  --gray-200:  #E5E7EB;
+  --gray-100:  #F3F4F6;
+  --surface:   #F7F8FA;
+  --white:     #FFFFFF;
+
+  --panel-bg:  #FFFFFF;
+  --input-bg:  #F9FAFB;
+  --input-border: #D1D5DB;
+  --input-focus: #2E8B5B;
+  --placeholder: #9CA3AF;
+
+  --left-bg-light: linear-gradient(160deg, #1A5C3A 0%, #0d3d26 60%, #071f14 100%);
+  --left-bg-dark:  linear-gradient(160deg, #0d1f29 0%, #0a1a2e 60%, #050d18 100%);
+
+  --shadow-form: 0 8px 40px rgba(0,0,0,0.10);
+  --shadow-input: 0 1px 3px rgba(0,0,0,0.06);
+
+  --font: 'Poppins', sans-serif;
+  --serif: 'Poppins', sans-serif;
+  --mono: 'Poppins', sans-serif;
+
+  --radius: 10px;
+  --radius-lg: 16px;
+  --transition: 0.2s ease;
+}
+
+[data-theme="dark"] {
+  --ink:       #F1F5F9;
+  --gray-700:  #CBD5E1;
+  --gray-500:  #94A3B8;
+  --gray-300:  #334155;
+  --gray-200:  #1E293B;
+  --gray-100:  #0F172A;
+  --surface:   #060E1A;
+  --white:     #0D1929;
+
+  --panel-bg:  #0D1929;
+  --input-bg:  #0a1520;
+  --input-border: #1E3A5F;
+  --input-focus: #4DB87A;
+  --placeholder: #4B6280;
+
+  --shadow-form: 0 8px 40px rgba(0,0,0,0.5);
+  --shadow-input: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font);
+  background: var(--surface);
+  color: var(--ink);
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ── Page layout ── */
+.auth-page {
+  display: none;
+  min-height: 100vh;
+  width: 100%;
+}
+.auth-page.active { display: flex; }
+
+/* ── Split layout ── */
+.auth-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* ── LEFT PANEL ── */
+.auth-left {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 36px 48px;
+  overflow: hidden;
+  min-height: 100vh;
+}
+
+/* Light mode left panel — forest/nature SVG illustration */
+[data-theme="light"] .auth-left {
+  background: var(--left-bg-light);
+}
+[data-theme="dark"] .auth-left {
+  background: var(--left-bg-dark);
+}
+
+/* Decorative background art */
+.left-art {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Light mode art: abstract organic shapes suggesting growth */
+[data-theme="light"] .left-art-light { display: block; }
+[data-theme="light"] .left-art-dark  { display: none; }
+[data-theme="dark"]  .left-art-light { display: none; }
+[data-theme="dark"]  .left-art-dark  { display: block; }
+
+.left-logo {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: fadeUp 0.6s ease both;
+}
+.logo-box {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+}
+.logo-box svg { width: 22px; height: 22px; }
+.logo-name { font-family: var(--serif); font-size: 20px; color: #fff; letter-spacing: 0.5px; }
+.logo-tagline { font-size: 10px; color: rgba(255,255,255,0.5); font-family: var(--mono); letter-spacing: 1px; text-transform: uppercase; margin-top: 1px; }
+
+.left-content {
+  position: relative;
+  z-index: 2;
+  animation: fadeUp 0.7s ease 0.1s both;
+}
+.left-headline {
+  font-family: var(--serif);
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+.left-headline em {
+  font-style: italic;
+  color: #7dd8a8;
+}
+.left-desc {
+  font-size: 14.5px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.7;
+  max-width: 360px;
+  margin-bottom: 32px;
+}
+
+.left-stats {
+  display: flex;
+  gap: 28px;
+}
+.stat-item { }
+.stat-num {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 500;
+  color: #fff;
+}
+.stat-txt {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 1px;
+}
+
+.left-footer {
+  position: relative;
+  z-index: 2;
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.3);
+  animation: fadeUp 0.7s ease 0.2s both;
+}
+
+/* ── RIGHT PANEL ── */
+.auth-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  background: var(--panel-bg);
+  transition: background 0.3s;
+  position: relative;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: 24px; right: 24px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--gray-200);
+  background: var(--input-bg);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all var(--transition);
+  color: var(--gray-500);
+}
+.theme-toggle:hover { background: var(--gray-100); transform: rotate(20deg); }
+
+.form-wrap {
+  width: 100%;
+  max-width: 400px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.form-logo-mobile {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.form-logo-mobile .logo-box-sm {
+  width: 34px; height: 34px;
+  background: var(--green-900);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.form-logo-mobile .logo-box-sm svg { width: 18px; height: 18px; }
+.form-logo-mobile .logo-name-sm { font-family: var(--serif); font-size: 18px; color: var(--ink); }
+
+.form-title {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+.form-subtitle {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* ── Inputs ── */
+.field {
+  margin-bottom: 16px;
+  position: relative;
+}
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+.field label .req { color: var(--green-600); margin-left: 2px; }
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-wrap .input-icon {
+  position: absolute;
+  left: 13px;
+  color: var(--placeholder);
+  font-size: 15px;
+  pointer-events: none;
+  transition: color var(--transition);
+}
+.input-wrap input,
+.input-wrap select {
+  width: 100%;
+  padding: 11px 13px 11px 38px;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--radius);
+  background: var(--input-bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  box-shadow: var(--shadow-input);
+  appearance: none;
+}
+.input-wrap input::placeholder { color: var(--placeholder); }
+.input-wrap input:focus,
+.input-wrap select:focus {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px rgba(46,139,91,0.12);
+  background: var(--panel-bg);
+}
+.input-wrap input:focus ~ .input-icon,
+.input-wrap select:focus ~ .input-icon { color: var(--green-600); }
+.input-wrap .eye-btn {
+  position: absolute;
+  right: 12px;
+  background: none; border: none;
+  cursor: pointer;
+  color: var(--placeholder);
+  font-size: 16px;
+  padding: 2px;
+  transition: color var(--transition);
+}
+.input-wrap .eye-btn:hover { color: var(--gray-500); }
+
+/* No left icon variant */
+.input-wrap.no-icon input,
+.input-wrap.no-icon select {
+  padding-left: 13px;
+}
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── Error / success alerts ── */
+.alert {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  margin-bottom: 18px;
+  line-height: 1.4;
+  animation: slideIn 0.3s ease both;
+}
+.alert-error   { background: var(--coral-100); color: var(--coral-700); border: 1px solid rgba(192,57,43,0.2); }
+.alert-success { background: var(--green-100); color: var(--green-900); border: 1px solid rgba(46,139,91,0.2); }
+.alert-info    { background: var(--amber-100); color: #92400E; border: 1px solid rgba(245,158,11,0.2); }
+.alert-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.alert.hidden { display: none; }
+
+/* ── Forgot password link ── */
+.field-meta {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 6px;
+}
+.field-meta label { margin-bottom: 0; }
+.forgot-link {
+  font-size: 12px; color: var(--green-600); font-weight: 500;
+  cursor: pointer; text-decoration: none;
+  transition: color var(--transition);
+}
+.forgot-link:hover { color: var(--green-900); text-decoration: underline; }
+
+/* ── Submit button ── */
+.btn-submit {
+  width: 100%;
+  padding: 13px;
+  background: var(--green-900);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  box-shadow: 0 2px 8px rgba(26,92,58,0.3);
+  margin-top: 6px;
+}
+.btn-submit:hover { background: var(--green-700); box-shadow: 0 4px 16px rgba(26,92,58,0.4); transform: translateY(-1px); }
+.btn-submit:active { transform: translateY(0); }
+.btn-submit.loading { opacity: 0.7; pointer-events: none; }
+
+/* ── Divider ── */
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 20px 0;
+  font-size: 12px; color: var(--placeholder);
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1;
+  height: 1px; background: var(--gray-200);
+}
+
+/* ── Switch link ── */
+.switch-link {
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--gray-500);
+  margin-top: 20px;
+}
+.switch-link a {
+  color: var(--green-600); font-weight: 500;
+  cursor: pointer; text-decoration: none;
+  transition: color var(--transition);
+}
+.switch-link a:hover { color: var(--green-900); text-decoration: underline; }
+
+/* ── OTP boxes ── */
+.otp-row {
+  display: flex; gap: 10px; justify-content: center;
+  margin-bottom: 20px;
+}
+.otp-box {
+  width: 52px; height: 56px;
+  text-align: center;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--radius);
+  background: var(--input-bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 500;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.otp-box:focus {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px rgba(46,139,91,0.12);
+}
+
+/* ── Password strength ── */
+.strength-bar {
+  display: flex; gap: 4px;
+  margin-top: 8px;
+}
+.strength-seg {
+  flex: 1; height: 3px;
+  border-radius: 99px;
+  background: var(--gray-200);
+  transition: background 0.3s;
+}
+.strength-label {
+  font-size: 11px; color: var(--placeholder);
+  margin-top: 5px; text-align: right;
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .auth-split { grid-template-columns: 1fr; }
+  .auth-left  { display: none; }
+  .auth-right { padding: 40px 24px; justify-content: flex-start; padding-top: 60px; }
+  .form-logo-mobile { display: flex; }
+  .theme-toggle { top: 16px; right: 16px; }
+  .form-wrap { max-width: 100%; }
+}
+@media (max-width: 420px) {
+  .field-row { grid-template-columns: 1fr; }
+  .otp-box { width: 44px; height: 50px; font-size: 18px; }
+}
+
+/* ── Select arrow ── */
+.select-wrap::after {
+  content: '▾';
+  position: absolute;
+  right: 12px;
+  color: var(--placeholder);
+  pointer-events: none;
+  font-size: 12px;
+}
+.select-wrap { position: relative; }
+.select-wrap select { padding-right: 30px; cursor: pointer; }
+
+/* Password toggle visible text */
+input[type="text"].pw-field { letter-spacing: 0; }
+input[type="password"].pw-field { letter-spacing: 2px; }
+
+/* ── Role cards ── */
+.role-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 8px;
+  display: block;
+  letter-spacing: 0.2px;
+}
+.role-label .req { color: var(--green-600); margin-left: 2px; }
+.role-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--radius);
+  background: var(--input-bg);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.15s;
+  user-select: none;
+  text-align: center;
+}
+.role-card:hover {
+  border-color: var(--green-400);
+  background: var(--green-50);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26,92,58,0.1);
+}
+.role-card.selected {
+  border-color: var(--green-600);
+  background: var(--green-50);
+  box-shadow: 0 0 0 3px rgba(46,139,91,0.12);
+}
+[data-theme="dark"] .role-card:hover,
+[data-theme="dark"] .role-card.selected {
+  background: rgba(46,139,91,0.1);
+}
+.role-card-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--gray-100);
+  transition: background 0.2s;
+}
+.role-card.selected .role-card-icon { background: var(--green-100); }
+.role-card-icon svg { width: 18px; height: 18px; stroke: var(--gray-500); transition: stroke 0.2s; }
+.role-card.selected .role-card-icon svg { stroke: var(--green-700); }
+.role-card:hover .role-card-icon svg  { stroke: var(--green-600); }
+.role-card:hover .role-card-icon      { background: var(--green-100); }
+.role-card-name {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--gray-600);
+  transition: color 0.2s;
+  line-height: 1.2;
+}
+.role-card.selected .role-card-name { color: var(--green-900); }
+.role-card:hover .role-card-name { color: var(--green-700); }
+.role-check {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gray-300);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.role-card.selected .role-check {
+  background: var(--green-600);
+  border-color: var(--green-600);
+}
+.role-check svg { width: 8px; height: 8px; stroke: #fff; opacity: 0; transition: opacity 0.2s; }
+.role-card.selected .role-check svg { opacity: 1; }
+
+/* ── SVG icon helper ── */
+.icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.input-icon .icon svg,
+.input-icon svg {
+  width: 15px; height: 15px;
+  stroke: var(--placeholder);
+  fill: none;
+  stroke-linecap: round; stroke-linejoin: round; stroke-width: 2;
+  transition: stroke 0.2s;
+}
+.input-wrap:focus-within .input-icon svg { stroke: var(--green-600); }
+
+/* Eye btn svg */
+.eye-btn svg { width: 16px; height: 16px; stroke: var(--placeholder); fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.eye-btn:hover svg { stroke: var(--gray-500); }
+
+/* Step icon */
+.step-icon {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: var(--green-50);
+  border: 1px solid var(--green-100);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+}
+.step-icon svg { width: 24px; height: 24px; stroke: var(--green-700); fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+[data-theme="dark"] .step-icon { background: rgba(46,139,91,0.1); border-color: rgba(46,139,91,0.2); }
+
+/* Alert icon svg */
+.alert-icon svg { width: 15px; height: 15px; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.alert-error .alert-icon svg   { stroke: var(--coral-700); }
+.alert-success .alert-icon svg { stroke: var(--green-700); }
+.alert-info .alert-icon svg    { stroke: #92400E; }
+
+/* Theme toggle svg */
+.theme-toggle svg { width: 16px; height: 16px; fill: none; stroke: var(--gray-500); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; 
+
+  display: flex; align-items: center; gap: 8px;
+  margin: 4px 0 16px;
+}
+.check-row input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--green-600);
+  cursor: pointer;
+}
+.check-row label {
+  font-size: 13px; color: var(--gray-500);
+  cursor: pointer; margin-bottom: 0;
+}
+.check-row label a { color: var(--green-600); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     PAGE 1 — SIGN IN
+══════════════════════════════════════ -->
+<div class="auth-page active" id="page-signin">
+  <div class="auth-split">
+
+    <!-- LEFT -->
+    <div class="auth-left">
+      <div class="left-art">
+        <!-- LIGHT MODE art: organic shapes, leaves, growth -->
+        <svg class="left-art-light" viewBox="0 0 600 800" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%">
+          <ellipse cx="520" cy="120" rx="260" ry="260" fill="rgba(255,255,255,0.04)"/>
+          <ellipse cx="80"  cy="680" rx="200" ry="200" fill="rgba(255,255,255,0.03)"/>
+          <ellipse cx="300" cy="400" rx="300" ry="300" fill="rgba(77,184,122,0.06)"/>
+          <!-- leaf shapes -->
+          <path d="M480 760 Q520 680 460 620 Q400 680 480 760Z" fill="rgba(77,184,122,0.12)"/>
+          <path d="M500 780 Q560 700 500 640 Q440 700 500 780Z" fill="rgba(77,184,122,0.08)"/>
+          <path d="M100 100 Q60 200 130 240 Q160 180 100 100Z" fill="rgba(255,255,255,0.06)"/>
+          <path d="M70 120 Q20 220 90 270 Q130 200 70 120Z" fill="rgba(255,255,255,0.04)"/>
+          <!-- grid dots -->
+          <g fill="rgba(255,255,255,0.07)">
+            <circle cx="40"  cy="40"  r="2"/><circle cx="80"  cy="40"  r="2"/><circle cx="120" cy="40"  r="2"/>
+            <circle cx="40"  cy="80"  r="2"/><circle cx="80"  cy="80"  r="2"/><circle cx="120" cy="80"  r="2"/>
+            <circle cx="40"  cy="120" r="2"/><circle cx="80"  cy="120" r="2"/><circle cx="120" cy="120" r="2"/>
+          </g>
+          <!-- arc lines -->
+          <path d="M-20 500 Q200 300 500 400" stroke="rgba(255,255,255,0.05)" stroke-width="1" fill="none"/>
+          <path d="M-20 560 Q200 360 500 460" stroke="rgba(255,255,255,0.04)" stroke-width="1" fill="none"/>
+        </svg>
+        <!-- DARK MODE art: stars / tech constellation -->
+        <svg class="left-art-dark" viewBox="0 0 600 800" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%">
+          <ellipse cx="300" cy="400" rx="350" ry="350" fill="rgba(77,184,122,0.04)"/>
+          <ellipse cx="500" cy="100" rx="180" ry="180" fill="rgba(93,130,166,0.06)"/>
+          <!-- constellation dots & lines -->
+          <g fill="rgba(255,255,255,0.35)">
+            <circle cx="120" cy="180" r="1.5"/><circle cx="220" cy="130" r="2.5"/><circle cx="360" cy="200" r="1.5"/>
+            <circle cx="460" cy="140" r="2"/><circle cx="500" cy="280" r="1.5"/><circle cx="390" cy="340" r="2"/>
+            <circle cx="240" cy="300" r="1.5"/><circle cx="140" cy="380" r="2"/><circle cx="80"  cy="500" r="1.5"/>
+            <circle cx="180" cy="560" r="2.5"/><circle cx="320" cy="520" r="1.5"/><circle cx="460" cy="480" r="2"/>
+            <circle cx="540" cy="600" r="1.5"/><circle cx="420" cy="680" r="2"/><circle cx="280" cy="700" r="1.5"/>
+          </g>
+          <g stroke="rgba(255,255,255,0.1)" stroke-width="0.8" fill="none">
+            <line x1="120" y1="180" x2="220" y2="130"/><line x1="220" y1="130" x2="360" y2="200"/>
+            <line x1="360" y1="200" x2="460" y2="140"/><line x1="460" y1="140" x2="500" y2="280"/>
+            <line x1="500" y1="280" x2="390" y2="340"/><line x1="390" y1="340" x2="240" y2="300"/>
+            <line x1="240" y1="300" x2="140" y2="380"/><line x1="140" y1="380" x2="80"  y2="500"/>
+            <line x1="80"  y1="500" x2="180" y2="560"/><line x1="180" y1="560" x2="320" y2="520"/>
+            <line x1="320" y1="520" x2="460" y2="480"/><line x1="460" y1="480" x2="540" y2="600"/>
+          </g>
+          <!-- glowing orb -->
+          <circle cx="300" cy="280" r="80" fill="rgba(46,139,91,0.08)"/>
+          <circle cx="300" cy="280" r="40" fill="rgba(46,139,91,0.1)"/>
+        </svg>
+      </div>
+
+      <div class="left-logo">
+        <div class="logo-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-name">AILES</div>
+          <div class="logo-tagline">Internship Logging & Evaluation</div>
+        </div>
+      </div>
+
+      <div class="left-content">
+        <div class="left-headline">
+          Track every step of your<br><em>internship journey.</em>
+        </div>
+        <p class="left-desc">AILES gives interns, supervisors, and administrators a unified space to log progress, evaluate performance, and generate insights — in real time.</p>
+        <div class="left-stats">
+          <div class="stat-item"><div class="stat-num">48+</div><div class="stat-txt">Active interns</div></div>
+          <div class="stat-item"><div class="stat-num">312</div><div class="stat-txt">Logs submitted</div></div>
+          <div class="stat-item"><div class="stat-num">83.4</div><div class="stat-txt">Avg. score</div></div>
+        </div>
+      </div>
+
+      <div class="left-footer">© 2025 AILES System · All rights reserved</div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="auth-right">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn-signin">
+        <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+
+      <div class="form-wrap">
+        <!-- Mobile logo -->
+        <div class="form-logo-mobile">
+          <div class="logo-box-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="logo-name-sm">AILES</span>
+        </div>
+
+        <div class="form-title">Welcome back</div>
+        <div class="form-subtitle">Sign in to your AILES account to continue.</div>
+
+        <div class="alert alert-error" id="signin-error">
+          <span class="alert-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+          <span>Login failed. Please check your username and password.</span>
+        </div>
+
+        <div class="field">
+          <label>Username <span class="req">*</span></label>
+          <div class="input-wrap">
+            <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <input type="text" placeholder="e.g. Eddy-Iles" id="signin-username">
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-meta">
+            <label>Password <span class="req">*</span></label>
+            <a class="forgot-link" onclick="showPage('page-forgot')">Forgot password?</a>
+          </div>
+          <div class="input-wrap">
+            <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+            <input type="password" class="pw-field" placeholder="Enter your password" id="signin-password">
+            <button class="eye-btn" onclick="toggleEye('signin-password',this)" type="button"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+        </div>
+
+        <!-- Remember me -->
+        <div class="check-row">
+          <input type="checkbox" id="remember">
+          <label for="remember">Remember me for 30 days</label>
+        </div>
+
+        <button class="btn-submit" onclick="handleSignIn()">Sign In</button>
+
+        <div class="divider">or</div>
+
+        <div class="switch-link">Don't have an account? <a onclick="showPage('page-signup')">Sign Up</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 2 — SIGN UP
+══════════════════════════════════════ -->
+<div class="auth-page" id="page-signup">
+  <div class="auth-split">
+
+    <div class="auth-left">
+      <div class="left-art">
+        <svg class="left-art-light" viewBox="0 0 600 800" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%">
+          <ellipse cx="300" cy="400" rx="320" ry="320" fill="rgba(77,184,122,0.07)"/>
+          <path d="M550 0 Q620 200 500 350 Q380 500 450 700 Q520 800 600 800 L600 0Z" fill="rgba(255,255,255,0.03)"/>
+          <!-- circles ring -->
+          <circle cx="300" cy="400" r="200" stroke="rgba(255,255,255,0.05)" stroke-width="1" fill="none"/>
+          <circle cx="300" cy="400" r="150" stroke="rgba(255,255,255,0.04)" stroke-width="1" fill="none"/>
+          <circle cx="300" cy="400" r="100" stroke="rgba(255,255,255,0.04)" stroke-width="1" fill="none"/>
+          <!-- person/growth icon placeholder dots -->
+          <circle cx="300" cy="240" r="36" fill="rgba(77,184,122,0.15)"/>
+          <path d="M260 320 Q260 420 300 440 Q340 420 340 320 Q320 300 300 298 Q280 300 260 320Z" fill="rgba(77,184,122,0.1)"/>
+          <g fill="rgba(255,255,255,0.06)">
+            <circle cx="40"  cy="760" r="2"/><circle cx="80"  cy="760" r="2"/><circle cx="120" cy="760" r="2"/>
+            <circle cx="40"  cy="720" r="2"/><circle cx="80"  cy="720" r="2"/><circle cx="120" cy="720" r="2"/>
+          </g>
+        </svg>
+        <svg class="left-art-dark" viewBox="0 0 600 800" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%">
+          <ellipse cx="300" cy="400" rx="350" ry="350" fill="rgba(77,184,122,0.04)"/>
+          <!-- grid -->
+          <g stroke="rgba(255,255,255,0.05)" stroke-width="0.5">
+            <line x1="0" y1="100" x2="600" y2="100"/><line x1="0" y1="200" x2="600" y2="200"/>
+            <line x1="0" y1="300" x2="600" y2="300"/><line x1="0" y1="400" x2="600" y2="400"/>
+            <line x1="0" y1="500" x2="600" y2="500"/><line x1="0" y1="600" x2="600" y2="600"/>
+            <line x1="0" y1="700" x2="600" y2="700"/>
+            <line x1="100" y1="0" x2="100" y2="800"/><line x1="200" y1="0" x2="200" y2="800"/>
+            <line x1="300" y1="0" x2="300" y2="800"/><line x1="400" y1="0" x2="400" y2="800"/>
+            <line x1="500" y1="0" x2="500" y2="800"/>
+          </g>
+          <circle cx="300" cy="360" r="120" fill="rgba(46,139,91,0.07)"/>
+          <circle cx="300" cy="360" r="60"  fill="rgba(46,139,91,0.1)"/>
+          <g fill="rgba(77,184,122,0.6)">
+            <circle cx="300" cy="360" r="6"/>
+            <circle cx="180" cy="260" r="4"/><circle cx="420" cy="260" r="4"/>
+            <circle cx="160" cy="420" r="3"/><circle cx="440" cy="420" r="3"/>
+          </g>
+          <g stroke="rgba(77,184,122,0.2)" stroke-width="1" fill="none">
+            <line x1="300" y1="360" x2="180" y2="260"/>
+            <line x1="300" y1="360" x2="420" y2="260"/>
+            <line x1="300" y1="360" x2="160" y2="420"/>
+            <line x1="300" y1="360" x2="440" y2="420"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="left-logo">
+        <div class="logo-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-name">AILES</div>
+          <div class="logo-tagline">Internship Logging & Evaluation</div>
+        </div>
+      </div>
+
+      <div class="left-content">
+        <div class="left-headline">
+          Your internship,<br><em>documented with purpose.</em>
+        </div>
+        <p class="left-desc">Join AILES as an intern, supervisor, or administrator. Build a complete record of your internship experience — tracked, evaluated, and ready for review.</p>
+        <div class="left-stats">
+          <div class="stat-item"><div class="stat-num">3</div><div class="stat-txt">User roles</div></div>
+          <div class="stat-item"><div class="stat-num">16</div><div class="stat-txt">Week coverage</div></div>
+          <div class="stat-item"><div class="stat-num">100%</div><div class="stat-txt">Transparent</div></div>
+        </div>
+      </div>
+
+      <div class="left-footer">© 2025 AILES System · All rights reserved</div>
+    </div>
+
+    <div class="auth-right">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn-signup">
+        <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+
+      <div class="form-wrap">
+        <div class="form-logo-mobile">
+          <div class="logo-box-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="logo-name-sm">AILES</span>
+        </div>
+
+        <div class="form-title">Create account</div>
+        <div class="form-subtitle">Fill in your details to get started with AILES.</div>
+
+        <div class="alert alert-error hidden" id="signup-error">
+          <span class="alert-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+          <span id="signup-error-msg">Please fill in all required fields.</span>
+        </div>
+
+        <!-- Role cards — top of form -->
+        <input type="hidden" id="su-role" value="">
+        <span class="role-label">Select your role <span class="req">*</span></span>
+        <div class="role-cards">
+          <div class="role-card" onclick="selectRole(this,'Student Intern')">
+            <div class="role-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            </div>
+            <div class="role-card-name">Student Intern</div>
+            <div class="role-check"><svg viewBox="0 0 10 10" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="1.5,5 4,7.5 8.5,2"/></svg></div>
+          </div>
+          <div class="role-card" onclick="selectRole(this,'Supervisor')">
+            <div class="role-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="role-card-name">Supervisor</div>
+            <div class="role-check"><svg viewBox="0 0 10 10" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="1.5,5 4,7.5 8.5,2"/></svg></div>
+          </div>
+          <div class="role-card" onclick="selectRole(this,'Administrator')">
+            <div class="role-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="role-card-name">Administrator</div>
+            <div class="role-check"><svg viewBox="0 0 10 10" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="1.5,5 4,7.5 8.5,2"/></svg></div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>First Name <span class="req">*</span></label>
+            <div class="input-wrap no-icon"><input type="text" placeholder="First name" id="su-firstname"></div>
+          </div>
+          <div class="field">
+            <label>Last Name <span class="req">*</span></label>
+            <div class="input-wrap no-icon"><input type="text" placeholder="Last name" id="su-lastname"></div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Username <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg></span>
+              <input type="text" placeholder="Choose username" id="su-username">
+            </div>
+          </div>
+          <div class="field">
+            <label>Email <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              <input type="email" placeholder="you@example.com" id="su-email">
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Phone</label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.92z"/></svg></span>
+              <input type="tel" placeholder="+233 XX XXX XXXX" id="su-phone">
+            </div>
+          </div>
+          <div class="field">
+            <label>Department</label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+              <input type="text" placeholder="e.g. Engineering, Finance…" id="su-dept">
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Password <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <input type="password" class="pw-field" placeholder="Min 8 characters" id="su-password" oninput="checkStrength(this.value)">
+              <button class="eye-btn" onclick="toggleEye('su-password',this)" type="button"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+            <div class="strength-bar">
+              <div class="strength-seg" id="s1"></div><div class="strength-seg" id="s2"></div>
+              <div class="strength-seg" id="s3"></div><div class="strength-seg" id="s4"></div>
+            </div>
+            <div class="strength-label" id="strength-lbl"></div>
+          </div>
+          <div class="field">
+            <label>Confirm Password <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <input type="password" class="pw-field" placeholder="Re-enter password" id="su-confirm">
+              <button class="eye-btn" onclick="toggleEye('su-confirm',this)" type="button"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="check-row">
+          <input type="checkbox" id="terms">
+          <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+        </div>
+
+        <button class="btn-submit" onclick="handleSignUp()">Create Account</button>
+
+        <div class="switch-link">Already have an account? <a onclick="showPage('page-signin')">Sign In</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 3 — FORGOT PASSWORD
+══════════════════════════════════════ -->
+<div class="auth-page" id="page-forgot">
+  <div class="auth-split">
+
+    <div class="auth-left">
+      <div class="left-art">
+        <svg class="left-art-light" viewBox="0 0 600 800" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%">
+          <ellipse cx="300" cy="400" rx="280" ry="280" fill="rgba(77,184,122,0.06)"/>
+          <!-- lock shapes -->
+          <rect x="220" y="300" width="160" height="130" rx="16" fill="rgba(255,255,255,0.07)"/>
+          <path d="M240 300 Q240 220 300 220 Q360 220 360 300" stroke="rgba(255,255,255,0.12)" stroke-width="18" fill="none" stroke-linecap="round"/>
+          <circle cx="300" cy="365" r="16" fill="rgba(255,255,255,0.15)"/>
+          <rect x="295" y="365" width="10" height="28" rx="5" fill="rgba(255,255,255,0.15)"/>
+          <!-- radiate lines -->
+          <g stroke="rgba(77,184,122,0.15)" stroke-width="1" fill="none">
+            <circle cx="300" cy="365" r="60"/><circle cx="300" cy="365" r="100"/><circle cx="300" cy="365" r="140"/>
+          </g>
+        </svg>
+        <svg class="left-art-dark" viewBox="0 0 600 800" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%">
+          <ellipse cx="300" cy="400" rx="320" ry="320" fill="rgba(46,139,91,0.05)"/>
+          <rect x="220" y="300" width="160" height="130" rx="16" fill="rgba(77,184,122,0.08)"/>
+          <path d="M240 300 Q240 220 300 220 Q360 220 360 300" stroke="rgba(77,184,122,0.2)" stroke-width="18" fill="none" stroke-linecap="round"/>
+          <circle cx="300" cy="365" r="16" fill="rgba(77,184,122,0.3)"/>
+          <rect x="295" y="365" width="10" height="28" rx="5" fill="rgba(77,184,122,0.3)"/>
+          <g stroke="rgba(77,184,122,0.1)" stroke-width="1" fill="none">
+            <circle cx="300" cy="365" r="60"/><circle cx="300" cy="365" r="100"/><circle cx="300" cy="365" r="150"/>
+          </g>
+          <g fill="rgba(255,255,255,0.2)">
+            <circle cx="120" cy="180" r="2"/><circle cx="480" cy="180" r="2"/>
+            <circle cx="80"  cy="600" r="2"/><circle cx="520" cy="600" r="2"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="left-logo">
+        <div class="logo-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-name">AILES</div>
+          <div class="logo-tagline">Internship Logging & Evaluation</div>
+        </div>
+      </div>
+
+      <div class="left-content">
+        <div class="left-headline">
+          Locked out?<br><em>We've got you covered.</em>
+        </div>
+        <p class="left-desc">Password resets are quick and secure. Enter your registered email and we'll send you a 6-digit code to verify your identity and set a new password.</p>
+        <div class="left-stats">
+          <div class="stat-item"><div class="stat-num">2 min</div><div class="stat-txt">Reset time</div></div>
+          <div class="stat-item"><div class="stat-num">256-bit</div><div class="stat-txt">Encrypted</div></div>
+        </div>
+      </div>
+
+      <div class="left-footer">© 2025 AILES System · All rights reserved</div>
+    </div>
+
+    <div class="auth-right">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn-forgot">
+        <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+
+      <div class="form-wrap">
+        <div class="form-logo-mobile">
+          <div class="logo-box-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="logo-name-sm">AILES</span>
+        </div>
+
+        <!-- STEP 1: email -->
+        <div id="fp-step1">
+          <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="form-title">Reset password</div>
+          <div class="form-subtitle">Enter your registered email address and we'll send you a verification code.</div>
+
+          <div class="alert alert-info hidden" id="fp-info">
+            <span class="alert-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>
+            <span>If this email is registered, you'll receive a code shortly.</span>
+          </div>
+
+          <div class="field">
+            <label>Email address <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              <input type="email" placeholder="you@example.com" id="fp-email">
+            </div>
+          </div>
+
+          <button class="btn-submit" onclick="handleFpStep1()">Send Reset Code</button>
+          <div class="switch-link" style="margin-top:16px"><a onclick="showPage('page-signin')">← Back to Sign In</a></div>
+        </div>
+
+        <!-- STEP 2: OTP -->
+        <div id="fp-step2" style="display:none">
+          <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div class="form-title">Check your email</div>
+          <div class="form-subtitle" id="fp-step2-sub">We sent a 6-digit code to <strong>you@example.com</strong>. Enter it below.</div>
+
+          <div class="alert alert-error hidden" id="fp-otp-error">
+            <span class="alert-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+            <span>Invalid code. Please try again.</span>
+          </div>
+
+          <div class="otp-row">
+            <input type="text" class="otp-box" maxlength="1" oninput="otpNext(this,0)">
+            <input type="text" class="otp-box" maxlength="1" oninput="otpNext(this,1)">
+            <input type="text" class="otp-box" maxlength="1" oninput="otpNext(this,2)">
+            <input type="text" class="otp-box" maxlength="1" oninput="otpNext(this,3)">
+            <input type="text" class="otp-box" maxlength="1" oninput="otpNext(this,4)">
+            <input type="text" class="otp-box" maxlength="1" oninput="otpNext(this,5)">
+          </div>
+
+          <button class="btn-submit" onclick="handleFpStep2()">Verify Code</button>
+          <div class="switch-link" style="margin-top:14px">Didn't get a code? <a onclick="handleFpStep1(true)">Resend</a></div>
+        </div>
+
+        <!-- STEP 3: new password -->
+        <div id="fp-step3" style="display:none">
+          <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="form-title">Set new password</div>
+          <div class="form-subtitle">Choose a strong password you haven't used before.</div>
+
+          <div class="alert alert-error hidden" id="fp-pw-error">
+            <span class="alert-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+            <span>Passwords do not match.</span>
+          </div>
+
+          <div class="field">
+            <label>New Password <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <input type="password" class="pw-field" placeholder="Min 8 characters" id="fp-newpw" oninput="checkStrength2(this.value)">
+              <button class="eye-btn" onclick="toggleEye('fp-newpw',this)" type="button"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+            <div class="strength-bar">
+              <div class="strength-seg" id="fs1"></div><div class="strength-seg" id="fs2"></div>
+              <div class="strength-seg" id="fs3"></div><div class="strength-seg" id="fs4"></div>
+            </div>
+            <div class="strength-label" id="fstrength-lbl"></div>
+          </div>
+
+          <div class="field">
+            <label>Confirm Password <span class="req">*</span></label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <input type="password" class="pw-field" placeholder="Re-enter new password" id="fp-confirmpw">
+              <button class="eye-btn" onclick="toggleEye('fp-confirmpw',this)" type="button"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+
+          <button class="btn-submit" onclick="handleFpStep3()">Update Password</button>
+        </div>
+
+        <!-- STEP 4: success -->
+        <div id="fp-step4" style="display:none;text-align:center">
+          <div class="step-icon" style="margin:0 auto 16px;background:var(--green-100);border-color:var(--green-100)">
+            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" style="stroke:var(--green-700)"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="form-title">Password updated!</div>
+          <div class="form-subtitle" style="margin-bottom:28px">Your password has been changed successfully. You can now sign in with your new credentials.</div>
+          <button class="btn-submit" onclick="showPage('page-signin')">Go to Sign In</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Theme ──
+  const moonSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  const sunSVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    document.querySelectorAll('.theme-toggle').forEach(b => b.innerHTML = isDark ? moonSVG : sunSVG);
+  }
+
+  // ── Page switching ──
+  function showPage(id) {
+    document.querySelectorAll('.auth-page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  // ── Role card selection ──
+  function selectRole(card, role) {
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    document.getElementById('su-role').value = role;
+  }
+
+  // ── Eye toggle (SVG-based) ──
+  const eyeOpenSVG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const eyeClosedSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+  function toggleEye(id, btn) {
+    const inp = document.getElementById(id);
+    if (inp.type === 'password') { inp.type = 'text'; btn.innerHTML = eyeClosedSVG; }
+    else { inp.type = 'password'; btn.innerHTML = eyeOpenSVG; }
+  }
+
+  // ── Password strength ──
+  function applyStrength(val, segs, lbl) {
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const colors = ['','#C0392B','#F59E0B','#2E8B5B','#1A5C3A'];
+    const labels = ['','Weak','Fair','Good','Strong'];
+    segs.forEach((s, i) => s.style.background = i < score ? colors[score] : 'var(--gray-200)');
+    lbl.textContent = val.length ? labels[score] : '';
+    lbl.style.color = colors[score] || 'var(--placeholder)';
+  }
+  function checkStrength(v)  { applyStrength(v, [document.getElementById('s1'),document.getElementById('s2'),document.getElementById('s3'),document.getElementById('s4')], document.getElementById('strength-lbl')); }
+  function checkStrength2(v) { applyStrength(v, [document.getElementById('fs1'),document.getElementById('fs2'),document.getElementById('fs3'),document.getElementById('fs4')], document.getElementById('fstrength-lbl')); }
+
+</script>

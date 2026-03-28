@@ -23,21 +23,34 @@ import {
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   Person as ProfileIcon,
+  BusinessCenter as PlacementsIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
+import {
+  DRAWER_WIDTH,
+  NAVIGATION,
+  getRoleColor,
+  getRoleLabel,
+} from './layoutConfig';
 
-const DRAWER_WIDTH = 240;
+const navigation = NAVIGATION.map((item) => {
+  const iconMap = {
+    Dashboard: DashboardIcon,
+    Logs: LogsIcon,
+    Evaluations: EvaluationsIcon,
+    Interns: InternsIcon,
+    Reports: ReportsIcon,
+    Notifications: NotificationsIcon,
+    Profile: ProfileIcon,
+    Settings: SettingsIcon,
+    Placements: PlacementsIcon,
+  };
 
-const navigation = [
-  { path: '/dashboard', label: 'Dashboard', icon: DashboardIcon, roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
-  { path: '/logs', label: 'Logs', icon: LogsIcon, roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
-  { path: '/evaluations', label: 'Evaluations', icon: EvaluationsIcon, roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
-  { path: '/interns', label: 'Interns', icon: InternsIcon, roles: ['workplace_supervisor', 'academic_supervisor', 'admin'] },
-  { path: '/reports', label: 'Reports', icon: ReportsIcon, roles: ['admin'] },
-  { path: '/notifications', label: 'Notifications', icon: NotificationsIcon, roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
-  { path: '/profile', label: 'Profile', icon: ProfileIcon, roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
-  { path: '/settings', label: 'Settings', icon: SettingsIcon, roles: ['admin'] },
-];
+  return {
+    ...item,
+    icon: iconMap[item.label] || DashboardIcon,
+  };
+});
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -50,29 +63,14 @@ const Sidebar = () => {
     item.roles.includes(user?.role || 'student')
   );
 
+  const groupedNav = ['Overview', 'Management', 'System'].map((section) => ({
+    section,
+    items: filteredNav.filter((item) => item.section === section),
+  }));
+
   const handleLogout = async () => {
     await logout();
     navigate('/login');
-  };
-
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'student': return '#2E8B5B';
-      case 'workplace_supervisor': return '#F59E0B';
-      case 'academic_supervisor': return '#5B82A6';
-      case 'admin': return '#C0392B';
-      default: return '#4B5563';
-    }
-  };
-
-  const getRoleDisplay = (role) => {
-    switch (role) {
-      case 'student': return 'Student Intern';
-      case 'workplace_supervisor': return 'Workplace Supervisor';
-      case 'academic_supervisor': return 'Academic Supervisor';
-      case 'admin': return 'Administrator';
-      default: return role;
-    }
   };
 
   return (
@@ -85,105 +83,113 @@ const Sidebar = () => {
           width: DRAWER_WIDTH,
           boxSizing: 'border-box',
           borderRight: '1px solid',
-          borderColor: 'divider',
+          borderColor: '#E5E7EB',
           bgcolor: 'background.paper',
         },
       }}
     >
-      <Box sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ p: '20px 20px 16px', borderBottom: '1px solid #E5E7EB' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
-              width: 36,
-              height: 36,
+              width: 32,
+              height: 32,
               bgcolor: 'primary.main',
-              borderRadius: 1.5,
+              borderRadius: '6px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
               fontWeight: 600,
-              fontSize: 18,
+              fontSize: 14,
             }}
           >
             A
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '0.95rem', lineHeight: 1.2 }}>
+            <Typography sx={{ fontWeight: 600, fontSize: '15px', lineHeight: 1.1 }}>
               AILES
             </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+            <Typography sx={{ color: 'text.secondary', fontSize: '10px', letterSpacing: '0.6px' }}>
               v2.4.0
             </Typography>
           </Box>
         </Box>
       </Box>
 
-      <Box sx={{ flex: 1, py: 2 }}>
-        <Typography variant="caption" sx={{ px: 2.5, pb: 1, display: 'block', color: 'text.secondary', fontWeight: 500 }}>
-          MAIN
-        </Typography>
-        <List disablePadding>
-          {filteredNav.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            const badge = item.label === 'Evaluations' && pendingReviews > 0 ? pendingReviews : 
-                         item.label === 'Notifications' && unreadNotifications > 0 ? unreadNotifications : null;
-            
-            return (
-              <ListItem key={item.path} disablePadding sx={{ px: 1.5, mb: 0.5 }}>
-                <ListItemButton
-                  onClick={() => navigate(item.path)}
-                  sx={{
-                    borderRadius: 1.5,
-                    bgcolor: isActive ? 'action.selected' : 'transparent',
-                    '&:hover': { bgcolor: 'action.hover' },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36, color: isActive ? 'primary.main' : 'text.secondary' }}>
-                    <Icon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={item.label} 
-                    primaryTypographyProps={{ 
-                      fontSize: '0.85rem',
-                      fontWeight: isActive ? 500 : 400,
-                      color: isActive ? 'primary.main' : 'text.secondary',
-                    }}
-                  />
-                  {badge && (
-                    <Chip
-                      label={badge}
-                      size="small"
-                      sx={{
-                        height: 18,
-                        fontSize: '0.7rem',
-                        bgcolor: 'secondary.main',
-                        color: 'white',
-                        fontWeight: 600,
-                      }}
-                    />
-                  )}
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
-        </List>
+      <Box sx={{ flex: 1, py: 1.5 }}>
+        {groupedNav.map(({ section, items }) => (
+          items.length > 0 ? (
+            <Box key={section} sx={{ px: 1.5, pt: 0.6, pb: 1.2 }}>
+              <Typography sx={{ px: 1, pb: 0.5, fontSize: '10px', color: '#9CA3AF', letterSpacing: '0.8px', textTransform: 'uppercase', fontWeight: 500 }}>
+                {section}
+              </Typography>
+              <List disablePadding>
+                {items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  const badge = item.label === 'Evaluations' && pendingReviews > 0 ? pendingReviews :
+                    item.label === 'Notifications' && unreadNotifications > 0 ? unreadNotifications : null;
+
+                  return (
+                    <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
+                      <ListItemButton
+                        onClick={() => navigate(item.path)}
+                        sx={{
+                          py: 0.9,
+                          px: 1.1,
+                          borderRadius: '6px',
+                          bgcolor: isActive ? '#EEF9F3' : 'transparent',
+                          '&:hover': { bgcolor: '#F3F4F6' },
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 28, color: isActive ? 'primary.main' : '#4B5563' }}>
+                          <Icon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={item.label}
+                          primaryTypographyProps={{
+                            fontSize: '13.5px',
+                            fontWeight: isActive ? 500 : 400,
+                            color: isActive ? 'primary.main' : '#4B5563',
+                          }}
+                        />
+                        {badge && (
+                          <Chip
+                            label={badge}
+                            size="small"
+                            sx={{
+                              height: 18,
+                              fontSize: '10px',
+                              bgcolor: '#F59E0B',
+                              color: '#FFFFFF',
+                              fontWeight: 600,
+                            }}
+                          />
+                        )}
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </Box>
+          ) : null
+        ))}
       </Box>
 
-      <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+      <Box sx={{ p: 1.5, borderTop: '1px solid #E5E7EB' }}>
         <ListItem disablePadding>
           <ListItemButton
             onClick={() => navigate('/profile')}
-            sx={{ borderRadius: 1.5 }}
+            sx={{ borderRadius: '6px', py: 0.9, px: 1.1 }}
           >
-            <ListItemIcon sx={{ minWidth: 36 }}>
+            <ListItemIcon sx={{ minWidth: 32 }}>
               <Avatar
                 sx={{
-                  width: 32,
-                  height: 32,
+                  width: 30,
+                  height: 30,
                   bgcolor: getRoleColor(user?.role),
-                  fontSize: '0.85rem',
+                  fontSize: '12px',
                   fontWeight: 600,
                 }}
               >
@@ -192,20 +198,20 @@ const Sidebar = () => {
             </ListItemIcon>
             <ListItemText
               primary={user?.first_name ? `${user.first_name} ${user.last_name || ''}` : user?.username}
-              secondary={getRoleDisplay(user?.role)}
-              primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 500 }}
-              secondaryTypographyProps={{ fontSize: '0.7rem' }}
+              secondary={getRoleLabel(user?.role)}
+              primaryTypographyProps={{ fontSize: '13px', fontWeight: 500, color: '#111827' }}
+              secondaryTypographyProps={{ fontSize: '11px', color: '#9CA3AF' }}
             />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding sx={{ mt: 1 }}>
-          <ListItemButton onClick={handleLogout} sx={{ borderRadius: 1.5 }}>
-            <ListItemIcon sx={{ minWidth: 36 }}>
+          <ListItemButton onClick={handleLogout} sx={{ borderRadius: '6px', py: 0.9, px: 1.1 }}>
+            <ListItemIcon sx={{ minWidth: 32 }}>
               <LogoutIcon fontSize="small" sx={{ color: 'text.secondary' }} />
             </ListItemIcon>
             <ListItemText 
               primary="Logout" 
-              primaryTypographyProps={{ fontSize: '0.85rem', color: 'text.secondary' }}
+              primaryTypographyProps={{ fontSize: '13px', color: '#4B5563' }}
             />
           </ListItemButton>
         </ListItem>

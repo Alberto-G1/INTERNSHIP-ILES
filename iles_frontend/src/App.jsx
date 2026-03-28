@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeModeProvider, useThemeMode } from './context/ThemeModeContext';
 
 // Layout Components
 import Layout from './components/Layout/Layout';
@@ -13,15 +14,31 @@ import Layout from './components/Layout/Layout';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 
-// Dashboard Pages
-import StudentDashboard from './pages/Dashboard/StudentDashboard';
-import SupervisorDashboard from './pages/Dashboard/SupervisorDashboard';
-import AdminDashboard from './pages/Dashboard/AdminDashboard';
+// Student Pages
+import StudentDashboard from './pages/Student/Dashboard/StudentDashboard';
+import StudentProfilePage from './pages/Student/Profile/StudentProfilePage';
+import StudentLogsPage from './pages/Student/Logs/StudentLogsPage';
+import StudentPlacementsPage from './pages/Student/Placements/StudentPlacementsPage';
 
-// Feature Pages
-import ProfilePage from './pages/Profile/ProfilePage';
-import EditProfilePage from './pages/Profile/EditProfilePage';
-import LogsPage from './pages/Logs/LogsPage';
+// Workplace Supervisor Pages
+import WorkplaceSupervisorDashboard from './pages/WorkplaceSupervisor/Dashboard/WorkplaceSupervisorDashboard';
+import WorkplaceSupervisorProfilePage from './pages/WorkplaceSupervisor/Profile/WorkplaceSupervisorProfilePage';
+import WorkplaceSupervisorLogsPage from './pages/WorkplaceSupervisor/Logs/WorkplaceSupervisorLogsPage';
+import WorkplaceSupervisorPlacementsPage from './pages/WorkplaceSupervisor/Placements/WorkplaceSupervisorPlacementsPage';
+
+// Academic Supervisor Pages
+import AcademicSupervisorDashboard from './pages/AcademicSupervisor/Dashboard/AcademicSupervisorDashboard';
+import AcademicSupervisorProfilePage from './pages/AcademicSupervisor/Profile/AcademicSupervisorProfilePage';
+import AcademicSupervisorLogsPage from './pages/AcademicSupervisor/Logs/AcademicSupervisorLogsPage';
+import AcademicSupervisorPlacementsPage from './pages/AcademicSupervisor/Placements/AcademicSupervisorPlacementsPage';
+
+// Admin Pages
+import AdminDashboard from './pages/Admin/Dashboard/AdminDashboard';
+import AdminProfilePage from './pages/Admin/Profile/AdminProfilePage';
+import AdminLogsPage from './pages/Admin/LogsPage';
+import AdminPlacementsPage from './pages/Admin/Placements/AdminPlacementsPage';
+
+// Shared Feature Pages
 import EvaluationsPage from './pages/Evaluations/EvaluationsPage';
 import InternsPage from './pages/Interns/InternsPage';
 import ReportsPage from './pages/Reports/ReportsPage';
@@ -33,9 +50,9 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 
 const queryClient = new QueryClient();
 
-// Custom theme matching the design system
-const theme = createTheme({
+const buildTheme = (mode) => createTheme({
   palette: {
+    mode,
     primary: {
       main: '#1A5C3A',
       light: '#2E8B5B',
@@ -49,17 +66,27 @@ const theme = createTheme({
     error: {
       main: '#C0392B',
     },
-    background: {
-      default: '#F9FAFB',
-      paper: '#FFFFFF',
-    },
-    text: {
-      primary: '#111827',
-      secondary: '#4B5563',
-    },
+    background: mode === 'dark'
+      ? {
+          default: '#0D1117',
+          paper: '#161F2E',
+        }
+      : {
+          default: '#F9FAFB',
+          paper: '#FFFFFF',
+        },
+    text: mode === 'dark'
+      ? {
+          primary: '#F1F5F9',
+          secondary: '#CBD5E1',
+        }
+      : {
+          primary: '#111827',
+          secondary: '#4B5563',
+        },
   },
   typography: {
-    fontFamily: '"DM Sans", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Poppins", "Segoe UI", sans-serif',
     h4: {
       fontWeight: 600,
       letterSpacing: '-0.3px',
@@ -75,6 +102,57 @@ const theme = createTheme({
   shape: {
     borderRadius: 10,
   },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          fontFamily: 'Poppins, Segoe UI, sans-serif',
+          backgroundColor: mode === 'dark' ? '#0D1117' : '#F9FAFB',
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          border: `1px solid ${mode === 'dark' ? '#1E293B' : '#E5E7EB'}`,
+          borderRadius: 14,
+          boxShadow: mode === 'dark'
+            ? '0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.25)'
+            : '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05)',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 10,
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+          boxShadow: 'none',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          backgroundColor: mode === 'dark' ? '#161F2E' : '#FFFFFF',
+        },
+      },
+    },
+  },
   shadows: [
     'none',
     '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05)',
@@ -83,53 +161,65 @@ const theme = createTheme({
   ],
 });
 
+const AppShell = () => {
+  const { mode } = useThemeMode();
+  const theme = buildTheme(mode);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Toaster position="top-right" toastOptions={{
+        style: {
+          fontFamily: '"Poppins", sans-serif',
+          borderRadius: '10px',
+        },
+      }} />
+      <Router>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            
+            {/* Protected routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/dashboard" />} />
+              <Route path="dashboard" element={<DashboardRouter />} />
+              <Route path="profile" element={<ProfileRouter />} />
+              <Route path="logs" element={<LogsRouter />} />
+              <Route path="placements" element={<PlacementsRouter />} />
+              <Route path="evaluations" element={<EvaluationsPage />} />
+              <Route path="interns" element={<InternsPage />} />
+              <Route path="reports" element={<ReportsPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+          </Routes>
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
+  );
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Toaster position="top-right" toastOptions={{
-          style: {
-            fontFamily: '"DM Sans", sans-serif',
-            borderRadius: '10px',
-          },
-        }} />
-        <Router>
-          <AuthProvider>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              
-              {/* Protected routes */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<Navigate to="/dashboard" />} />
-                <Route path="dashboard" element={<DashboardRouter />} />
-                <Route path="profile" element={<ProfilePage />} />
-                <Route path="profile/edit" element={<EditProfilePage />} />
-                <Route path="logs" element={<LogsPage />} />
-                <Route path="evaluations" element={<EvaluationsPage />} />
-                <Route path="interns" element={<InternsPage />} />
-                <Route path="reports" element={<ReportsPage />} />
-                <Route path="notifications" element={<NotificationsPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-              </Route>
-            </Routes>
-          </AuthProvider>
-        </Router>
-      </ThemeProvider>
+      <ThemeModeProvider>
+        <AppShell />
+      </ThemeModeProvider>
     </QueryClientProvider>
   );
 }
 
-// Role-based dashboard router
+
+// Role-based Dashboard Router
 const DashboardRouter = () => {
   const { user } = useAuth();
   
@@ -137,10 +227,63 @@ const DashboardRouter = () => {
     case 'student':
       return <StudentDashboard />;
     case 'workplace_supervisor':
+      return <WorkplaceSupervisorDashboard />;
     case 'academic_supervisor':
-      return <SupervisorDashboard />;
+      return <AcademicSupervisorDashboard />;
     case 'admin':
       return <AdminDashboard />;
+    default:
+      return <Navigate to="/login" />;
+  }
+};
+
+// Role-based Profile Router
+const ProfileRouter = () => {
+  const { user } = useAuth();
+  
+  switch (user?.role) {
+    case 'student':
+      return <StudentProfilePage />;
+    case 'workplace_supervisor':
+      return <WorkplaceSupervisorProfilePage />;
+    case 'academic_supervisor':
+      return <AcademicSupervisorProfilePage />;
+    case 'admin':
+      return <AdminProfilePage />;
+    default:
+      return <Navigate to="/login" />;
+  }
+};
+
+const LogsRouter = () => {
+  const { user } = useAuth();
+
+  switch (user?.role) {
+    case 'student':
+      return <StudentLogsPage />;
+    case 'workplace_supervisor':
+      return <WorkplaceSupervisorLogsPage />;
+    case 'academic_supervisor':
+      return <AcademicSupervisorLogsPage />;
+    case 'admin':
+      return <AdminLogsPage />;
+    default:
+      return <Navigate to="/login" />;
+  }
+};
+
+const PlacementsRouter = () => {
+  const { user } = useAuth();
+
+  switch (user?.role) {
+    case 'student':
+      return <StudentPlacementsPage />;
+    case 'workplace_supervisor':
+      return <WorkplaceSupervisorPlacementsPage />;
+    case 'academic_supervisor':
+      return <AcademicSupervisorPlacementsPage />;
+    case 'admin':
+      return <AdminPlacementsPage />;
     default:
       return <Navigate to="/login" />;
   }
