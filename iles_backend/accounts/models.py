@@ -20,8 +20,18 @@ class User(AbstractUser):
     
     role = models.CharField(max_length=25, choices=ROLE_CHOICES, default='student')
     phone = models.CharField(max_length=15, blank=True)
+    alternative_phone = models.CharField(max_length=15, blank=True)
+    other_names = models.CharField(max_length=150, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True)
     email_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    profile_picture = models.ImageField(
+        upload_to='profiles/users/',
+        null=True,
+        blank=True,
+        help_text="User profile picture"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -58,10 +68,10 @@ class StudentProfile(models.Model):
     )
     
     INTERNSHIP_STATUS_CHOICES = (
-        ('not_started', 'Not Started'),
-        ('in_progress', 'In Progress'),
+        ('not_assigned', 'Not Assigned'),
+        ('assigned', 'Assigned'),
+        ('ongoing', 'Ongoing'),
         ('completed', 'Completed'),
-        ('suspended', 'Suspended'),
     )
     
     # Link to User
@@ -77,6 +87,11 @@ class StudentProfile(models.Model):
         unique=True,
         help_text="University registration number"
     )
+    student_number = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Alternative student number (if different from registration number)"
+    )
     institution = models.CharField(
         max_length=200,
         help_text="University or institution name"
@@ -86,6 +101,11 @@ class StudentProfile(models.Model):
         blank=True,
         help_text="Faculty/School"
     )
+    department = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Academic department"
+    )
     course = models.CharField(
         max_length=200,
         help_text="Course/Program of study"
@@ -93,10 +113,18 @@ class StudentProfile(models.Model):
     year_of_study = models.PositiveIntegerField(
         help_text="Current year of study (1-6)"
     )
+    semester = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Current semester"
+    )
     
     # Personal Information
     date_of_birth = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
+    nationality = models.CharField(max_length=100, blank=True)
+    disability_status = models.BooleanField(default=False)
+    special_needs = models.TextField(blank=True)
     
     # Internship Context
     expected_graduation_year = models.PositiveIntegerField(
@@ -105,7 +133,15 @@ class StudentProfile(models.Model):
     internship_status = models.CharField(
         max_length=20, 
         choices=INTERNSHIP_STATUS_CHOICES, 
-        default='not_started'
+        default='not_assigned'
+    )
+    
+    # Profile Picture
+    profile_picture = models.ImageField(
+        upload_to='profiles/students/',
+        null=True,
+        blank=True,
+        help_text="Student profile picture"
     )
     
     # Profile Completion
@@ -148,7 +184,15 @@ class StudentProfile(models.Model):
             self.full_clean()
         
         # Check if profile is complete (skip temporary registration numbers)
-        required_fields = ['registration_number', 'institution', 'course', 'year_of_study', 'expected_graduation_year']
+        required_fields = [
+            'registration_number',
+            'institution',
+            'faculty',
+            'department',
+            'course',
+            'year_of_study',
+            'expected_graduation_year',
+        ]
         self.profile_completed = all(
             getattr(self, field) and not str(getattr(self, field)).startswith('TEMP')
             for field in required_fields
@@ -162,8 +206,9 @@ class StudentProfile(models.Model):
     def completion_percentage(self):
         """Calculate profile completion percentage"""
         fields = [
-            'registration_number', 'institution', 'faculty', 'course', 
-            'year_of_study', 'date_of_birth', 'gender', 'expected_graduation_year'
+            'registration_number', 'student_number', 'institution', 'faculty', 'department', 'course',
+            'year_of_study', 'semester', 'date_of_birth', 'gender', 'nationality',
+            'expected_graduation_year', 'internship_status', 'disability_status', 'special_needs'
         ]
         completed = sum(
             1 for field in fields 
@@ -201,10 +246,30 @@ class SupervisorProfile(models.Model):
         max_length=200,
         help_text="Company or institution name"
     )
+    organization_type = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Type of organization (e.g. public, private, NGO)"
+    )
+    industry = models.CharField(
+        max_length=120,
+        blank=True,
+        help_text="Industry sector for workplace supervisors"
+    )
+    location = models.CharField(
+        max_length=160,
+        blank=True,
+        help_text="Primary organization location"
+    )
     department = models.CharField(
         max_length=200,
         blank=True,
         help_text="Department/Unit"
+    )
+    faculty = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Faculty/School (for academic supervisors)"
     )
     position = models.CharField(
         max_length=100,
@@ -216,10 +281,19 @@ class SupervisorProfile(models.Model):
         blank=True,
         help_text="Work email (if different from user email)"
     )
+    work_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Work phone"
+    )
     office_phone = models.CharField(
         max_length=15,
         blank=True,
         help_text="Office contact number"
+    )
+    office_address = models.TextField(
+        blank=True,
+        help_text="Office address"
     )
     
     # Professional Information
@@ -232,6 +306,14 @@ class SupervisorProfile(models.Model):
         null=True, 
         blank=True,
         help_text="Years in current role"
+    )
+
+    # Profile Picture
+    profile_picture = models.ImageField(
+        upload_to='profiles/supervisors/',
+        null=True,
+        blank=True,
+        help_text="Supervisor profile picture"
     )
     
     # Profile Completion
@@ -256,28 +338,30 @@ class SupervisorProfile(models.Model):
     
     def clean(self):
         """Validate based on supervisor type"""
-        if self.supervisor_type == 'workplace' and (not self.organization_name or self.organization_name == "To be updated"):
-            # Skip validation for temporary data
-            if self.organization_name != "To be updated":
-                raise ValidationError({
-                    'organization_name': 'Organization name is required for workplace supervisors'
-                })
-        
-        if self.supervisor_type == 'academic' and not self.department:
-            # Skip validation for temporary data
-            if self.department != "To be updated":
-                raise ValidationError({
-                    'department': 'Department is required for academic supervisors'
-                })
+        if self.supervisor_type == 'workplace':
+            required = {
+                'organization_name': 'Organization name is required for workplace supervisors',
+                'department': 'Department is required for workplace supervisors',
+                'position': 'Position is required for workplace supervisors',
+                'location': 'Location is required for workplace supervisors',
+            }
+            for field, message in required.items():
+                value = getattr(self, field)
+                if not value or str(value).startswith('To be updated'):
+                    if str(value) != 'To be updated':
+                        raise ValidationError({field: message})
+
         elif self.supervisor_type == 'academic':
-            if not self.organization_name:
-                raise ValidationError({
-                    'organization_name': 'Institution name is required for academic supervisors'
-                })
-            if not self.department:
-                raise ValidationError({
-                    'department': 'Department is required for academic supervisors'
-                })
+            required = {
+                'organization_name': 'Institution name is required for academic supervisors',
+                'faculty': 'Faculty is required for academic supervisors',
+                'department': 'Department is required for academic supervisors',
+            }
+            for field, message in required.items():
+                value = getattr(self, field)
+                if not value or str(value).startswith('To be updated'):
+                    if str(value) != 'To be updated':
+                        raise ValidationError({field: message})
     
     def save(self, *args, **kwargs):
         """Override save to check profile completion"""
@@ -286,7 +370,11 @@ class SupervisorProfile(models.Model):
             self.full_clean()
         
         # Check if profile is complete
-        required_fields = ['supervisor_type', 'organization_name', 'position']
+        if self.supervisor_type == 'workplace':
+            required_fields = ['supervisor_type', 'organization_name', 'department', 'position', 'location']
+        else:
+            required_fields = ['supervisor_type', 'organization_name', 'faculty', 'department']
+
         self.profile_completed = all(
             getattr(self, field) and not str(getattr(self, field)).startswith('To be updated')
             for field in required_fields
@@ -300,8 +388,9 @@ class SupervisorProfile(models.Model):
     def completion_percentage(self):
         """Calculate profile completion percentage"""
         fields = [
-            'supervisor_type', 'organization_name', 'department', 'position',
-            'work_email', 'office_phone', 'specialization', 'years_of_experience'
+            'supervisor_type', 'organization_name', 'organization_type', 'industry', 'location',
+            'faculty', 'department', 'position', 'work_email', 'work_phone', 'office_phone',
+            'office_address', 'specialization', 'years_of_experience'
         ]
         completed = sum(
             1 for field in fields 
@@ -315,15 +404,16 @@ class AdminProfile(models.Model):
     """
     
     ADMIN_LEVELS = (
-        ('staff', 'Staff'),
-        ('senior', 'Senior Admin'),
+        ('standard', 'Standard Admin'),
+        ('staff', 'Standard Admin'),
+        ('senior', 'Standard Admin'),
         ('super', 'Super Admin'),
     )
     
     # Link to User
     user = models.OneToOneField(
         User, 
-        on_delete=models.CASCADE, 
+        on_delete=models.CASCADE,
         related_name='admin_profile'
     )
     
@@ -331,16 +421,27 @@ class AdminProfile(models.Model):
     admin_level = models.CharField(
         max_length=10, 
         choices=ADMIN_LEVELS, 
-        default='staff'
+        default='standard'
     )
     department = models.CharField(
         max_length=100,
         blank=True,
         help_text="Administrative department"
     )
+
+    # Profile Picture
+    profile_picture = models.ImageField(
+        upload_to='profiles/admins/',
+        null=True,
+        blank=True,
+        help_text="Admin profile picture"
+    )
     
     # Permissions (JSON field for future expansion)
     permissions = models.JSONField(default=dict, blank=True)
+    can_manage_users = models.BooleanField(default=True)
+    can_assign_placements = models.BooleanField(default=True)
+    can_view_reports = models.BooleanField(default=True)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

@@ -24,8 +24,12 @@ const RegisterPage = () => {
     password2: '',
     first_name: '',
     last_name: '',
+    other_names: '',
     role: 'student',
     phone: '',
+    alternative_phone: '',
+    country: '',
+    city: '',
     // Student fields
     department: '',
     // Supervisor fields
@@ -65,8 +69,12 @@ const RegisterPage = () => {
       password2: formData.password2,
       first_name: formData.first_name,
       last_name: formData.last_name,
+      other_names: formData.other_names,
       role: formData.role,
       phone: formData.phone,
+      alternative_phone: formData.alternative_phone,
+      country: formData.country,
+      city: formData.city,
     };
     
     // Add role-specific fields
@@ -143,6 +151,15 @@ const RegisterPage = () => {
                   onChange={handleChange}
                 />
               </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Other Names"
+                  name="other_names"
+                  value={formData.other_names}
+                  onChange={handleChange}
+                />
+              </Grid>
               
               <Grid item xs={12}>
                 <TextField
@@ -190,9 +207,38 @@ const RegisterPage = () => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
+                  required
                   label="Phone"
                   name="phone"
                   value={formData.phone}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Alternative Phone"
+                  name="alternative_phone"
+                  value={formData.alternative_phone}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Country"
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="City"
+                  name="city"
+                  value={formData.city}
                   onChange={handleChange}
                 />
               </Grid>
