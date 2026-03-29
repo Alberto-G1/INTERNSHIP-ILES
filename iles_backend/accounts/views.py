@@ -1,4 +1,5 @@
 import logging
+import random
 
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
@@ -6,12 +7,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils import timezone
+from datetime import timedelta
 
-from .models import User
+from .models import PasswordResetCode, User
 from .permissions import IsAdmin
 from .serializers import (
     AdminProfileSerializer,
     ChangePasswordSerializer,
+    ForgotPasswordConfirmSerializer,
+    ForgotPasswordRequestSerializer,
     LoginSerializer,
     StudentProfileSerializer,
     SupervisorProfileSerializer,
@@ -22,11 +27,39 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 
 
-class RegisterView(generics.CreateAPIView):
+class RegisterView(APIView):
     """User registration with automatic role-based profile creation."""
 
     permission_classes = [permissions.AllowAny]
-    serializer_class = UserRegistrationSerializer
+
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        # Supervisors are not auto-signed-in at registration time.
+        if user.role in ['workplace_supervisor', 'academic_supervisor']:
+            return Response(
+                {
+                    'user': UserProfileSerializer(user).data,
+                    'approval_required': True,
+                    'message': (
+                        'Registration successful. You may login once, then wait for admin approval.'
+                    ),
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                'user': UserProfileSerializer(user).data,
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'message': 'Registration successful',
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class LoginView(APIView):
@@ -204,6 +237,51 @@ class AdminProfileListView(APIView):
         return Response(serializer.data)
 
 
+class AdminSupervisorApprovalListView(APIView):
+    """List supervisor accounts and their approval status."""
+
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        pending_only = request.query_params.get('pending') == 'true'
+        users = User.objects.filter(role__in=['workplace_supervisor', 'academic_supervisor']).order_by('-created_at')
+
+        if pending_only:
+            users = users.filter(admin_approved=False)
+
+        serializer = UserProfileSerializer(users, many=True)
+        return Response(serializer.data)
+
+
+class AdminSupervisorApprovalActionView(APIView):
+    """Approve or revoke a supervisor account."""
+
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def patch(self, request, user_id):
+        approved = request.data.get('approved')
+        if approved is None:
+            return Response({'error': 'approved is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        target_user = User.objects.filter(
+            id=user_id,
+            role__in=['workplace_supervisor', 'academic_supervisor'],
+        ).first()
+        if not target_user:
+            return Response({'error': 'Supervisor account not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        target_user.admin_approved = bool(approved)
+        target_user.save(update_fields=['admin_approved', 'updated_at'])
+
+        return Response(
+            {
+                'message': 'Approval status updated successfully',
+                'user': UserProfileSerializer(target_user).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class ChangePasswordView(APIView):
     """Change authenticated user password."""
 
@@ -220,3 +298,69 @@ class ChangePasswordView(APIView):
         user.set_password(serializer.validated_data["new_password"])
         user.save()
         return Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
+
+
+class ForgotPasswordRequestView(APIView):
+    """Generate a one-time reset code for an account email."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = ForgotPasswordRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data['email']
+        user = User.objects.filter(email__iexact=email).first()
+
+        # Always return generic response to avoid user enumeration.
+        if not user:
+            return Response(
+                {'message': 'If this email exists, a reset code has been sent.'},
+                status=status.HTTP_200_OK,
+            )
+
+        PasswordResetCode.objects.filter(user=user, is_used=False).update(is_used=True)
+        code = f"{random.randint(0, 999999):06d}"
+        expires_at = timezone.now() + timedelta(minutes=15)
+        PasswordResetCode.objects.create(user=user, code=code, expires_at=expires_at)
+
+        logger.info('Password reset code for %s: %s', user.email, code)
+        return Response(
+            {'message': 'If this email exists, a reset code has been sent.'},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ForgotPasswordConfirmView(APIView):
+    """Validate reset code and set a new password."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = ForgotPasswordConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data['email']
+        code = serializer.validated_data['code']
+        new_password = serializer.validated_data['new_password']
+
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            return Response({'error': 'Invalid reset code or email.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        reset_code = PasswordResetCode.objects.filter(
+            user=user,
+            code=code,
+            is_used=False,
+            expires_at__gte=timezone.now(),
+        ).first()
+
+        if not reset_code:
+            return Response({'error': 'Invalid or expired reset code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save(update_fields=['password', 'updated_at'])
+        reset_code.is_used = True
+        reset_code.save(update_fields=['is_used'])
+
+        return Response({'message': 'Password reset successful.'}, status=status.HTTP_200_OK)

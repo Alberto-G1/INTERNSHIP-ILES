@@ -120,6 +120,9 @@ const AdminDashboard = () => {
                 <Button variant="outlined" size="small" onClick={() => navigate('/reports')}>
                   View Reports
                 </Button>
+                <Button variant="outlined" size="small" onClick={() => navigate('/admin/approvals')}>
+                  Supervisor Approvals
+                </Button>
                 <Button variant="outlined" size="small" onClick={() => navigate('/settings')}>
                   System Settings
                 </Button>

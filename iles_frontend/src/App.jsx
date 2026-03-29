@@ -13,6 +13,7 @@ import Layout from './components/Layout/Layout';
 // Auth Pages
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
+import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
 
 // Student Pages
 import StudentDashboard from './pages/Student/Dashboard/StudentDashboard';
@@ -37,6 +38,7 @@ import AdminDashboard from './pages/Admin/Dashboard/AdminDashboard';
 import AdminProfilePage from './pages/Admin/Profile/AdminProfilePage';
 import AdminLogsPage from './pages/Admin/LogsPage';
 import AdminPlacementsPage from './pages/Admin/Placements/AdminPlacementsPage';
+import AdminApprovalsPage from './pages/Admin/Approvals/AdminApprovalsPage';
 
 // Shared Feature Pages
 import EvaluationsPage from './pages/Evaluations/EvaluationsPage';
@@ -107,7 +109,7 @@ const buildTheme = (mode) => createTheme({
       styleOverrides: {
         body: {
           fontFamily: 'Poppins, Segoe UI, sans-serif',
-          backgroundColor: mode === 'dark' ? '#0D1117' : '#F9FAFB',
+          backgroundColor: mode === 'dark' ? 'var(--surface)' : '#F9FAFB',
         },
       },
     },
@@ -148,7 +150,7 @@ const buildTheme = (mode) => createTheme({
       styleOverrides: {
         root: {
           borderRadius: 8,
-          backgroundColor: mode === 'dark' ? '#161F2E' : '#FFFFFF',
+          backgroundColor: mode === 'dark' ? 'var(--white)' : '#FFFFFF',
         },
       },
     },
@@ -180,6 +182,7 @@ const AppShell = () => {
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             
             {/* Protected routes */}
             <Route
@@ -200,6 +203,7 @@ const AppShell = () => {
               <Route path="reports" element={<ReportsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="admin/approvals" element={<AdminApprovalsRoute />} />
             </Route>
           </Routes>
         </AuthProvider>
@@ -287,6 +291,16 @@ const PlacementsRouter = () => {
     default:
       return <Navigate to="/login" />;
   }
+};
+
+const AdminApprovalsRoute = () => {
+  const { user } = useAuth();
+
+  if (user?.role !== 'admin') {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return <AdminApprovalsPage />;
 };
 
 export default App;

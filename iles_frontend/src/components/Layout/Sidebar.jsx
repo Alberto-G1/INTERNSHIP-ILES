@@ -22,6 +22,7 @@ import {
   BarChart as ReportsIcon,
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
+  HowToReg as ApprovalsIcon,
   Person as ProfileIcon,
   BusinessCenter as PlacementsIcon,
   Logout as LogoutIcon,
@@ -42,6 +43,7 @@ const navigation = NAVIGATION.map((item) => {
     Reports: ReportsIcon,
     Notifications: NotificationsIcon,
     Profile: ProfileIcon,
+    Approvals: ApprovalsIcon,
     Settings: SettingsIcon,
     Placements: PlacementsIcon,
   };
@@ -83,12 +85,12 @@ const Sidebar = () => {
           width: DRAWER_WIDTH,
           boxSizing: 'border-box',
           borderRight: '1px solid',
-          borderColor: '#E5E7EB',
+          borderColor: 'var(--gray-200)',
           bgcolor: 'background.paper',
         },
       }}
     >
-      <Box sx={{ p: '20px 20px 16px', borderBottom: '1px solid #E5E7EB' }}>
+      <Box sx={{ p: '20px 20px 16px', borderBottom: '1px solid var(--gray-200)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
@@ -110,7 +112,7 @@ const Sidebar = () => {
             <Typography sx={{ fontWeight: 600, fontSize: '15px', lineHeight: 1.1 }}>
               AILES
             </Typography>
-            <Typography sx={{ color: 'text.secondary', fontSize: '10px', letterSpacing: '0.6px' }}>
+            <Typography sx={{ color: 'var(--gray-400)', fontSize: '10px', letterSpacing: '0.6px' }}>
               v2.4.0
             </Typography>
           </Box>
@@ -121,7 +123,7 @@ const Sidebar = () => {
         {groupedNav.map(({ section, items }) => (
           items.length > 0 ? (
             <Box key={section} sx={{ px: 1.5, pt: 0.6, pb: 1.2 }}>
-              <Typography sx={{ px: 1, pb: 0.5, fontSize: '10px', color: '#9CA3AF', letterSpacing: '0.8px', textTransform: 'uppercase', fontWeight: 500 }}>
+              <Typography sx={{ px: 1, pb: 0.5, fontSize: '10px', color: 'var(--gray-400)', letterSpacing: '0.8px', textTransform: 'uppercase', fontWeight: 500 }}>
                 {section}
               </Typography>
               <List disablePadding>
@@ -139,11 +141,11 @@ const Sidebar = () => {
                           py: 0.9,
                           px: 1.1,
                           borderRadius: '6px',
-                          bgcolor: isActive ? '#EEF9F3' : 'transparent',
-                          '&:hover': { bgcolor: '#F3F4F6' },
+                          bgcolor: isActive ? 'var(--green-50)' : 'transparent',
+                          '&:hover': { bgcolor: 'var(--gray-100)' },
                         }}
                       >
-                        <ListItemIcon sx={{ minWidth: 28, color: isActive ? 'primary.main' : '#4B5563' }}>
+                        <ListItemIcon sx={{ minWidth: 28, color: isActive ? 'var(--green-900)' : 'var(--gray-600)' }}>
                           <Icon fontSize="small" />
                         </ListItemIcon>
                         <ListItemText
@@ -151,7 +153,7 @@ const Sidebar = () => {
                           primaryTypographyProps={{
                             fontSize: '13.5px',
                             fontWeight: isActive ? 500 : 400,
-                            color: isActive ? 'primary.main' : '#4B5563',
+                            color: isActive ? 'var(--green-900)' : 'var(--gray-600)',
                           }}
                         />
                         {badge && (
@@ -177,7 +179,7 @@ const Sidebar = () => {
         ))}
       </Box>
 
-      <Box sx={{ p: 1.5, borderTop: '1px solid #E5E7EB' }}>
+      <Box sx={{ p: 1.5, borderTop: '1px solid var(--gray-200)' }}>
         <ListItem disablePadding>
           <ListItemButton
             onClick={() => navigate('/profile')}
@@ -199,8 +201,8 @@ const Sidebar = () => {
             <ListItemText
               primary={user?.first_name ? `${user.first_name} ${user.last_name || ''}` : user?.username}
               secondary={getRoleLabel(user?.role)}
-              primaryTypographyProps={{ fontSize: '13px', fontWeight: 500, color: '#111827' }}
-              secondaryTypographyProps={{ fontSize: '11px', color: '#9CA3AF' }}
+              primaryTypographyProps={{ fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}
+              secondaryTypographyProps={{ fontSize: '11px', color: 'var(--gray-400)' }}
             />
           </ListItemButton>
         </ListItem>
@@ -211,7 +213,7 @@ const Sidebar = () => {
             </ListItemIcon>
             <ListItemText 
               primary="Logout" 
-              primaryTypographyProps={{ fontSize: '13px', color: '#4B5563' }}
+              primaryTypographyProps={{ fontSize: '13px', color: 'var(--gray-600)' }}
             />
           </ListItemButton>
         </ListItem>

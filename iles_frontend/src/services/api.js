@@ -91,6 +91,8 @@ export const authAPI = {
   getProfile: () => api.get('/auth/profile/'),
   updateProfile: (data) => api.put('/auth/profile/', data),
   changePassword: (data) => api.post('/auth/change-password/', data),
+  forgotPasswordRequest: (email) => api.post('/auth/forgot-password/request/', { email }),
+  forgotPasswordConfirm: (payload) => api.post('/auth/forgot-password/confirm/', payload),
 };
 
 
@@ -99,6 +101,12 @@ export const profileAPI = {
   getProfile: () => api.get('/auth/profile/'),
   updateProfile: (data) => api.put('/auth/profile/', data),
   getCompletion: () => api.get('/auth/profile/completion/'),
+};
+
+export const adminAPI = {
+  getSupervisorApprovals: () => api.get('/auth/admin/approvals/'),
+  updateSupervisorApproval: (userId, approved) =>
+    api.patch(`/auth/admin/approvals/${userId}/`, { approved }),
 };
 
 export default api;

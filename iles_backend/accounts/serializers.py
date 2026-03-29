@@ -3,7 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import AdminProfile, StudentProfile, SupervisorProfile, User
+from .models import AdminProfile, PasswordResetCode, StudentProfile, SupervisorProfile, User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -30,6 +30,8 @@ class UserSerializer(serializers.ModelSerializer):
             'profile_picture',
             'email_verified',
             'is_verified',
+            'admin_approved',
+            'first_login_completed',
             'is_active',
             'created_at',
         ]
@@ -89,6 +91,15 @@ class LoginSerializer(serializers.Serializer):
 
         if not user.is_active:
             raise serializers.ValidationError("This account is disabled.")
+
+        # Supervisors can login once before admin approval, then are blocked until approved.
+        if user.role in ['workplace_supervisor', 'academic_supervisor'] and not user.admin_approved:
+            if user.first_login_completed:
+                raise serializers.ValidationError(
+                    "Your account is pending admin approval. Please contact the administrator."
+                )
+            user.first_login_completed = True
+            user.save(update_fields=['first_login_completed', 'updated_at'])
 
         refresh = RefreshToken.for_user(user)
         return {
@@ -218,6 +229,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'profile_picture',
             'email_verified',
             'is_verified',
+            'admin_approved',
+            'first_login_completed',
             'is_active',
             'created_at',
             'student_profile',
@@ -311,6 +324,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         user.set_password(password)
         user.role = role
+        if role in ['workplace_supervisor', 'academic_supervisor']:
+            user.admin_approved = False
+            user.first_login_completed = False
+        else:
+            user.admin_approved = True
         user.save()
 
         if role == 'student':
@@ -389,3 +407,19 @@ class ProfileUpdateSerializer(serializers.Serializer):
     can_manage_users = serializers.BooleanField(required=False)
     can_assign_placements = serializers.BooleanField(required=False)
     can_view_reports = serializers.BooleanField(required=False)
+
+
+class ForgotPasswordRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+
+class ForgotPasswordConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    code = serializers.CharField(required=True, min_length=6, max_length=6)
+    new_password = serializers.CharField(required=True, validators=[validate_password])
+    confirm_password = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({'confirm_password': "Passwords don't match."})
+        return attrs

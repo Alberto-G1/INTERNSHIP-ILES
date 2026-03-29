@@ -18,6 +18,9 @@ urlpatterns = [
     path('register/', views.RegisterView.as_view(), name='register'),
     path('login/', views.LoginView.as_view(), name='login'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
+    path('change-password/', views.ChangePasswordView.as_view(), name='change-password'),
+    path('forgot-password/request/', views.ForgotPasswordRequestView.as_view(), name='forgot-password-request'),
+    path('forgot-password/confirm/', views.ForgotPasswordConfirmView.as_view(), name='forgot-password-confirm'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
     # Profile endpoints
@@ -26,4 +29,6 @@ urlpatterns = [
     
     # Admin endpoints
     path('admin/profiles/', views.AdminProfileListView.as_view(), name='admin-profiles'),
+    path('admin/approvals/', views.AdminSupervisorApprovalListView.as_view(), name='admin-supervisor-approvals'),
+    path('admin/approvals/<int:user_id>/', views.AdminSupervisorApprovalActionView.as_view(), name='admin-supervisor-approval-action'),
 ]

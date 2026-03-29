@@ -14,6 +14,8 @@ const Layout = () => {
           flex: 1,
           ml: `${DRAWER_WIDTH}px`,
           minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         <Topbar />
