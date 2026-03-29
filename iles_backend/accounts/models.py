@@ -25,6 +25,14 @@ class User(AbstractUser):
     country = models.CharField(max_length=100, blank=True)
     city = models.CharField(max_length=100, blank=True)
     email_verified = models.BooleanField(default=False)
+    admin_approved = models.BooleanField(
+        default=True,
+        help_text="Set by admin for supervisor accounts after initial login"
+    )
+    first_login_completed = models.BooleanField(
+        default=False,
+        help_text="Tracks first successful login for supervisor approval workflow"
+    )
     is_active = models.BooleanField(default=True)
     profile_picture = models.ImageField(
         upload_to='profiles/users/',
@@ -53,6 +61,26 @@ class User(AbstractUser):
         elif self.role in ['workplace_supervisor', 'academic_supervisor']:
             return hasattr(self, 'supervisor_profile')
         return True  # Admin doesn't need profile
+
+
+class PasswordResetCode(models.Model):
+    """One-time reset code for forgot-password workflow."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_codes')
+    code = models.CharField(max_length=6)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'password_reset_codes'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Password reset code for {self.user.username}"
+
+    def is_valid(self):
+        return (not self.is_used) and timezone.now() <= self.expires_at
 
 
 class StudentProfile(models.Model):

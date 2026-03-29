@@ -55,15 +55,21 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await authAPI.register(userData);
-      const { access, refresh, user } = response.data;
+      const { access, refresh, user, approval_required, message } = response.data;
+
+      if (access && refresh) {
+        localStorage.setItem('access_token', access);
+        localStorage.setItem('refresh_token', refresh);
+        setUser(user);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+
+      toast.success(message || 'Registration successful!');
       
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
-      setUser(user);
-      setIsAuthenticated(true);
-      toast.success('Registration successful!');
-      
-      return user;
+      return { user, approval_required: Boolean(approval_required) };
     } catch (error) {
       console.error('Registration error:', error);
       throw error;

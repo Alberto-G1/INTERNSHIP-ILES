@@ -10,6 +10,7 @@ export const PAGE_TITLES = {
   '/notifications': { title: 'Notifications', subtitle: 'System updates and alerts' },
   '/profile': { title: 'Profile', subtitle: 'Your personal information' },
   '/settings': { title: 'Settings', subtitle: 'System configuration' },
+  '/admin/approvals': { title: 'Supervisor Approvals', subtitle: 'Review and approve supervisor accounts' },
 };
 
 export const NAVIGATION = [
@@ -21,6 +22,7 @@ export const NAVIGATION = [
   { section: 'Management', path: '/reports', label: 'Reports', roles: ['admin'] },
   { section: 'Management', path: '/notifications', label: 'Notifications', roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
   { section: 'System', path: '/profile', label: 'Profile', roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
+  { section: 'System', path: '/admin/approvals', label: 'Approvals', roles: ['admin'] },
   { section: 'System', path: '/settings', label: 'Settings', roles: ['admin'] },
 ];
 
@@ -42,8 +44,20 @@ export const getRoleLabel = (role) => ROLE_LABELS[role] || role || 'User';
 
 export const getRoleColor = (role) => ROLE_COLORS[role] || '#4B5563';
 
-export const getUserMenuLinks = (role) =>
-  NAVIGATION.filter((item) => item.roles.includes(role || 'student')).map((item) => ({
-    path: item.path,
-    label: item.label,
-  }));
+export const getUserMenuLinks = (role) => {
+  const baseLinks = [
+    { path: '/dashboard', label: 'Dashboard' },
+    { path: '/profile', label: 'My Profile' },
+    { path: '/notifications', label: 'Notifications' },
+  ];
+
+  if (role === 'admin') {
+    return [
+      ...baseLinks,
+      { path: '/admin/approvals', label: 'Supervisor Approvals' },
+      { path: '/settings', label: 'Settings' },
+    ];
+  }
+
+  return baseLinks;
+};

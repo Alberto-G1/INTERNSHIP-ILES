@@ -29,6 +29,7 @@ import {
   BarChart as ReportsIcon,
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
+  HowToReg as ApprovalsIcon,
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
@@ -45,6 +46,7 @@ const iconByPath = {
   '/reports': ReportsIcon,
   '/notifications': NotificationsIcon,
   '/settings': SettingsIcon,
+  '/admin/approvals': ApprovalsIcon,
 };
 
 const Topbar = () => {
@@ -84,7 +86,7 @@ const Topbar = () => {
       elevation={0}
       sx={{
         bgcolor: 'background.paper',
-        borderBottom: '1px solid #E5E7EB',
+        borderBottom: '1px solid var(--gray-200)',
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between', minHeight: 56, px: { xs: 2, md: 3.5 } }}>
@@ -106,13 +108,13 @@ const Topbar = () => {
               display: 'flex',
               alignItems: 'center',
               width: 220,
-              bgcolor: mode === 'dark' ? '#0F172A' : '#F3F4F6',
+              bgcolor: 'var(--gray-100)',
               borderRadius: '6px',
-              border: `1px solid ${mode === 'dark' ? '#1E293B' : '#E5E7EB'}`,
+              border: '1px solid var(--gray-200)',
               boxShadow: 'none',
             }}
           >
-            <SearchIcon sx={{ mr: 0.8, color: '#9CA3AF', fontSize: 18 }} />
+            <SearchIcon sx={{ mr: 0.8, color: 'var(--gray-400)', fontSize: 18 }} />
             <InputBase
               sx={{ flex: 1, fontSize: '13px' }}
               placeholder="Search interns, logs…"
@@ -128,8 +130,8 @@ const Topbar = () => {
               width: 34,
               height: 34,
               borderRadius: '6px',
-              border: `1px solid ${mode === 'dark' ? '#1E293B' : '#E5E7EB'}`,
-              bgcolor: mode === 'dark' ? '#161F2E' : '#FFFFFF',
+              border: '1px solid var(--gray-200)',
+              bgcolor: 'var(--white)',
             }}
           >
             {mode === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
@@ -142,9 +144,9 @@ const Topbar = () => {
               borderRadius: '6px',
               color: 'text.primary',
               minWidth: 'auto',
-              border: `1px solid ${mode === 'dark' ? '#1E293B' : '#E5E7EB'}`,
-              bgcolor: mode === 'dark' ? '#161F2E' : '#FFFFFF',
-              '&:hover': { bgcolor: mode === 'dark' ? '#0F172A' : '#F3F4F6' },
+              border: '1px solid var(--gray-200)',
+              bgcolor: 'var(--white)',
+              '&:hover': { bgcolor: 'var(--gray-100)' },
               textTransform: 'none',
             }}
           >
