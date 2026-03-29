@@ -35,6 +35,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useThemeMode } from '../../context/ThemeModeContext';
 import { PAGE_TITLES, getRoleLabel, getUserMenuLinks } from './layoutConfig';
+import AppConfirmModal from '../Common/AppConfirmModal';
 
 const iconByPath = {
   '/dashboard': DashboardIcon,
@@ -56,6 +57,7 @@ const Topbar = () => {
   const { mode, toggleMode } = useThemeMode();
   const [anchorEl, setAnchorEl] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [signoutModalOpen, setSignoutModalOpen] = useState(false);
 
   const pageInfo = PAGE_TITLES[location.pathname] || { title: 'AILES', subtitle: '' };
   const userName = user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user?.username || 'User';
@@ -75,9 +77,14 @@ const Topbar = () => {
   };
 
   const handleLogout = async () => {
+    setSignoutModalOpen(false);
     await logout();
-    handleMenuClose();
     navigate('/login');
+  };
+
+  const openSignoutModal = () => {
+    handleMenuClose();
+    setSignoutModalOpen(true);
   };
 
   return (
@@ -211,10 +218,22 @@ const Topbar = () => {
               {mode === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />} Toggle Theme
             </MenuItem>
             <Divider />
-            <MenuItem onClick={handleLogout} sx={{ gap: 1, fontSize: '13px', color: 'error.main' }}>
+            <MenuItem onClick={openSignoutModal} sx={{ gap: 1, fontSize: '13px', color: 'error.main' }}>
               <LogoutIcon fontSize="small" /> Logout
             </MenuItem>
           </Menu>
+
+          <AppConfirmModal
+            open={signoutModalOpen}
+            onClose={() => setSignoutModalOpen(false)}
+            onConfirm={handleLogout}
+            title="Sign Out of AILES?"
+            description="You are about to end this session on the current device."
+            confirmLabel="Sign Out"
+            cancelLabel="Stay Signed In"
+            variant="signout"
+            highlight={userName}
+          />
         </Box>
       </Toolbar>
     </AppBar>

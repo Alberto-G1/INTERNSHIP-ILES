@@ -33,6 +33,7 @@ import {
   getRoleColor,
   getRoleLabel,
 } from './layoutConfig';
+import AppConfirmModal from '../Common/AppConfirmModal';
 
 const navigation = NAVIGATION.map((item) => {
   const iconMap = {
@@ -60,6 +61,7 @@ const Sidebar = () => {
   const { user, logout } = useAuth();
   const [pendingReviews] = useState(3);
   const [unreadNotifications] = useState(5);
+  const [signoutModalOpen, setSignoutModalOpen] = useState(false);
 
   const filteredNav = navigation.filter(item => 
     item.roles.includes(user?.role || 'student')
@@ -71,6 +73,7 @@ const Sidebar = () => {
   }));
 
   const handleLogout = async () => {
+    setSignoutModalOpen(false);
     await logout();
     navigate('/login');
   };
@@ -207,7 +210,7 @@ const Sidebar = () => {
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding sx={{ mt: 1 }}>
-          <ListItemButton onClick={handleLogout} sx={{ borderRadius: '6px', py: 0.9, px: 1.1 }}>
+          <ListItemButton onClick={() => setSignoutModalOpen(true)} sx={{ borderRadius: '6px', py: 0.9, px: 1.1 }}>
             <ListItemIcon sx={{ minWidth: 32 }}>
               <LogoutIcon fontSize="small" sx={{ color: 'text.secondary' }} />
             </ListItemIcon>
@@ -218,6 +221,18 @@ const Sidebar = () => {
           </ListItemButton>
         </ListItem>
       </Box>
+
+      <AppConfirmModal
+        open={signoutModalOpen}
+        onClose={() => setSignoutModalOpen(false)}
+        onConfirm={handleLogout}
+        title="Sign Out of AILES?"
+        description="You are about to end this session on the current device."
+        confirmLabel="Sign Out"
+        cancelLabel="Stay Signed In"
+        variant="signout"
+        highlight={user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user?.username || ''}
+      />
     </Drawer>
   );
 };

@@ -26,7 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/AuthContext';
 import { profileAPI } from '../../../services/api';
-import toast from 'react-hot-toast';
+import { notifyError, notifySuccess } from '../../../components/Common/AppToast';
 
 const StudentProfilePage = () => {
   const { user } = useAuth();
@@ -49,7 +49,7 @@ const StudentProfilePage = () => {
       setFormData(response.data);
     } catch (err) {
       setError('Failed to load profile');
-      toast.error('Failed to load profile');
+      notifyError('Failed to load profile', { title: 'Profile Error' });
     } finally {
       setLoading(false);
     }
@@ -79,9 +79,9 @@ const StudentProfilePage = () => {
       await profileAPI.updateProfile(formData);
       setProfile(formData);
       setEditMode(false);
-      toast.success('Profile updated successfully');
+      notifySuccess('Profile updated successfully', { title: 'Profile Saved' });
     } catch (err) {
-      toast.error('Failed to update profile');
+      notifyError('Failed to update profile', { title: 'Save Failed' });
     }
   };
 

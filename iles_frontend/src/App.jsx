@@ -170,12 +170,17 @@ const AppShell = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Toaster position="top-right" toastOptions={{
-        style: {
-          fontFamily: '"Poppins", sans-serif',
-          borderRadius: '10px',
-        },
-      }} />
+      <Toaster
+        position="top-right"
+        gutter={14}
+        toastOptions={{
+          duration: 4600,
+          style: {
+            fontFamily: '"Poppins", sans-serif',
+            borderRadius: '14px',
+          },
+        }}
+      />
       <Router>
         <AuthProvider>
           <Routes>

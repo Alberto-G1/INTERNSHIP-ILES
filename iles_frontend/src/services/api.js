@@ -1,5 +1,5 @@
 import axios from 'axios';
-import toast from 'react-hot-toast';
+import { notifyError } from '../components/Common/AppToast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -57,7 +57,7 @@ api.interceptors.response.use(
         // Refresh failed - clear tokens and redirect to login
         localStorage.clear();
         window.location.href = '/login';
-        toast.error('Session expired. Please login again.');
+        notifyError('Session expired. Please login again.', { title: 'Session Expired' });
         return Promise.reject(refreshError);
       }
     }
@@ -69,7 +69,7 @@ api.interceptors.response.use(
     
     // Don't show toast for 401 errors (handled above)
     if (error.response?.status !== 401) {
-      toast.error(errorMessage);
+      notifyError(errorMessage, { title: 'Request Failed' });
     }
     
     return Promise.reject(error);

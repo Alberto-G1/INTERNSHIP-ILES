@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authAPI } from '../services/api';
-import toast from 'react-hot-toast';
+import { notifySuccess } from '../components/Common/AppToast';
 
 const AuthContext = createContext(undefined);
 
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('refresh_token', refresh);
       setUser(user);
       setIsAuthenticated(true);
-      toast.success('Login successful!');
+      notifySuccess('Login successful!', { title: 'Welcome Back' });
       
       return user;
     } catch (error) {
@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
       }
 
-      toast.success(message || 'Registration successful!');
+      notifySuccess(message || 'Registration successful!', { title: 'Account Created' });
       
       return { user, approval_required: Boolean(approval_required) };
     } catch (error) {
@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.clear();
       setUser(null);
       setIsAuthenticated(false);
-      toast.success('Logged out successfully');
+      notifySuccess('Logged out successfully', { title: 'Signed Out' });
     }
   };
 
