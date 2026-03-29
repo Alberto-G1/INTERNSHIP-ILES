@@ -11,9 +11,10 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import toast from 'react-hot-toast';
 import PageScaffold from '../../../components/Common/PageScaffold';
 import { adminAPI } from '../../../services/api';
+import AppConfirmModal from '../../../components/Common/AppConfirmModal';
+import { notifyError, notifySuccess } from '../../../components/Common/AppToast';
 
 const getRoleChipColor = (role) => {
   if (role === 'workplace_supervisor') return { bg: '#FEF3C7', color: '#B45309' };
@@ -26,6 +27,11 @@ const AdminApprovalsPage = () => {
   const [error, setError] = useState('');
   const [supervisors, setSupervisors] = useState([]);
   const [actionLoading, setActionLoading] = useState({});
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    user: null,
+    approvedStatus: true,
+  });
 
   const pending = useMemo(
     () => supervisors.filter((u) => !u.admin_approved),
@@ -45,7 +51,7 @@ const AdminApprovalsPage = () => {
       setSupervisors(response.data || []);
     } catch (err) {
       setError('Failed to load supervisor approvals.');
-      toast.error('Failed to load supervisor approvals');
+      notifyError('Failed to load supervisor approvals', { title: 'Load Failed' });
     } finally {
       setLoading(false);
     }
@@ -59,13 +65,29 @@ const AdminApprovalsPage = () => {
     try {
       setActionLoading((prev) => ({ ...prev, [userId]: true }));
       await adminAPI.updateSupervisorApproval(userId, approvedStatus);
-      toast.success(approvedStatus ? 'Supervisor approved' : 'Approval revoked');
+      notifySuccess(approvedStatus ? 'Supervisor approved' : 'Approval revoked', {
+        title: approvedStatus ? 'Approval Updated' : 'Access Revoked',
+      });
       await fetchSupervisors();
     } catch (err) {
-      toast.error('Failed to update approval status');
+      notifyError('Failed to update approval status', { title: 'Update Failed' });
     } finally {
       setActionLoading((prev) => ({ ...prev, [userId]: false }));
     }
+  };
+
+  const openConfirm = (user, approvedStatus) => {
+    setConfirmState({ open: true, user, approvedStatus });
+  };
+
+  const closeConfirm = () => {
+    setConfirmState({ open: false, user: null, approvedStatus: true });
+  };
+
+  const confirmApprovalAction = async () => {
+    if (!confirmState.user) return;
+    await updateApproval(confirmState.user.id, confirmState.approvedStatus);
+    closeConfirm();
   };
 
   if (loading) {
@@ -142,7 +164,7 @@ const AdminApprovalsPage = () => {
                           variant="contained"
                           size="small"
                           disabled={busy || !isPending}
-                          onClick={() => updateApproval(item.id, true)}
+                          onClick={() => openConfirm(item, true)}
                         >
                           {busy ? 'Updating...' : 'Approve'}
                         </Button>
@@ -151,7 +173,7 @@ const AdminApprovalsPage = () => {
                           size="small"
                           color="error"
                           disabled={busy || isPending}
-                          onClick={() => updateApproval(item.id, false)}
+                          onClick={() => openConfirm(item, false)}
                         >
                           {busy ? 'Updating...' : 'Revoke'}
                         </Button>
@@ -163,6 +185,29 @@ const AdminApprovalsPage = () => {
             );
           })}
         </Grid>
+
+        <AppConfirmModal
+          open={confirmState.open}
+          onClose={closeConfirm}
+          onConfirm={confirmApprovalAction}
+          loading={Boolean(confirmState.user && actionLoading[confirmState.user.id])}
+          title={confirmState.approvedStatus ? 'Approve Supervisor?' : 'Revoke Supervisor Access?'}
+          description={
+            confirmState.approvedStatus
+              ? 'This supervisor will be granted full access to supervisor workflows in AILES.'
+              : 'This supervisor account will lose access until approved again by an administrator.'
+          }
+          confirmLabel={confirmState.approvedStatus ? 'Approve' : 'Revoke'}
+          cancelLabel="Cancel"
+          variant={confirmState.approvedStatus ? 'approve' : 'delete'}
+          highlight={
+            confirmState.user
+              ? `${confirmState.user.full_name || confirmState.user.username} · ${
+                  confirmState.user.role === 'academic_supervisor' ? 'Academic Supervisor' : 'Workplace Supervisor'
+                }`
+              : ''
+          }
+        />
       </Stack>
     </PageScaffold>
   );

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { Box, Button, Checkbox, CircularProgress, FormControlLabel, Link, Stack, Typography } from '@mui/material';
-import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import AuthShell from '../../components/Auth/AuthShell';
+import { notifyInfo } from '../../components/Common/AppToast';
 
 /* ══════════════════════════════════════
    SHARED STYLE TOKENS
@@ -303,7 +303,7 @@ const RegisterPage = () => {
     try {
       const result = await register(submitData);
       if (result?.approval_required) {
-        toast('You can login once now. Further access requires admin approval.', { icon: 'ℹ️' });
+        notifyInfo('You can login once now. Further access requires admin approval.', { title: 'Approval Required' });
         navigate('/login');
         return;
       }

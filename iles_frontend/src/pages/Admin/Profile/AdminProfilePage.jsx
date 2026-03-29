@@ -25,7 +25,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/AuthContext';
 import { profileAPI } from '../../../services/api';
-import toast from 'react-hot-toast';
+import { notifyError, notifySuccess } from '../../../components/Common/AppToast';
 
 const AdminProfilePage = () => {
   const { user } = useAuth();
@@ -46,14 +46,14 @@ const AdminProfilePage = () => {
       const response = await profileAPI.getProfile();
       if (user?.role !== 'admin') {
         navigate('/dashboard');
-        toast.error('Access denied');
+        notifyError('Access denied', { title: 'Permission Denied' });
         return;
       }
       setProfile(response.data);
       setFormData(response.data);
     } catch (err) {
       setError('Failed to load profile');
-      toast.error('Failed to load profile');
+      notifyError('Failed to load profile', { title: 'Profile Error' });
     } finally {
       setLoading(false);
     }
@@ -94,9 +94,9 @@ const AdminProfilePage = () => {
       await profileAPI.updateProfile(formData);
       setProfile(formData);
       setEditMode(false);
-      toast.success('Profile updated successfully');
+      notifySuccess('Profile updated successfully', { title: 'Profile Saved' });
     } catch (err) {
-      toast.error('Failed to update profile');
+      notifyError('Failed to update profile', { title: 'Save Failed' });
     }
   };
 

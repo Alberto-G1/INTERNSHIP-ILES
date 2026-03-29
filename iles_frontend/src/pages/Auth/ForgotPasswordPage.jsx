@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, Button, Link, Stack, Typography } from '@mui/material';
-import toast from 'react-hot-toast';
 import AuthShell from '../../components/Auth/AuthShell';
 import { authAPI } from '../../services/api';
+import { notifySuccess } from '../../components/Common/AppToast';
 
 /* ══════════════════════════════════════
    SHARED STYLES
@@ -278,7 +278,7 @@ const ForgotPasswordPage = () => {
     setError('');
     try {
       await authAPI.forgotPasswordRequest(email);
-      toast.success('If the email exists, a reset code has been issued.');
+      notifySuccess('If the email exists, a reset code has been issued.', { title: 'Code Sent' });
       if (!isResend) {
         setStep(2);
         setOtp(['', '', '', '', '', '']);
@@ -314,7 +314,7 @@ const ForgotPasswordPage = () => {
         new_password: newPassword,
         confirm_password: confirmPassword,
       });
-      toast.success('Password updated successfully.');
+      notifySuccess('Password updated successfully.', { title: 'Password Updated' });
       setStep(4);
     } catch (err) {
       setError(err.response?.data?.error || 'Invalid code or password details.');
