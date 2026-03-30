@@ -35,9 +35,9 @@ urlpatterns = [
     # API endpoints
     path('api/auth/', include('accounts.urls')),  # All auth endpoints under /api/auth/
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # Add this
+    path('api/placements/', include('placements.urls')),
 
     # Future apps will be added here:
-    # path('api/placements/', include('placements.urls')),
     # path('api/logs/', include('logs.urls')),
     # path('api/evaluations/', include('evaluations.urls')),
 ]

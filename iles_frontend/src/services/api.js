@@ -109,4 +109,30 @@ export const adminAPI = {
     api.patch(`/auth/admin/approvals/${userId}/`, { approved }),
 };
 
+export const placementsAPI = {
+  getOrganizations: (params = {}) => api.get('/placements/organizations/', { params }),
+  createOrganization: (payload) => api.post('/placements/organizations/', payload),
+  getMyPlacements: () => api.get('/placements/student/'),
+  getMyPlacement: (placementId) => api.get(`/placements/student/${placementId}/`),
+  createDraftPlacement: (formData) =>
+    api.post('/placements/student/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  updateDraftPlacement: (placementId, formData) =>
+    api.patch(`/placements/student/${placementId}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  submitPlacement: (placementId) => api.post(`/placements/student/${placementId}/submit/`, {}),
+  getAssignedPlacements: () => api.get('/placements/supervisor/assigned/'),
+};
+
+export const adminPlacementsAPI = {
+  getPlacements: (params = {}) => api.get('/placements/admin/', { params }),
+  decidePlacement: (placementId, payload) =>
+    api.post(`/placements/admin/${placementId}/decision/`, payload),
+  assignSupervisors: (placementId, payload) =>
+    api.patch(`/placements/admin/${placementId}/supervisors/`, payload),
+  refreshLifecycle: () => api.post('/placements/admin/lifecycle/refresh/', {}),
+};
+
 export default api;

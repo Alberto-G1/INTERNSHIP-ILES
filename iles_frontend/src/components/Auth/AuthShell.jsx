@@ -185,7 +185,7 @@ const AuthShell = ({ mode = 'signin', children }) => {
         >
           <Box
             sx={{
-              width: 40, height: 40,
+              width: 60, height: 60,
               background: 'rgba(255,255,255,0.15)',
               border: '1px solid rgba(255,255,255,0.25)',
               borderRadius: '10px',
@@ -193,7 +193,7 @@ const AuthShell = ({ mode = 'signin', children }) => {
               backdropFilter: 'blur(8px)',
             }}
           >
-            <LogoSVG size={22} stroke="white" strokeWidth={2} />
+            <LogoSVG size={32} stroke="white" strokeWidth={2} />
           </Box>
           <Box>
             <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '20px', lineHeight: 1.1, letterSpacing: '0.5px' }}>
@@ -295,7 +295,7 @@ const AuthShell = ({ mode = 'signin', children }) => {
             position: 'absolute',
             top: { xs: 16, md: 24 },
             right: { xs: 16, md: 24 },
-            width: 36, height: 36,
+            width: 50, height: 50,
             borderRadius: '50%',
             border: '1px solid var(--gray-200)',
             bgcolor: 'var(--input-bg)',
@@ -338,7 +338,7 @@ const AuthShell = ({ mode = 'signin', children }) => {
         <Box
           sx={{
             width: '100%',
-            maxWidth: 420,
+            maxWidth: 700,
             animation: 'fadeUp 0.5s ease both',
             '@keyframes fadeUp': {
               from: { opacity: 0, transform: 'translateY(14px)' },
