@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-role="admin">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AILES — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g900:#1A5C3A;--g800:#1e6b43;--g700:#236B44;--g600:#2E8B5B;--g400:#4DB87A;--g200:#A8DEC0;--g100:#D6F2E4;--g50:#EEF9F3;
+  --a800:#B45309;--a500:#F59E0B;--a100:#FEF3C7;
+  --s800:#334D6E;--s500:#5B82A6;--s100:#DDEAF6;
+  --r700:#C0392B;--r100:#FDE8E6;
+  --violet:#7C3AED;--violet-l:#EDE9FE;
+  --bg:#ECEEF3;--surface:#FFFFFF;--surface2:#F5F6F9;
+  --border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);
+  --tx1:#0D1117;--tx2:#4B5563;--tx3:#9CA3AF;
+  --sb-w:258px;--sb-bg:#27573a;--sb-border:rgba(255,255,255,0.06);
+  --sb-tx:rgba(255,255,255,0.52);--sb-tx-active:#fff;
+  --sb-item-hover:rgba(255,255,255,0.06);--sb-item-active:rgba(77,184,122,0.16);
+  --tb-h:62px;
+  --r:12px;--rl:16px;--rxl:20px;
+  --sh:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --shl:0 8px 32px rgba(0,0,0,.12);--shxl:0 20px 60px rgba(0,0,0,.18);
+  --font:'Poppins',sans-serif;--serif:'Playfair Display',serif;
+  --ease:cubic-bezier(.4,0,.2,1);--spring:cubic-bezier(.34,1.56,.64,1);
+}
+[data-theme="dark"]{
+  --bg:#060D10;--surface:#0D1A20;--surface2:#111E26;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --tx1:#F0F6FF;--tx2:#94A3B8;--tx3:#4B6280;
+  --sb-bg:#060D10;--sh:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);--shl:0 8px 32px rgba(0,0,0,.4);
+  --g100:rgba(77,184,122,0.12);--g50:rgba(77,184,122,0.07);
+  --s100:rgba(91,130,166,0.12);--a100:rgba(245,158,11,0.12);
+  --r100:rgba(192,57,43,0.12);--violet-l:rgba(124,58,237,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--tx1);overflow-x:hidden}
+button{cursor:pointer;font-family:var(--font);border:none;background:none}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+
+/* LAYOUT */
+.shell{display:flex;min-height:100vh}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar{
+  width:var(--sb-w);background:var(--sb-bg);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;z-index:200;
+  border-right:1px solid var(--sb-border);overflow:hidden;
+  transition:transform .3s var(--ease);
+}
+.sidebar::before{content:'';position:absolute;top:-80px;right:-50px;width:260px;height:260px;background:radial-gradient(circle,rgba(77,184,122,0.11) 0%,transparent 70%);pointer-events:none}
+
+/* Logo */
+.sb-logo{padding:18px 20px 14px;border-bottom:1px solid var(--sb-border);display:flex;align-items:center;gap:11px;flex-shrink:0}
+.sb-lm{width:36px;height:36px;background:linear-gradient(135deg,var(--g600),var(--g400));border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(46,139,91,0.4);flex-shrink:0}
+.sb-lm svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sb-name{font-size:15px;font-weight:700;color:#fff;letter-spacing:0.3px;line-height:1}
+.sb-tag{font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:1.2px;text-transform:uppercase;margin-top:2px}
+
+/* Role pill */
+.sb-role{margin:11px 14px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);display:flex;align-items:center;gap:9px;cursor:pointer;transition:background .2s}
+.sb-role:hover{background:rgba(255,255,255,0.07)}
+.sb-role-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sb-role-name{font-size:11.5px;font-weight:600;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-role-sub{font-size:10px;color:rgba(255,255,255,0.35)}
+.sb-role-arr{color:rgba(255,255,255,0.3);font-size:13px;flex-shrink:0}
+
+/* Nav */
+.sb-nav{flex:1;overflow-y:auto;padding:6px 8px;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.sb-sec-lbl{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:10px 12px 3px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:9px;color:var(--sb-tx);font-size:13px;font-weight:400;transition:all .18s var(--ease);position:relative;cursor:pointer;user-select:none;margin-bottom:1px}
+.sb-item:hover{background:var(--sb-item-hover);color:rgba(255,255,255,0.85);transform:translateX(2px)}
+.sb-item.act{background:var(--sb-item-active);color:var(--sb-tx-active);font-weight:500}
+.sb-item.act::before{content:'';position:absolute;left:0;top:22%;height:56%;width:3px;background:var(--g400);border-radius:0 3px 3px 0}
+.sb-ii{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.04);transition:background .18s}
+.sb-item.act .sb-ii{background:rgba(77,184,122,0.2)}
+.sb-ii svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.sb-item-lbl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-bdg{font-size:10px;font-weight:600;padding:1px 7px;border-radius:99px;min-width:18px;text-align:center;background:var(--a500);color:#fff;flex-shrink:0}
+.sb-bdg.g{background:var(--g600)}.sb-bdg.r{background:var(--r700)}.sb-bdg.v{background:var(--violet)}
+
+/* Sidebar footer */
+.sb-foot{padding:10px 8px;border-top:1px solid var(--sb-border);flex-shrink:0}
+.sb-um{display:flex;align-items:center;gap:9px;padding:7px 12px;border-radius:9px;cursor:pointer;transition:background .18s}
+.sb-um:hover{background:var(--sb-item-hover)}
+.sb-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;position:relative}
+.sb-av-on{position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;background:#22c55e;border:1.5px solid var(--sb-bg)}
+.sb-un{font-size:12px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-ur{font-size:10px;color:rgba(255,255,255,0.32)}
+.sb-set{color:rgba(255,255,255,0.28);padding:4px;border-radius:6px;transition:all .15s;margin-left:auto;flex-shrink:0}
+.sb-set:hover{background:rgba(255,255,255,0.08);color:#fff}
+.sb-set svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+
+/* ═══ TOPBAR ═══ */
+.main{margin-left:var(--sb-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:var(--tb-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px 0 26px;gap:10px;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.tb-pi{flex:1;min-width:0}
+.tb-bc{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx3);margin-bottom:1px}
+.tb-bc svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tb-title{font-size:16px;font-weight:600;color:var(--tx1);letter-spacing:-0.3px}
+.tb-search{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:6px 13px;width:210px;transition:all .2s}
+.tb-search:focus-within{width:250px;border-color:var(--g400);box-shadow:0 0 0 3px rgba(77,184,122,0.1)}
+.tb-search svg{width:13px;height:13px;stroke:var(--tx3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.tb-search input{background:none;border:none;outline:none;font-size:12.5px;color:var(--tx1);width:100%}
+.tb-search input::placeholder{color:var(--tx3)}
+.tb-acts{display:flex;align-items:center;gap:5px}
+.tb-ib{width:35px;height:35px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);color:var(--tx2);transition:all .18s;position:relative}
+.tb-ib:hover{background:var(--g50);border-color:var(--g200);color:var(--g700)}
+.tb-ib svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tb-nd{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#EF4444;border:1.5px solid var(--surface)}
+.tb-nb{display:flex;align-items:center;gap:5px;padding:7px 14px;background:var(--g900);color:#fff;border-radius:9px;font-size:12.5px;font-weight:500;transition:all .2s var(--ease);box-shadow:0 2px 8px rgba(26,92,58,0.28);white-space:nowrap}
+.tb-nb:hover{background:var(--g700);transform:translateY(-1px);box-shadow:0 4px 14px rgba(26,92,58,0.38)}
+.tb-nb svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* User trigger */
+.tb-user{display:flex;align-items:center;gap:7px;padding:4px 9px 4px 4px;border-radius:11px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .2s;position:relative;user-select:none}
+.tb-user:hover{border-color:var(--border2);background:var(--surface)}
+.tb-uav{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;position:relative}
+.tb-uav-on{position:absolute;bottom:-1px;right:-1px;width:9px;height:9px;border-radius:50%;background:#22c55e;border:2px solid var(--surface)}
+.tb-uname{font-size:12px;font-weight:600;color:var(--tx1);line-height:1.2;white-space:nowrap}
+.tb-usub{font-size:10.5px;color:var(--tx3);line-height:1.2}
+.tb-uchev{color:var(--tx3);transition:transform .2s}
+.tb-uchev svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+.tb-user.open .tb-uchev{transform:rotate(180deg)}
+
+/* ═══ USER DROPDOWN ═══ */
+.ud{position:absolute;top:calc(100% + 9px);right:0;width:256px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);box-shadow:var(--shxl);opacity:0;visibility:hidden;transform:translateY(-6px) scale(.97);transition:all .2s var(--ease);z-index:500;overflow:hidden}
+.ud.open{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+.ud-hd{padding:14px 14px 12px;background:linear-gradient(140deg,var(--g50),var(--surface));border-bottom:1px solid var(--border)}
+.ud-av{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;margin-bottom:9px;position:relative}
+.ud-ring{position:absolute;inset:-3px;border-radius:16px;border:2px solid var(--g400);opacity:.45}
+.ud-ob{position:absolute;bottom:1px;right:1px;width:11px;height:11px;border-radius:50%;background:#22c55e;border:2px solid var(--surface)}
+.ud-name{font-size:13.5px;font-weight:600;color:var(--tx1);margin-bottom:1px}
+.ud-email{font-size:11px;color:var(--tx3);margin-bottom:6px}
+.ud-tags{display:flex;gap:5px;flex-wrap:wrap}
+.ud-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:500}
+.ud-tag svg{width:9px;height:9px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.ud-menu{padding:5px}
+.ud-item{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:8px;font-size:12.5px;color:var(--tx2);cursor:pointer;transition:all .14s}
+.ud-item:hover{background:var(--surface2);color:var(--tx1)}
+.ud-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--surface2);flex-shrink:0;transition:background .14s}
+.ud-item:hover .ud-icon{background:var(--g50)}
+.ud-icon svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ud-lbl{flex:1}
+.ud-sep{height:1px;background:var(--border);margin:3px 5px}
+.ud-so{color:var(--r700)!important}.ud-so:hover{background:var(--r100)!important}.ud-so .ud-icon{background:var(--r100)!important}
+.ud-foot{padding:8px;border-top:1px solid var(--border);background:var(--surface2)}
+.ud-tr{display:flex;align-items:center;justify-content:space-between;padding:3px 4px 3px 9px}
+.ud-tl{font-size:11.5px;color:var(--tx3)}
+.ud-ts{display:flex;gap:2px;background:var(--border);border-radius:7px;padding:2px}
+.ud-to{padding:3px 9px;border-radius:5px;font-size:10.5px;font-weight:500;color:var(--tx3);cursor:pointer;transition:all .14s;display:flex;align-items:center;gap:3px}
+.ud-to svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ud-to.act{background:var(--surface);color:var(--tx1);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+/* ═══ CONTENT ═══ */
+.content{flex:1;padding:22px 26px;overflow-y:auto}
+.rv{display:none;animation:fadeUp .35s var(--ease) both}
+.rv.act{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ COMPONENTS ═══ */
+
+/* Greeting */
+.gb{background:var(--sb-bg);border-radius:var(--rxl);padding:26px 30px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:18px;position:relative;overflow:hidden}
+.gb::before{content:'';position:absolute;right:-30px;top:-50px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(77,184,122,0.14) 0%,transparent 65%)}
+.gb::after{content:'';position:absolute;right:100px;bottom:-70px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(46,139,91,0.09) 0%,transparent 65%)}
+.gb-txt{position:relative;z-index:1}
+.gb-ey{font-size:10.5px;font-weight:500;color:var(--g400);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.gb-h{font-family:var(--serif);font-size:clamp(19px,2.4vw,25px);font-weight:600;color:#fff;margin-bottom:5px;line-height:1.2}
+.gb-s{font-size:12.5px;color:rgba(255,255,255,0.48);max-width:400px}
+.gb-st{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap}
+.gb-sn{font-size:21px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+.gb-sl{font-size:10px;color:rgba(255,255,255,0.38);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.gb-art{position:relative;z-index:1;flex-shrink:0;opacity:.18}
+.gb-art svg{width:76px;height:76px}
+
+/* Metrics */
+.mg{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:20px}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px;position:relative;overflow:hidden;box-shadow:var(--sh);transition:transform .25s var(--ease),box-shadow .25s var(--ease);cursor:default}
+.mc:hover{transform:translateY(-3px);box-shadow:var(--shl)}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--rl) var(--rl) 0 0}
+.mcg::before{background:linear-gradient(90deg,var(--g700),var(--g400))}
+.mca::before{background:linear-gradient(90deg,var(--a800),var(--a500))}
+.mcs::before{background:linear-gradient(90deg,var(--s800),var(--s500))}
+.mcr::before{background:linear-gradient(90deg,var(--r700),#ef4444)}
+.mcv::before{background:linear-gradient(90deg,var(--violet),#a855f7)}
+.mc-i{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.mc-i svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mcg .mc-i{background:var(--g100);color:var(--g700)}.mca .mc-i{background:var(--a100);color:var(--a800)}
+.mcs .mc-i{background:var(--s100);color:var(--s800)}.mcr .mc-i{background:var(--r100);color:var(--r700)}
+.mcv .mc-i{background:var(--violet-l);color:var(--violet)}
+.mc-l{font-size:11px;font-weight:500;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.mc-v{font-size:27px;font-weight:700;color:var(--tx1);letter-spacing:-1px;line-height:1}
+.mc-d{font-size:11.5px;margin-top:5px;display:flex;align-items:center;gap:3px}
+.mc-d svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.up{color:var(--g600)}.dn{color:var(--r700)}.nt{color:var(--tx3)}
+
+/* Card */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);box-shadow:var(--sh);overflow:hidden}
+.card-h{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.card-t{font-size:13.5px;font-weight:600;color:var(--tx1)}
+.card-st{font-size:11.5px;color:var(--tx3);margin-top:1px}
+.card-a{font-size:12px;color:var(--g600);font-weight:500;cursor:pointer;transition:color .14s}
+.card-a:hover{color:var(--g900)}
+.cb{padding:14px 18px}
+
+/* Grids */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.g31{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g4{display:grid;grid-template-columns:3fr 1fr;gap:14px;margin-bottom:14px}
+
+/* Table */
+.dt{width:100%;border-collapse:collapse}
+.dt th{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;padding:8px 11px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+.dt td{padding:10px 11px;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--tx1);vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.dt tbody tr{transition:background .14s}
+.dt tbody tr:hover td{background:var(--surface2)}
+.dtn{font-weight:500}
+.dtm{font-family:'Courier New',monospace;font-size:11.5px;color:var(--tx2)}
+
+/* Badges */
+.bdg{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:500;white-space:nowrap}
+.bdg::before{content:'';width:5px;height:5px;border-radius:50%}
+.bg{background:var(--g100);color:var(--g900)}.bg::before{background:var(--g600)}
+.ba{background:var(--a100);color:var(--a800)}.ba::before{background:var(--a500)}
+.br{background:var(--r100);color:var(--r700)}.br::before{background:var(--r700)}
+.bs{background:var(--s100);color:var(--s800)}.bs::before{background:var(--s500)}
+.bv{background:var(--violet-l);color:var(--violet)}.bv::before{background:var(--violet)}
+
+/* Progress */
+.pw{margin-bottom:11px}
+.ph{display:flex;justify-content:space-between;margin-bottom:4px}
+.pl{font-size:12px;color:var(--tx2);font-weight:500}
+.pp{font-size:11.5px;color:var(--tx1);font-weight:600;font-variant-numeric:tabular-nums}
+.pt{background:var(--surface2);border-radius:99px;height:6px;overflow:hidden;border:1px solid var(--border)}
+.pf{height:100%;border-radius:99px;transition:width .8s var(--ease)}
+
+/* Person row */
+.pr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.pr:last-child{border-bottom:none}
+.prav{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.prn{font-size:12.5px;font-weight:500;color:var(--tx1)}
+.prs{font-size:11px;color:var(--tx3)}
+.prsc{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* Notif */
+.ni{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.ni:last-child{border-bottom:none}
+.nd{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.nt2{font-size:12.5px;color:var(--tx1);line-height:1.45}
+.ntm{font-size:10.5px;color:var(--tx3);margin-top:2px}
+
+/* Week pills */
+.wg{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+.wp{aspect-ratio:1;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:500;cursor:pointer;transition:transform .14s var(--spring)}
+.wp:hover{transform:scale(1.09)}
+.wd{background:var(--g100);color:var(--g900)}.wl{background:var(--a100);color:var(--a800)}
+.wm{background:var(--r100);color:var(--r700)}.wc{background:var(--g900);color:#fff;box-shadow:0 2px 7px rgba(26,92,58,0.4)}
+.wf{background:var(--surface2);color:var(--tx3)}
+
+/* Stars */
+.sr{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)}
+.sr:last-child{border-bottom:none}
+.sc{flex:1;font-size:12.5px;color:var(--tx1)}
+.st{display:flex;gap:2px}
+.s{font-size:15px;cursor:pointer;transition:transform .1s var(--spring);color:var(--a500)}
+.s.e{color:var(--border2)}
+.s:hover{transform:scale(1.25)}
+.sv{font-size:11.5px;color:var(--tx3);min-width:26px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:500;transition:all .17s;font-family:var(--font)}
+.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btp{background:var(--g900);color:#fff;box-shadow:0 2px 6px rgba(26,92,58,0.22)}.btp:hover{background:var(--g700);transform:translateY(-1px)}
+.btg{background:transparent;color:var(--tx2);border:1px solid var(--border)}.btg:hover{background:var(--surface2);color:var(--tx1)}
+.bta{background:var(--a500);color:#fff}.bta:hover{opacity:.9;transform:translateY(-1px)}
+.bts{padding:4px 10px;font-size:11.5px}
+
+/* Timeline */
+.tl{position:relative;padding-left:20px}
+.tl::before{content:'';position:absolute;left:5px;top:5px;bottom:5px;width:1px;background:var(--border2);border-radius:1px}
+.tli{position:relative;margin-bottom:13px}
+.tli:last-child{margin-bottom:0}
+.tldt{position:absolute;left:-20px;top:3px;width:12px;height:12px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--border2);flex-shrink:0}
+.tlc{font-size:12px;color:var(--tx2);line-height:1.5}
+.tlc strong{color:var(--tx1);font-weight:500}
+.tlt{font-size:10.5px;color:var(--tx3);margin-top:1px}
+
+/* Role switcher */
+.rsb{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:3px;margin-bottom:20px;box-shadow:var(--sh);width:fit-content;flex-wrap:wrap}
+.rb{padding:6px 16px;border-radius:8px;font-size:12px;font-weight:500;color:var(--tx2);transition:all .18s var(--ease);cursor:pointer}
+.rb.act{background:var(--g900);color:#fff;box-shadow:0 2px 8px rgba(26,92,58,0.28)}
+.rb:not(.act):hover{background:var(--surface2);color:var(--tx1)}
+
+/* Mobile toggle */
+.mbt{display:none;position:fixed;bottom:18px;right:18px;z-index:300;width:46px;height:46px;border-radius:50%;background:var(--g900);box-shadow:0 4px 14px rgba(26,92,58,0.4);align-items:center;justify-content:center}
+.mbt svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* Stagger */
+.stg>*{opacity:0;animation:fadeUp .4s var(--ease) both}
+.stg>*:nth-child(1){animation-delay:.04s}.stg>*:nth-child(2){animation-delay:.09s}
+.stg>*:nth-child(3){animation-delay:.14s}.stg>*:nth-child(4){animation-delay:.19s}
+.stg>*:nth-child(5){animation-delay:.24s}.stg>*:nth-child(6){animation-delay:.29s}
+
+/* Live dot */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.ld{display:inline-block;width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pulse 2s ease-in-out infinite;margin-right:5px;vertical-align:middle}
+
+/* Responsive */
+@media(max-width:1200px){.mg{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:920px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}.mbt{display:flex}
+  .g2,.g3,.g31,.g4{grid-template-columns:1fr}
+  .mg{grid-template-columns:repeat(2,1fr)}.tb-search{width:130px}
+  .tb-uname,.tb-usub{display:none}
+}
+@media(max-width:580px){
+  .mg{grid-template-columns:1fr 1fr}
+  .gb{flex-direction:column;align-items:flex-start}.gb-art{display:none}
+  .rsb{gap:2px}.rb{padding:5px 11px;font-size:11px}
+  .content{padding:14px 14px}.topbar{padding:0 14px}
+  .tb-nb span{display:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-lm">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <div>
+      <div class="sb-name">AILES</div>
+      <div class="sb-tag">Internship System · v2.4</div>
+    </div>
+  </div>
+
+  <div class="sb-role" onclick="cycleRole()">
+    <div class="sb-role-dot" id="sb-dot"></div>
+    <div style="flex:1;min-width:0">
+      <div class="sb-role-name" id="sb-rn">System Administrator</div>
+      <div class="sb-role-sub">Click to switch role</div>
+    </div>
+    <div class="sb-role-arr">⇅</div>
+  </div>
+
+  <nav class="sb-nav" id="sb-nav"></nav>
+
+  <div class="sb-foot">
+    <div class="sb-um">
+      <div class="sb-av" id="sb-av" style="background:var(--g700)">AD<div class="sb-av-on"></div></div>
+      <div style="flex:1;min-width:0">
+        <div class="sb-un" id="sb-un">Admin User</div>
+        <div class="sb-ur" id="sb-ur">Administrator</div>
+      </div>
+      <button class="sb-set">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="main">
+  <header class="topbar">
+    <div class="tb-pi">
+      <div class="tb-bc"><span>AILES</span><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg><span id="tb-crumb">Dashboard</span></div>
+      <div class="tb-title" id="tb-title">Overview</div>
+    </div>
+
+    <div class="tb-search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search interns, logs…">
+    </div>
+
+    <div class="tb-acts">
+      <button class="tb-ib">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <div class="tb-nd"></div>
+      </button>
+      <button class="tb-ib" onclick="toggleTheme()" id="theme-btn">
+        <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+      <button class="tb-nb">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>New Log</span>
+      </button>
+
+      <!-- User dropdown -->
+      <div class="tb-user" id="tb-user" onclick="toggleDD()">
+        <div class="tb-uav" id="tb-av" style="background:var(--g700)">AD<div class="tb-uav-on"></div></div>
+        <div>
+          <div class="tb-uname" id="tb-uname">Admin User</div>
+          <div class="tb-usub" id="tb-usub">Year 3 · CS Lead</div>
+        </div>
+        <div class="tb-uchev"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+
+        <div class="ud" id="ud">
+          <div class="ud-hd">
+            <div class="ud-av" id="ud-av" style="background:var(--g700)">AD<div class="ud-ring"></div><div class="ud-ob"></div></div>
+            <div class="ud-name" id="ud-name">Admin User</div>
+            <div class="ud-email" id="ud-email">admin@ailes.edu</div>
+            <div class="ud-tags">
+              <span class="ud-tag bg" id="ud-tag">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Year 3 · CS Lead
+              </span>
+            </div>
+          </div>
+          <div class="ud-menu">
+            <div class="ud-item"><div class="ud-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="ud-lbl">My Profile</span><span style="color:var(--tx3);font-size:12px">›</span></div>
+            <div class="ud-item"><div class="ud-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div><span class="ud-lbl">Account Settings</span><span style="color:var(--tx3);font-size:12px">›</span></div>
+            <div class="ud-item"><div class="ud-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><span class="ud-lbl">Billing &amp; Plan</span><span style="color:var(--tx3);font-size:12px">›</span></div>
+          </div>
+          <div class="ud-sep"></div>
+          <div class="ud-menu">
+            <div class="ud-item ud-so"><div class="ud-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div><span class="ud-lbl">Sign Out</span></div>
+          </div>
+          <div class="ud-foot">
+            <div class="ud-tr">
+              <span class="ud-tl">Appearance</span>
+              <div class="ud-ts">
+                <div class="ud-to act" id="ud-lt" onclick="setTheme('light',event)">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg> Light
+                </div>
+                <div class="ud-to" id="ud-dk" onclick="setTheme('dark',event)">
+                  <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg> Dark
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="rsb">
+      <div class="rb act" onclick="sw('admin',this)">Admin</div>
+      <div class="rb" onclick="sw('workplace',this)">Workplace Supervisor</div>
+      <div class="rb" onclick="sw('academic',this)">Academic Supervisor</div>
+      <div class="rb" onclick="sw('student',this)">Student</div>
+    </div>
+
+    <!-- ══ ADMIN ══ -->
+    <div class="rv act" id="rv-admin">
+      <div class="gb">
+        <div class="gb-txt">
+          <div class="gb-ey"><span class="ld"></span>Live · Spring 2025 Cohort</div>
+          <div class="gb-h">Good morning, Administrator</div>
+          <div class="gb-s">Live overview of all 48 interns across 6 departments this semester.</div>
+          <div class="gb-st">
+            <div><div class="gb-sn">48</div><div class="gb-sl">Interns</div></div>
+            <div><div class="gb-sn">312</div><div class="gb-sl">Logs</div></div>
+            <div><div class="gb-sn">83.4</div><div class="gb-sl">Avg Score</div></div>
+            <div><div class="gb-sn">9</div><div class="gb-sl">Pending</div></div>
+          </div>
+        </div>
+        <div class="gb-art"><svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="38" stroke="rgba(77,184,122,0.5)" stroke-width="1"/><circle cx="40" cy="40" r="26" stroke="rgba(77,184,122,0.35)" stroke-width="1"/><circle cx="40" cy="40" r="14" fill="rgba(77,184,122,0.2)"/><path d="M40 18v44M18 40h44" stroke="rgba(77,184,122,0.3)" stroke-width="1"/></svg></div>
+      </div>
+
+      <div class="mg stg">
+        <div class="mc mcg"><div class="mc-i"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div><div class="mc-l">Total Interns</div><div class="mc-v">48</div><div class="mc-d up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>+6 from last cohort</div></div>
+        <div class="mc mca"><div class="mc-i"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><div class="mc-l">Logs Submitted</div><div class="mc-v">312</div><div class="mc-d nt">of 384 expected</div></div>
+        <div class="mc mcs"><div class="mc-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="mc-l">Avg. Score</div><div class="mc-v">83.4</div><div class="mc-d up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>↑ 2.1 pts vs last term</div></div>
+        <div class="mc mcr"><div class="mc-i"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="mc-l">Pending Reviews</div><div class="mc-v">9</div><div class="mc-d dn"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>Across 5 supervisors</div></div>
+      </div>
+
+      <div class="g3">
+        <div class="card">
+          <div class="card-h"><div><div class="card-t">Recent Log Submissions</div><div class="card-st">Latest activity · all departments</div></div><span class="card-a">View all →</span></div>
+          <div class="cb" style="padding:0">
+            <table class="dt">
+              <thead><tr><th>Intern</th><th>Dept</th><th>Week</th><th>Time</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><span class="dtn">Amara Osei</span></td><td style="color:var(--tx3);font-size:11.5px">Finance</td><td><span class="dtm">W11</span></td><td style="color:var(--tx3);font-size:11px">2h ago</td><td><span class="bdg ba">Pending</span></td><td><button class="btn btg bts">Review</button></td></tr>
+                <tr><td><span class="dtn">Kofi Mensah</span></td><td style="color:var(--tx3);font-size:11.5px">Engineering</td><td><span class="dtm">W11</span></td><td style="color:var(--tx3);font-size:11px">5h ago</td><td><span class="bdg bg">Approved</span></td><td><button class="btn btg bts">View</button></td></tr>
+                <tr><td><span class="dtn">Fatima Al-Amin</span></td><td style="color:var(--tx3);font-size:11.5px">Legal</td><td><span class="dtm">W10</span></td><td style="color:var(--tx3);font-size:11px">1d ago</td><td><span class="bdg br">Revision</span></td><td><button class="btn btg bts">View</button></td></tr>
+                <tr><td><span class="dtn">David Nkosi</span></td><td style="color:var(--tx3);font-size:11.5px">Marketing</td><td><span class="dtm">W11</span></td><td style="color:var(--tx3);font-size:11px">1d ago</td><td><span class="bdg bg">Approved</span></td><td><button class="btn btg bts">View</button></td></tr>
+                <tr><td><span class="dtn">Ines Duarte</span></td><td style="color:var(--tx3);font-size:11.5px">Design</td><td><span class="dtm">W11</span></td><td style="color:var(--tx3);font-size:11px">2d ago</td><td><span class="bdg bs">Submitted</span></td><td><button class="btn bta bts">Review</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t">Notifications</div><span class="card-a">All →</span></div>
+          <div class="cb" style="padding-top:4px;padding-bottom:4px">
+            <div class="ni"><div class="nd" style="background:var(--a500)"></div><div><div class="nt2"><strong>3 logs</strong> awaiting review this week</div><div class="ntm">Today, 09:14</div></div></div>
+            <div class="ni"><div class="nd" style="background:var(--r700)"></div><div><div class="nt2">Fatima's W10 log returned for revision</div><div class="ntm">Yesterday, 16:30</div></div></div>
+            <div class="ni"><div class="nd" style="background:var(--g600)"></div><div><div class="nt2">Mid-term deadline: <strong>5 days</strong></div><div class="ntm">Yesterday, 10:00</div></div></div>
+            <div class="ni"><div class="nd" style="background:var(--s500)"></div><div><div class="nt2">New intern: <strong>Samuel Eze</strong> (Eng)</div><div class="ntm">Mon, 08:45</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="card-h"><div class="card-t">Submission Rate by Department</div></div>
+          <div class="cb">
+            <div class="pw"><div class="ph"><span class="pl">Engineering</span><span class="pp">96%</span></div><div class="pt"><div class="pf" style="width:96%;background:var(--g600)"></div></div></div>
+            <div class="pw"><div class="ph"><span class="pl">Finance</span><span class="pp">90%</span></div><div class="pt"><div class="pf" style="width:90%;background:var(--g400)"></div></div></div>
+            <div class="pw"><div class="ph"><span class="pl">Marketing</span><span class="pp">84%</span></div><div class="pt"><div class="pf" style="width:84%;background:var(--s500)"></div></div></div>
+            <div class="pw"><div class="ph"><span class="pl">Design</span><span class="pp">78%</span></div><div class="pt"><div class="pf" style="width:78%;background:var(--a500)"></div></div></div>
+            <div class="pw"><div class="ph"><span class="pl">Legal</span><span class="pp">70%</span></div><div class="pt"><div class="pf" style="width:70%;background:var(--r700)"></div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t">Top Interns</div><span class="card-a">All 48 →</span></div>
+          <div class="cb" style="padding-top:4px;padding-bottom:4px">
+            <div class="pr"><div class="prav" style="background:var(--a500)">KM</div><div style="flex:1"><div class="prn">Kofi Mensah</div><div class="prs">Engineering · W11</div></div><span class="bdg bg" style="margin-right:7px">11/11</span><div class="prsc" style="color:var(--g900)">94</div></div>
+            <div class="pr"><div class="prav" style="background:var(--s500)">AO</div><div style="flex:1"><div class="prn">Amara Osei</div><div class="prs">Finance · W11</div></div><span class="bdg ba" style="margin-right:7px">10/11</span><div class="prsc" style="color:var(--g600)">89</div></div>
+            <div class="pr"><div class="prav" style="background:var(--g600)">DN</div><div style="flex:1"><div class="prn">David Nkosi</div><div class="prs">Marketing · W11</div></div><span class="bdg bg" style="margin-right:7px">11/11</span><div class="prsc" style="color:var(--g600)">87</div></div>
+            <div class="pr"><div class="prav" style="background:var(--r700)">ID</div><div style="flex:1"><div class="prn">Ines Duarte</div><div class="prs">Design · W11</div></div><span class="bdg bs" style="margin-right:7px">10/11</span><div class="prsc" style="color:var(--s800)">82</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ WORKPLACE SUPERVISOR ══ -->
+    <div class="rv" id="rv-workplace">
+      <div class="gb">
+        <div class="gb-txt">
+          <div class="gb-ey"><span class="ld"></span>Workplace Supervisor · Engineering</div>
+          <div class="gb-h">Welcome back, Dr. Owusu</div>
+          <div class="gb-s">You have 3 pending log reviews and 1 intern flagged for follow-up.</div>
+          <div class="gb-st">
+            <div><div class="gb-sn">8</div><div class="gb-sl">My Interns</div></div>
+            <div><div class="gb-sn">3</div><div class="gb-sl">Pending</div></div>
+            <div><div class="gb-sn">91.2</div><div class="gb-sl">Dept Avg</div></div>
+          </div>
+        </div>
+        <div class="gb-art"><svg viewBox="0 0 80 80" fill="none"><rect x="10" y="18" width="60" height="46" rx="6" stroke="rgba(77,184,122,0.5)" stroke-width="1"/><path d="M20 34h40M20 44h30M20 54h20" stroke="rgba(77,184,122,0.35)" stroke-width="1.5" stroke-linecap="round"/><circle cx="60" cy="20" r="10" fill="rgba(77,184,122,0.25)"/><path d="M55 20l3 3 5-5" stroke="rgba(77,184,122,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+      <div class="mg stg">
+        <div class="mc mcg"><div class="mc-i"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="mc-l">My Interns</div><div class="mc-v">8</div><div class="mc-d nt">Engineering dept</div></div>
+        <div class="mc mca"><div class="mc-i"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="mc-l">Pending Reviews</div><div class="mc-v">3</div><div class="mc-d dn"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>Due this week</div></div>
+        <div class="mc mcg"><div class="mc-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="mc-l">Team Avg Score</div><div class="mc-v">91.2</div><div class="mc-d up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>Top dept this term</div></div>
+        <div class="mc mcr"><div class="mc-i"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="mc-l">At-Risk Interns</div><div class="mc-v">1</div><div class="mc-d dn">Needs attention</div></div>
+      </div>
+      <div class="g3">
+        <div class="card">
+          <div class="card-h"><div class="card-t">Pending Evaluations</div><span class="card-a">View queue →</span></div>
+          <div class="cb" style="padding:0">
+            <table class="dt"><thead><tr><th>Intern</th><th>Week</th><th>Submitted</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><span class="dtn">Kofi Mensah</span></td><td><span class="dtm">W11</span></td><td style="color:var(--tx3);font-size:11px">2h ago</td><td><button class="btn btp bts">Evaluate</button></td></tr>
+              <tr><td><span class="dtn">Ama Boateng</span></td><td><span class="dtm">W11</span></td><td style="color:var(--tx3);font-size:11px">5h ago</td><td><button class="btn btp bts">Evaluate</button></td></tr>
+              <tr><td><span class="dtn">Samuel Eze</span></td><td><span class="dtm">W11</span></td><td style="color:var(--tx3);font-size:11px">1d ago</td><td><button class="btn btp bts">Evaluate</button></td></tr>
+            </tbody></table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t">Quick Eval — Kofi Mensah</div></div>
+          <div class="cb" style="padding-top:6px;padding-bottom:6px">
+            <div class="sr"><span class="sc">Technical Quality</span><div class="st"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s e">★</span></div><span class="sv">4/5</span></div>
+            <div class="sr"><span class="sc">Communication</span><div class="st"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span></div><span class="sv">5/5</span></div>
+            <div class="sr"><span class="sc">Initiative</span><div class="st"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s e">★</span><span class="s e">★</span></div><span class="sv">3/5</span></div>
+            <div class="sr"><span class="sc">Punctuality</span><div class="st"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s e">★</span></div><span class="sv">4/5</span></div>
+            <div style="display:flex;gap:7px;margin-top:12px"><button class="btn btp" style="flex:1">Approve</button><button class="btn btg">Send Back</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-h"><div class="card-t">My Interns — Performance</div></div>
+          <div class="cb" style="padding-top:4px;padding-bottom:4px">
+            <div class="pr"><div class="prav" style="background:var(--a500)">KM</div><div style="flex:1"><div class="prn">Kofi Mensah</div><div class="prs">W11 · 11/11 logs</div></div><div class="prsc" style="color:var(--g900)">94</div></div>
+            <div class="pr"><div class="prav" style="background:var(--g600)">AB</div><div style="flex:1"><div class="prn">Ama Boateng</div><div class="prs">W11 · 10/11 logs</div></div><div class="prsc" style="color:var(--g600)">88</div></div>
+            <div class="pr"><div class="prav" style="background:var(--s500)">EK</div><div style="flex:1"><div class="prn">Elorm Kpodo</div><div class="prs">W11 · 11/11 logs</div></div><div class="prsc" style="color:var(--g600)">85</div></div>
+            <div class="pr"><div class="prav" style="background:var(--r700)">SE</div><div style="flex:1"><div class="prn">Samuel Eze</div><div class="prs">W11 · 8/11 ⚠</div></div><div class="prsc" style="color:var(--r700)">68</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t">Activity Timeline</div></div>
+          <div class="cb">
+            <div class="tl">
+              <div class="tli"><div class="tldt" style="background:var(--g600)"></div><div class="tlc"><strong>Kofi Mensah</strong> submitted W11 log</div><div class="tlt">Today, 08:32</div></div>
+              <div class="tli"><div class="tldt" style="background:var(--a500)"></div><div class="tlc">You added feedback to <strong>Ama Boateng</strong>'s W10</div><div class="tlt">Yesterday, 14:20</div></div>
+              <div class="tli"><div class="tldt" style="background:var(--r700)"></div><div class="tlc"><strong>Samuel Eze</strong> missed W9 deadline</div><div class="tlt">Mon, 23:59</div></div>
+              <div class="tli"><div class="tldt" style="background:var(--g600)"></div><div class="tlc">Approved <strong>Elorm Kpodo</strong>'s W10 log</div><div class="tlt">Mon, 11:05</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ACADEMIC SUPERVISOR ══ -->
+    <div class="rv" id="rv-academic">
+      <div class="gb">
+        <div class="gb-txt">
+          <div class="gb-ey"><span class="ld"></span>Academic Supervisor · Computer Science</div>
+          <div class="gb-h">Good morning, Prof. Mensah</div>
+          <div class="gb-s">Monitoring 12 CS students across 4 placement organisations this term.</div>
+          <div class="gb-st">
+            <div><div class="gb-sn">12</div><div class="gb-sl">Students</div></div>
+            <div><div class="gb-sn">4</div><div class="gb-sl">Orgs</div></div>
+            <div><div class="gb-sn">86.7</div><div class="gb-sl">Dept Avg</div></div>
+          </div>
+        </div>
+        <div class="gb-art"><svg viewBox="0 0 80 80" fill="none"><path d="M40 10l30 15v20l-30 15L10 45V25z" stroke="rgba(77,184,122,0.5)" stroke-width="1" fill="rgba(77,184,122,0.07)"/><path d="M40 10v50M10 25l30 15 30-15" stroke="rgba(77,184,122,0.3)" stroke-width="1"/></svg></div>
+      </div>
+      <div class="mg stg">
+        <div class="mc mcg"><div class="mc-i"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div><div class="mc-l">Students Supervised</div><div class="mc-v">12</div><div class="mc-d up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>+2 from last term</div></div>
+        <div class="mc mcv"><div class="mc-i"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div><div class="mc-l">Reports Due</div><div class="mc-v">2</div><div class="mc-d dn">This week</div></div>
+        <div class="mc mcs"><div class="mc-i"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="mc-l">Site Visits Due</div><div class="mc-v">3</div><div class="mc-d nt">Next 2 weeks</div></div>
+        <div class="mc mcg"><div class="mc-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="mc-l">Cohort Avg</div><div class="mc-v">86.7</div><div class="mc-d up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>Above university avg</div></div>
+      </div>
+      <div class="g3">
+        <div class="card">
+          <div class="card-h"><div class="card-t">Student Progress Overview</div><span class="card-a">Export report →</span></div>
+          <div class="cb" style="padding:0">
+            <table class="dt"><thead><tr><th>Student</th><th>Organisation</th><th>Logs</th><th>Avg</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><span class="dtn">Kofi Mensah</span></td><td style="color:var(--tx3);font-size:11px">TechCorp Ltd</td><td><span class="dtm">11/11</span></td><td style="color:var(--g900);font-weight:600">94</td><td><span class="bdg bg">Excellent</span></td></tr>
+              <tr><td><span class="dtn">Ama Boateng</span></td><td style="color:var(--tx3);font-size:11px">DataSystems</td><td><span class="dtm">10/11</span></td><td style="color:var(--g600);font-weight:600">88</td><td><span class="bdg bg">Good</span></td></tr>
+              <tr><td><span class="dtn">Elorm Kpodo</span></td><td style="color:var(--tx3);font-size:11px">TechCorp Ltd</td><td><span class="dtm">11/11</span></td><td style="color:var(--g600);font-weight:600">85</td><td><span class="bdg bg">Good</span></td></tr>
+              <tr><td><span class="dtn">Samuel Eze</span></td><td style="color:var(--tx3);font-size:11px">StartupX</td><td><span class="dtm">8/11</span></td><td style="color:var(--r700);font-weight:600">68</td><td><span class="bdg br">At Risk</span></td></tr>
+              <tr><td><span class="dtn">Grace Owusu</span></td><td style="color:var(--tx3);font-size:11px">GovMinistry</td><td><span class="dtm">10/11</span></td><td style="color:var(--a800);font-weight:600">75</td><td><span class="bdg ba">Monitor</span></td></tr>
+            </tbody></table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t">Upcoming Actions</div></div>
+          <div class="cb" style="padding-top:5px;padding-bottom:5px">
+            <div class="ni"><div class="nd" style="background:var(--r700)"></div><div><div class="nt2"><strong>Samuel Eze</strong> — intervention needed</div><div class="ntm">Overdue · 3 weeks</div></div></div>
+            <div class="ni"><div class="nd" style="background:var(--a500)"></div><div><div class="nt2">Site visit: <strong>TechCorp Ltd</strong></div><div class="ntm">Due Mar 20, 2025</div></div></div>
+            <div class="ni"><div class="nd" style="background:var(--s500)"></div><div><div class="nt2">Mid-term report submission</div><div class="ntm">Due Mar 25, 2025</div></div></div>
+            <div class="ni"><div class="nd" style="background:var(--violet)"></div><div><div class="nt2">Departmental meeting</div><div class="ntm">Mar 28 at 10:00 AM</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-h"><div class="card-t">Score Distribution</div></div>
+          <div class="cb">
+            <div class="pw"><div class="ph"><span class="pl">Excellent (90–100)</span><span class="pp">1 student</span></div><div class="pt"><div class="pf" style="width:8%;background:var(--g900)"></div></div></div>
+            <div class="pw"><div class="ph"><span class="pl">Good (80–89)</span><span class="pp">2 students</span></div><div class="pt"><div class="pf" style="width:16%;background:var(--g600)"></div></div></div>
+            <div class="pw"><div class="ph"><span class="pl">Average (70–79)</span><span class="pp">6 students</span></div><div class="pt"><div class="pf" style="width:50%;background:var(--a500)"></div></div></div>
+            <div class="pw"><div class="ph"><span class="pl">At Risk (&lt;70)</span><span class="pp">3 students</span></div><div class="pt"><div class="pf" style="width:25%;background:var(--r700)"></div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t">Organisation Performance</div></div>
+          <div class="cb">
+            <div class="pw"><div class="ph"><span class="pl">TechCorp Ltd</span><span class="pp">91.2</span></div><div class="pt"><div class="pf" style="width:91%;background:var(--g600)"></div></div></div>
+            <div class="pw"><div class="ph"><span class="pl">DataSystems</span><span class="pp">88.0</span></div><div class="pt"><div class="pf" style="width:88%;background:var(--g400)"></div></div></div>
+            <div class="pw"><div class="ph"><span class="pl">GovMinistry</span><span class="pp">75.0</span></div><div class="pt"><div class="pf" style="width:75%;background:var(--a500)"></div></div></div>
+            <div class="pw"><div class="ph"><span class="pl">StartupX</span><span class="pp">68.0</span></div><div class="pt"><div class="pf" style="width:68%;background:var(--r700)"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ STUDENT ══ -->
+    <div class="rv" id="rv-student">
+      <div class="gb" style="background:linear-gradient(135deg,#0D1F14,#1a2e1c)">
+        <div class="gb-txt">
+          <div class="gb-ey"><span class="ld"></span>Week 11 of 16 · Engineering · TechCorp Ltd</div>
+          <div class="gb-h">Keep it up, Kofi! 🎯</div>
+          <div class="gb-s">You're in the top 5% of your cohort. Your W11 log is due Friday.</div>
+          <div class="gb-st">
+            <div><div class="gb-sn">94</div><div class="gb-sl">My Score</div></div>
+            <div><div class="gb-sn">11/11</div><div class="gb-sl">Logs Done</div></div>
+            <div><div class="gb-sn">68%</div><div class="gb-sl">Progress</div></div>
+          </div>
+        </div>
+        <div class="gb-art"><svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="30" stroke="rgba(77,184,122,0.35)" stroke-width="1"/><path d="M40 10A30 30 0 0170 40" stroke="rgba(77,184,122,0.7)" stroke-width="3" stroke-linecap="round"/><circle cx="40" cy="10" r="4" fill="rgba(77,184,122,0.7)"/></svg></div>
+      </div>
+      <div class="mg stg">
+        <div class="mc mcg"><div class="mc-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="mc-l">Overall Score</div><div class="mc-v">94</div><div class="mc-d up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>#1 in Engineering</div></div>
+        <div class="mc mcs"><div class="mc-i"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="mc-l">Logs Submitted</div><div class="mc-v">11/16</div><div class="mc-d nt">5 remaining</div></div>
+        <div class="mc mca"><div class="mc-i"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="mc-l">Next Due</div><div class="mc-v">Fri</div><div class="mc-d nt">W11 log · 3 days</div></div>
+        <div class="mc mcg"><div class="mc-i"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div class="mc-l">Streak</div><div class="mc-v">9 wks</div><div class="mc-d up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>No missed deadlines</div></div>
+      </div>
+      <div class="g3">
+        <div class="card">
+          <div class="card-h"><div><div class="card-t">Internship Timeline</div><div class="card-st">Week 11 of 16 · 68% complete</div></div><button class="btn btp bts">+ Submit W11</button></div>
+          <div class="cb">
+            <div class="wg" style="margin-bottom:12px">
+              <div class="wp wd">W1</div><div class="wp wd">W2</div><div class="wp wd">W3</div><div class="wp wd">W4</div>
+              <div class="wp wd">W5</div><div class="wp wd">W6</div><div class="wp wl">W7</div><div class="wp wd">W8</div>
+              <div class="wp wd">W9</div><div class="wp wd">W10</div><div class="wp wc">W11</div><div class="wp wf">W12</div>
+              <div class="wp wf">W13</div><div class="wp wf">W14</div><div class="wp wf">W15</div><div class="wp wf">W16</div>
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:3px;background:var(--g100);display:inline-block"></span>Submitted</span>
+              <span style="font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:3px;background:var(--a100);display:inline-block"></span>Late</span>
+              <span style="font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:3px;background:var(--g900);display:inline-block"></span>Current</span>
+            </div>
+          </div>
+          <div class="card-h" style="border-top:1px solid var(--border)"><div class="card-t">Recent Log Scores</div></div>
+          <div class="cb" style="padding:0">
+            <table class="dt"><thead><tr><th>Week</th><th>Title</th><th>Score</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><span class="dtm">W11</span></td><td>Client Meetings &amp; Reporting</td><td>—</td><td><span class="bdg ba">Pending</span></td></tr>
+              <tr><td><span class="dtm">W10</span></td><td>System Architecture Design</td><td style="color:var(--g900);font-weight:700">96</td><td><span class="bdg bg">Approved</span></td></tr>
+              <tr><td><span class="dtm">W9</span></td><td>API Integration Sprint</td><td style="color:var(--g900);font-weight:700">92</td><td><span class="bdg bg">Approved</span></td></tr>
+              <tr><td><span class="dtm">W8</span></td><td>Stakeholder Interviews</td><td style="color:var(--g600);font-weight:700">88</td><td><span class="bdg bg">Approved</span></td></tr>
+            </tbody></table>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:13px">
+          <div class="card">
+            <div class="card-h"><div class="card-t">My Supervisors</div></div>
+            <div class="cb" style="padding-top:6px;padding-bottom:6px">
+              <div class="pr"><div class="prav" style="background:var(--g700)">DO</div><div style="flex:1"><div class="prn">Dr. Owusu</div><div class="prs">Workplace Supervisor</div></div><button class="btn btg bts" style="margin-left:auto">Message</button></div>
+              <div class="pr"><div class="prav" style="background:var(--violet)">PM</div><div style="flex:1"><div class="prn">Prof. Mensah</div><div class="prs">Academic Supervisor</div></div><button class="btn btg bts" style="margin-left:auto">Message</button></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="card-t">Score Breakdown</div></div>
+            <div class="cb">
+              <div class="pw"><div class="ph"><span class="pl">Technical</span><span class="pp">96%</span></div><div class="pt"><div class="pf" style="width:96%;background:var(--g600)"></div></div></div>
+              <div class="pw"><div class="ph"><span class="pl">Communication</span><span class="pp">90%</span></div><div class="pt"><div class="pf" style="width:90%;background:var(--g400)"></div></div></div>
+              <div class="pw"><div class="ph"><span class="pl">Initiative</span><span class="pp">94%</span></div><div class="pt"><div class="pf" style="width:94%;background:var(--g600)"></div></div></div>
+              <div class="pw"><div class="ph"><span class="pl">Punctuality</span><span class="pp">100%</span></div><div class="pt"><div class="pf" style="width:100%;background:var(--g900)"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<button class="mbt" onclick="toggleSB()"><svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+<div style="position:fixed;inset:0;z-index:400;display:none" id="ov" onclick="closeDD()"></div>
+
+<script>
+const NAV={
+  admin:[
+    {s:'Overview',i:[{ic:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',l:'Dashboard',a:1},{ic:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',l:'All Interns',b:'48'},{ic:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',l:'All Logs'}]},
+    {s:'Evaluation',i:[{ic:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',l:'Evaluations',b:'9',bc:'r'},{ic:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>',l:'Supervisors'}]},
+    {s:'Analytics',i:[{ic:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',l:'Reports'},{ic:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',l:'Calendar'}]},
+    {s:'System',i:[{ic:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>',l:'Notifications',b:'5'},{ic:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83"/>',l:'Settings'}]},
+  ],
+  workplace:[
+    {s:'My Dashboard',i:[{ic:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',l:'Dashboard',a:1},{ic:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>',l:'My Interns',b:'8',bc:'g'}]},
+    {s:'Review',i:[{ic:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',l:'Pending Reviews',b:'3',bc:'r'},{ic:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>',l:'Approved Logs'},{ic:'<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/>',l:'Feedback Given'}]},
+    {s:'Reporting',i:[{ic:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',l:'Performance'},{ic:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>',l:'Notifications',b:'2'}]},
+  ],
+  academic:[
+    {s:'My Dashboard',i:[{ic:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',l:'Dashboard',a:1},{ic:'<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',l:'My Students',b:'12',bc:'g'}]},
+    {s:'Academic Work',i:[{ic:'<path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>',l:'Student Reports',b:'2',bc:'r'},{ic:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>',l:'Site Visits',b:'3'},{ic:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>',l:'Organisations'}]},
+    {s:'Analytics',i:[{ic:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',l:'Dept Analytics'},{ic:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>',l:'Notifications',b:'4'}]},
+  ],
+  student:[
+    {s:'My Internship',i:[{ic:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',l:'Dashboard',a:1},{ic:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>',l:'My Logs'},{ic:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',l:'My Scores'}]},
+    {s:'Connect',i:[{ic:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>',l:'Supervisors'},{ic:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',l:'Messages',b:'2'}]},
+    {s:'Profile',i:[{ic:'<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',l:'My Profile'},{ic:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>',l:'Notifications',b:'1'}]},
+  ],
+};
+
+const META={
+  admin:    {lbl:'System Administrator',dot:'#4DB87A',av:'AD',name:'Admin User',       sub:'Year 3 · CS Lead',email:'admin@ailes.edu',        col:'var(--g700)',  tag:'Administrator'},
+  workplace:{lbl:'Workplace Supervisor', dot:'#5B82A6',av:'DO',name:'Dr. Kwame Owusu', sub:'Engineering Dept', email:'k.owusu@techcorp.com',   col:'var(--s800)',  tag:'Workplace Sup.'},
+  academic: {lbl:'Academic Supervisor',  dot:'#7C3AED',av:'PM',name:'Prof. E. Mensah', sub:'CS Department',   email:'e.mensah@uni.edu',        col:'var(--violet)',tag:'Academic Sup.'},
+  student:  {lbl:'Student Intern',       dot:'#F59E0B',av:'KM',name:'Kofi Mensah',     sub:'Year 3 · CS',     email:'k.mensah@student.edu',    col:'var(--a800)',  tag:'Student · W11'},
+};
+
+let cur='admin';
+const roles=['admin','workplace','academic','student'];
+
+function buildNav(r){
+  let h='';
+  NAV[r].forEach(sec=>{
+    h+=`<div><div class="sb-sec-lbl">${sec.s}</div>`;
+    sec.i.forEach(it=>{
+      h+=`<div class="sb-item${it.a?' act':''}">
+        <div class="sb-ii"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${it.ic}</svg></div>
+        <span class="sb-item-lbl">${it.l}</span>
+        ${it.b?`<span class="sb-bdg ${it.bc||''}">${it.b}</span>`:''}
+      </div>`;
+    });
+    h+='</div>';
+  });
+  document.getElementById('sb-nav').innerHTML=h;
+}
+
+function updateUI(r){
+  const m=META[r];
+  const tt={admin:'Overview',workplace:'My Dashboard',academic:'Academic Overview',student:'My Internship'};
+  document.getElementById('tb-title').textContent=tt[r];
+  ['tb-av','ud-av','sb-av'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.style.background=m.col;el.childNodes[0].textContent=m.av;}
+  });
+  document.getElementById('tb-uname').textContent=m.name;
+  document.getElementById('tb-usub').textContent=m.sub;
+  document.getElementById('ud-name').textContent=m.name;
+  document.getElementById('ud-email').textContent=m.email;
+  document.getElementById('ud-tag').childNodes[1].textContent=' '+m.tag;
+  document.getElementById('sb-un').textContent=m.name;
+  document.getElementById('sb-ur').textContent=m.lbl;
+  document.getElementById('sb-dot').style.background=m.dot;
+  document.getElementById('sb-rn').textContent=m.lbl;
+}
+
+function sw(r,btn){
+  cur=r;
+  document.querySelectorAll('.rb').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  document.querySelectorAll('.rv').forEach(v=>v.classList.remove('act'));
+  document.getElementById('rv-'+r).classList.add('act');
+  buildNav(r);updateUI(r);closeDD();
+}
+function cycleRole(){
+  const idx=roles.indexOf(cur);const next=roles[(idx+1)%roles.length];
+  const btn=document.querySelectorAll('.rb')[roles.indexOf(next)];
+  sw(next,btn);
+}
+
+function toggleDD(){
+  const open=document.getElementById('ud').classList.toggle('open');
+  document.getElementById('tb-user').classList.toggle('open',open);
+  document.getElementById('ov').style.display=open?'block':'none';
+}
+function closeDD(){
+  document.getElementById('ud').classList.remove('open');
+  document.getElementById('tb-user').classList.remove('open');
+  document.getElementById('ov').style.display='none';
+}
+
+function setTheme(t,e){
+  if(e)e.stopPropagation();
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('ud-lt').classList.toggle('act',t==='light');
+  document.getElementById('ud-dk').classList.toggle('act',t==='dark');
+  const moon='<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
+  const sun='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  document.getElementById('theme-btn').innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t==='dark'?sun:moon}</svg>`;
+}
+function toggleTheme(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
+function toggleSB(){document.getElementById('sidebar').classList.toggle('open');}
+
+buildNav('admin');updateUI('admin');
+</script>
+</body>
+</html>

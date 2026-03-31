@@ -135,4 +135,23 @@ export const adminPlacementsAPI = {
   refreshLifecycle: () => api.post('/placements/admin/lifecycle/refresh/', {}),
 };
 
+export const logbookAPI = {
+  getStudentLogs: () => api.get('/logbook/student/'),
+  createStudentLogDraft: (formData) =>
+    api.post('/logbook/student/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  updateStudentLogDraft: (logId, formData) =>
+    api.patch(`/logbook/student/${logId}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  submitStudentLog: (logId) => api.post(`/logbook/student/${logId}/submit/`, {}),
+  getStudentProgress: () => api.get('/logbook/student/progress/'),
+
+  getSupervisorLogs: (params = {}) => api.get('/logbook/supervisor/', { params }),
+  reviewSupervisorLog: (logId, payload) => api.post(`/logbook/supervisor/${logId}/review/`, payload),
+
+  getAdminOverview: () => api.get('/logbook/admin/overview/'),
+};
+
 export default api;
