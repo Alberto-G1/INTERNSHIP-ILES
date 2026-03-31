@@ -12,6 +12,7 @@ import {
   Grid,
   Link,
   MenuItem,
+  Pagination,
   Stack,
   TextField,
   Typography,
@@ -36,6 +37,10 @@ const AdminPlacementsPage = () => {
   const [supervisors, setSupervisors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
     approval_status: '',
     submission_status: '',
@@ -46,7 +51,7 @@ const AdminPlacementsPage = () => {
   const [reasonModal, setReasonModal] = useState({ open: false, placement: null, action: 'reject', reason: '' });
   const [assigning, setAssigning] = useState({});
 
-  const fetchData = async () => {
+  const fetchData = async (targetPage = page) => {
     try {
       setLoading(true);
       setError('');
@@ -54,13 +59,27 @@ const AdminPlacementsPage = () => {
       Object.entries(filters).forEach(([k, v]) => {
         if (v) params[k] = v;
       });
+      params.page = targetPage;
+      params.page_size = pageSize;
 
       const [placementsRes, supervisorRes] = await Promise.all([
         adminPlacementsAPI.getPlacements(params),
         adminAPI.getSupervisorApprovals(),
       ]);
 
-      setPlacements(placementsRes.data || []);
+      const payload = placementsRes.data;
+      if (Array.isArray(payload)) {
+        setPlacements(payload);
+        setTotalCount(payload.length);
+        setTotalPages(1);
+      } else {
+        setPlacements(payload.results || []);
+        setTotalCount(payload.count || 0);
+        const computedPages = Math.max(1, Math.ceil((payload.count || 0) / pageSize));
+        setTotalPages(computedPages);
+      }
+
+      setPage(targetPage);
       setSupervisors((supervisorRes.data || []).filter((item) => item.admin_approved));
     } catch (err) {
       setError('Failed to load placement records.');
@@ -71,7 +90,11 @@ const AdminPlacementsPage = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(1);
+  }, [pageSize]);
+
+  useEffect(() => {
+    fetchData(1);
   }, []);
 
   const stats = useMemo(() => {
@@ -93,14 +116,14 @@ const AdminPlacementsPage = () => {
   };
 
   const applyFilters = async () => {
-    await fetchData();
+    await fetchData(1);
   };
 
   const makeDecision = async (placementId, action, reason = '') => {
     try {
       await adminPlacementsAPI.decidePlacement(placementId, { action, reason });
       notifySuccess(`Placement ${action}d successfully`, { title: 'Decision Saved' });
-      await fetchData();
+      await fetchData(page);
     } catch (err) {
       const msg = err.response?.data?.error || 'Failed to process placement decision.';
       notifyError(msg, { title: 'Decision Failed' });
@@ -130,7 +153,7 @@ const AdminPlacementsPage = () => {
       const payload = { [field]: value || null };
       await adminPlacementsAPI.assignSupervisors(placementId, payload);
       notifySuccess('Supervisor assignment updated', { title: 'Assignment Saved' });
-      await fetchData();
+      await fetchData(page);
     } catch (err) {
       notifyError('Failed to assign supervisor', { title: 'Assignment Failed' });
     } finally {
@@ -188,6 +211,19 @@ const AdminPlacementsPage = () => {
             <Button fullWidth variant="contained" sx={{ height: '54px' }} onClick={applyFilters}>
               Apply
             </Button>
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <TextField
+              fullWidth
+              select
+              label="Page Size"
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+            >
+              <MenuItem value={10}>10</MenuItem>
+              <MenuItem value={20}>20</MenuItem>
+              <MenuItem value={50}>50</MenuItem>
+            </TextField>
           </Grid>
         </Grid>
 
@@ -287,6 +323,21 @@ const AdminPlacementsPage = () => {
                 </Box>
               );
             })}
+          </Stack>
+        )}
+
+        {totalCount > 0 && (
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
+            <Typography sx={{ fontSize: '12px', color: 'text.secondary' }}>
+              Showing page {page} of {totalPages} ({totalCount} total placements)
+            </Typography>
+            <Pagination
+              page={page}
+              count={totalPages}
+              color="primary"
+              shape="rounded"
+              onChange={(_, value) => fetchData(value)}
+            />
           </Stack>
         )}
 

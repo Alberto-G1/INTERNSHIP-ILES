@@ -1,4 +1,7 @@
-export const DRAWER_WIDTH = 220;
+// frontend/src/components/Layout/layoutConfig.js
+
+export const DRAWER_WIDTH = 240; // Increased slightly for better readability
+export const COLLAPSED_DRAWER_WIDTH = 72; // For mobile collapsed state
 
 export const PAGE_TITLES = {
   '/dashboard': { title: 'Dashboard', subtitle: 'Good morning, Spring 2025 cohort' },

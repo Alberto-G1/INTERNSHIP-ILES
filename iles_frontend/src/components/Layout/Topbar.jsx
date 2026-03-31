@@ -15,6 +15,8 @@ import {
   Avatar,
   Divider,
   Fade,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -33,6 +35,7 @@ import {
   HowToReg as ApprovalsIcon,
   ExpandMore as ExpandMoreIcon,
   Close as CloseIcon,
+  Menu as MenuIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useThemeMode } from '../../context/ThemeModeContext';
@@ -52,19 +55,10 @@ const iconByPath = {
   '/admin/approvals': ApprovalsIcon,
 };
 
-/* keyframes */
 const TOPBAR_STYLES = `
   @keyframes topbarSlideDown {
     from { opacity: 0; transform: translateY(-4px); }
     to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes searchExpand {
-    from { width: 220px; }
-    to   { width: 300px; }
-  }
-  @keyframes searchCollapse {
-    from { width: 300px; }
-    to   { width: 220px; }
   }
   @keyframes themeIconSpin {
     from { transform: rotate(0deg) scale(1); }
@@ -81,9 +75,10 @@ const TOPBAR_STYLES = `
   }
 `;
 
-const Topbar = () => {
+const Topbar = ({ onMenuClick, isMobile }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
   const { user, logout } = useAuth();
   const { mode, toggleMode } = useThemeMode();
 
@@ -97,7 +92,6 @@ const Topbar = () => {
 
   const searchRef = useRef(null);
 
-  // Inject keyframes once
   useEffect(() => {
     if (!document.getElementById('topbar-keyframes')) {
       const tag = document.createElement('style');
@@ -107,7 +101,6 @@ const Topbar = () => {
     }
   }, []);
 
-  // Re-animate title on route change
   useEffect(() => {
     if (location.pathname !== prevPath) {
       setTitleKey(k => k + 1);
@@ -154,10 +147,9 @@ const Topbar = () => {
       elevation={0}
       sx={{
         bgcolor: 'background.paper',
-        borderBottom: '1px solid var(--gray-200)',
-        backdropFilter: 'blur(8px)',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
         animation: 'topbarSlideDown 0.3s ease',
-        /* subtle gradient line at bottom */
         '&::after': {
           content: '""',
           position: 'absolute',
@@ -173,104 +165,119 @@ const Topbar = () => {
       <Toolbar
         sx={{
           justifyContent: 'space-between',
-          minHeight: 56,
-          px: { xs: 2, md: 3.5 },
+          minHeight: { xs: 56, sm: 64 },
+          px: { xs: 2, sm: 3, md: 4 },
         }}
       >
-        {/* ── Page title ── */}
-        <Box
-          key={titleKey}
-          sx={{
-            animation: 'titleFade 0.25s ease',
-          }}
-        >
-          <Typography
-            variant="h6"
+        {/* Left section */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={onMenuClick}
+              sx={{ mr: 1 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+          
+          <Box
+            key={titleKey}
             sx={{
-              fontSize: '15.5px',
-              fontWeight: 600,
-              color: 'text.primary',
-              lineHeight: 1.15,
-              fontFamily: "'Poppins', sans-serif",
-              letterSpacing: '-0.2px',
+              animation: 'titleFade 0.25s ease',
             }}
           >
-            {pageInfo.title}
-          </Typography>
-          {pageInfo.subtitle && (
             <Typography
-              variant="caption"
+              variant="h6"
               sx={{
-                color: 'text.secondary',
-                fontSize: '11.5px',
-                display: 'block',
-                mt: 0.15,
+                fontSize: { xs: '14px', sm: '15.5px' },
+                fontWeight: 600,
+                color: 'text.primary',
+                lineHeight: 1.15,
                 fontFamily: "'Poppins', sans-serif",
+                letterSpacing: '-0.2px',
               }}
             >
-              {pageInfo.subtitle}
+              {pageInfo.title}
             </Typography>
-          )}
-        </Box>
-
-        {/* ── Right controls ── */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-
-          {/* Search */}
-          <Paper
-            sx={{
-              p: '4px 10px',
-              display: 'flex',
-              alignItems: 'center',
-              width: searchFocused ? 295 : 220,
-              bgcolor: searchFocused ? 'background.paper' : 'var(--gray-100)',
-              borderRadius: '8px',
-              border: '1px solid',
-              borderColor: searchFocused ? 'var(--green-600)' : 'var(--gray-200)',
-              boxShadow: searchFocused
-                ? '0 0 0 3px rgba(46,139,91,0.12)'
-                : '0 1px 3px rgba(0,0,0,0.04)',
-              transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1), border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease',
-            }}
-          >
-            <SearchIcon
-              sx={{
-                mr: 0.8,
-                color: searchFocused ? 'var(--green-600)' : 'var(--gray-400)',
-                fontSize: 17,
-                transition: 'color 0.18s ease',
-                flexShrink: 0,
-              }}
-            />
-            <InputBase
-              inputRef={searchRef}
-              sx={{
-                flex: 1,
-                fontSize: '12.5px',
-                fontFamily: "'Poppins', sans-serif",
-                '& input::placeholder': { color: 'var(--placeholder)', opacity: 1 },
-              }}
-              placeholder="Search interns, logs…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-            />
-            {searchQuery && (
-              <IconButton
-                size="small"
-                onClick={clearSearch}
+            {pageInfo.subtitle && !isMobile && (
+              <Typography
+                variant="caption"
                 sx={{
-                  p: 0,
-                  color: 'var(--gray-400)',
-                  '&:hover': { color: 'var(--gray-600)' },
-                  transition: 'color 0.15s ease',
+                  color: 'text.secondary',
+                  fontSize: '11.5px',
+                  display: 'block',
+                  mt: 0.15,
+                  fontFamily: "'Poppins', sans-serif",
                 }}
               >
-                <CloseIcon sx={{ fontSize: 14 }} />
-              </IconButton>
+                {pageInfo.subtitle}
+              </Typography>
             )}
-          </Paper>
+          </Box>
+        </Box>
+
+        {/* Right controls */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 } }}>
+          {/* Search - hide on very small screens */}
+          {!isMobile && (
+            <Paper
+              sx={{
+                p: '4px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                width: searchFocused ? 295 : 220,
+                bgcolor: searchFocused ? 'background.paper' : 'action.hover',
+                borderRadius: '8px',
+                border: '1px solid',
+                borderColor: searchFocused ? 'var(--green-600)' : 'divider',
+                boxShadow: searchFocused
+                  ? '0 0 0 3px rgba(46,139,91,0.12)'
+                  : '0 1px 3px rgba(0,0,0,0.04)',
+                transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1), border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease',
+              }}
+            >
+              <SearchIcon
+                sx={{
+                  mr: 0.8,
+                  color: searchFocused ? 'var(--green-600)' : 'text.secondary',
+                  fontSize: 17,
+                  transition: 'color 0.18s ease',
+                  flexShrink: 0,
+                }}
+              />
+              <InputBase
+                inputRef={searchRef}
+                sx={{
+                  flex: 1,
+                  fontSize: '12.5px',
+                  fontFamily: "'Poppins', sans-serif",
+                  '& input::placeholder': { color: 'text.disabled', opacity: 1 },
+                }}
+                placeholder="Search interns, logs…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+              />
+              {searchQuery && (
+                <IconButton
+                  size="small"
+                  onClick={clearSearch}
+                  sx={{
+                    p: 0,
+                    color: 'text.secondary',
+                    '&:hover': { color: 'text.primary' },
+                    transition: 'color 0.15s ease',
+                  }}
+                >
+                  <CloseIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              )}
+            </Paper>
+          )}
 
           {/* Theme toggle */}
           <IconButton
@@ -280,18 +287,18 @@ const Topbar = () => {
               width: 34,
               height: 34,
               borderRadius: '8px',
-              border: '1px solid var(--gray-200)',
-              bgcolor: 'var(--white)',
-              color: mode === 'dark' ? 'var(--amber-500)' : 'var(--gray-600)',
-              transition: 'background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.15s ease',
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
+              color: mode === 'dark' ? 'warning.main' : 'text.secondary',
+              transition: 'all 0.18s ease',
               '&:hover': {
-                bgcolor: mode === 'dark' ? 'var(--amber-100)' : 'var(--gray-100)',
-                borderColor: mode === 'dark' ? 'var(--amber-500)' : 'var(--gray-300)',
+                bgcolor: mode === 'dark' ? 'warning.100' : 'action.hover',
+                borderColor: mode === 'dark' ? 'warning.main' : 'text.disabled',
                 transform: 'scale(1.06)',
               },
               '& svg': {
                 animation: themeSpinning ? 'themeIconSpin 0.4s ease' : 'none',
-                transition: 'transform 0.25s ease',
               },
             }}
           >
@@ -306,18 +313,19 @@ const Topbar = () => {
           <Button
             onClick={handleMenuOpen}
             sx={{
-              p: '3px 8px 3px 3px',
+              p: { xs: '3px 6px', sm: '3px 8px 3px 3px' },
               borderRadius: '8px',
               color: 'text.primary',
               minWidth: 'auto',
-              border: '1px solid var(--gray-200)',
-              bgcolor: 'var(--white)',
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
               textTransform: 'none',
               gap: 0.8,
-              transition: 'background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
+              transition: 'all 0.18s ease',
               '&:hover': {
-                bgcolor: 'var(--gray-100)',
-                borderColor: 'var(--gray-300)',
+                bgcolor: 'action.hover',
+                borderColor: 'text.disabled',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
               },
               '&:active': { transform: 'scale(0.98)' },
@@ -325,10 +333,10 @@ const Topbar = () => {
           >
             <Avatar
               sx={{
-                width: 28,
-                height: 28,
+                width: { xs: 26, sm: 28 },
+                height: { xs: 26, sm: 28 },
                 bgcolor: 'var(--green-600)',
-                fontSize: '11px',
+                fontSize: { xs: '10px', sm: '11px' },
                 fontWeight: 700,
                 fontFamily: "'Poppins', sans-serif",
                 transition: 'transform 0.18s ease',
@@ -337,37 +345,41 @@ const Topbar = () => {
             >
               {userInitial}
             </Avatar>
-            <Box sx={{ textAlign: 'left' }}>
-              <Typography
-                sx={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  lineHeight: 1.15,
-                  fontFamily: "'Poppins', sans-serif",
-                  color: 'var(--ink)',
-                }}
-              >
-                {userName}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '10px',
-                  color: 'text.secondary',
-                  lineHeight: 1.1,
-                  fontFamily: "'Poppins', sans-serif",
-                }}
-              >
-                {roleLabel}
-              </Typography>
-            </Box>
-            <ExpandMoreIcon
-              sx={{
-                color: 'var(--gray-400)',
-                fontSize: 16,
-                transition: 'transform 0.2s ease',
-                transform: Boolean(anchorEl) ? 'rotate(180deg)' : 'rotate(0deg)',
-              }}
-            />
+            {!isMobile && (
+              <>
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography
+                    sx={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      lineHeight: 1.15,
+                      fontFamily: "'Poppins', sans-serif",
+                      color: 'text.primary',
+                    }}
+                  >
+                    {userName}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: '10px',
+                      color: 'text.secondary',
+                      lineHeight: 1.1,
+                      fontFamily: "'Poppins', sans-serif",
+                    }}
+                  >
+                    {roleLabel}
+                  </Typography>
+                </Box>
+                <ExpandMoreIcon
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: 16,
+                    transition: 'transform 0.2s ease',
+                    transform: Boolean(anchorEl) ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                />
+              </>
+            )}
           </Button>
 
           {/* Dropdown menu */}
@@ -384,13 +396,13 @@ const Topbar = () => {
                 mt: 1,
                 minWidth: 240,
                 borderRadius: '10px',
-                border: '1px solid var(--gray-200)',
+                border: '1px solid',
+                borderColor: 'divider',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
                 overflow: 'hidden',
               },
             }}
           >
-            {/* Header */}
             <Box
               sx={{
                 px: 1.8,
@@ -420,7 +432,7 @@ const Topbar = () => {
                     fontSize: '13px',
                     fontWeight: 600,
                     fontFamily: "'Poppins', sans-serif",
-                    color: 'var(--ink)',
+                    color: 'text.primary',
                   }}
                 >
                   {userName}
@@ -428,7 +440,7 @@ const Topbar = () => {
                 <Typography
                   sx={{
                     fontSize: '11px',
-                    color: 'var(--gray-400)',
+                    color: 'text.secondary',
                     fontFamily: "'Poppins', sans-serif",
                   }}
                 >
@@ -437,10 +449,9 @@ const Topbar = () => {
               </Box>
             </Box>
 
-            <Divider sx={{ borderColor: 'var(--gray-200)' }} />
+            <Divider sx={{ borderColor: 'divider' }} />
 
-            {/* Nav links */}
-            {menuLinks.map((link, idx) => {
+            {menuLinks.map((link) => {
               const LinkIcon = iconByPath[link.path] || DashboardIcon;
               return (
                 <MenuItem
@@ -450,10 +461,10 @@ const Topbar = () => {
                     gap: 1.2,
                     fontSize: '12.5px',
                     fontFamily: "'Poppins', sans-serif",
-                    color: 'var(--gray-700)',
+                    color: 'text.secondary',
                     py: 1,
                     px: 1.8,
-                    transition: 'background-color 0.15s ease, color 0.15s ease, padding-left 0.15s ease',
+                    transition: 'all 0.15s ease',
                     '&:hover': {
                       bgcolor: 'var(--green-50)',
                       color: 'var(--green-700)',
@@ -467,46 +478,44 @@ const Topbar = () => {
               );
             })}
 
-            {/* Theme toggle in menu */}
             <MenuItem
               onClick={() => { handleThemeToggle(); handleMenuClose(); }}
               sx={{
                 gap: 1.2,
                 fontSize: '12.5px',
                 fontFamily: "'Poppins', sans-serif",
-                color: 'var(--gray-700)',
+                color: 'text.secondary',
                 py: 1,
                 px: 1.8,
-                transition: 'background-color 0.15s ease, color 0.15s ease, padding-left 0.15s ease',
+                transition: 'all 0.15s ease',
                 '&:hover': {
-                  bgcolor: mode === 'dark' ? 'var(--amber-100)' : 'var(--gray-100)',
+                  bgcolor: mode === 'dark' ? 'warning.100' : 'action.hover',
                   pl: '20px',
                 },
               }}
             >
               {mode === 'dark' ? (
-                <LightModeIcon sx={{ fontSize: 16, color: 'var(--amber-500)' }} />
+                <LightModeIcon sx={{ fontSize: 16, color: 'warning.main' }} />
               ) : (
                 <DarkModeIcon sx={{ fontSize: 16, opacity: 0.7 }} />
               )}
               {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
             </MenuItem>
 
-            <Divider sx={{ borderColor: 'var(--gray-200)' }} />
+            <Divider sx={{ borderColor: 'divider' }} />
 
-            {/* Logout */}
             <MenuItem
               onClick={openSignoutModal}
               sx={{
                 gap: 1.2,
                 fontSize: '12.5px',
                 fontFamily: "'Poppins', sans-serif",
-                color: 'var(--coral-700)',
+                color: 'error.main',
                 py: 1,
                 px: 1.8,
-                transition: 'background-color 0.15s ease, padding-left 0.15s ease',
+                transition: 'all 0.15s ease',
                 '&:hover': {
-                  bgcolor: 'var(--coral-100)',
+                  bgcolor: 'error.lighter',
                   pl: '20px',
                 },
               }}

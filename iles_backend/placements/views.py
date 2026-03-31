@@ -2,6 +2,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,6 +19,12 @@ from .serializers import (
     StudentPlacementUpdateSerializer,
     SupervisorAssignmentSerializer,
 )
+
+
+class PlacementPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 def sync_student_internship_status(placement):
@@ -139,6 +146,7 @@ class StudentPlacementSubmitView(APIView):
 
 class AdminPlacementListView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    pagination_class = PlacementPagination
 
     def get(self, request):
         queryset = Placement.objects.select_related(
@@ -183,8 +191,10 @@ class AdminPlacementListView(APIView):
                 | Q(organization__name__icontains=search)
             )
 
-        serializer = PlacementSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = PlacementSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
 
 
 class AdminPlacementDecisionView(APIView):

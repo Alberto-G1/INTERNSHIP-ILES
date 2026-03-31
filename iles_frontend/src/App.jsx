@@ -17,25 +17,29 @@ import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
 
 // Student Pages
 import StudentDashboard from './pages/Student/Dashboard/StudentDashboard';
-import StudentProfilePage from './pages/Student/Profile/StudentProfilePage';
+import StudentProfileDisplayPage from './pages/Student/Profile/StudentProfileDisplayPage';
+import StudentProfileEditPage from './pages/Student/Profile/StudentProfileEditPage';
 import StudentLogsPage from './pages/Student/Logs/StudentLogsPage';
 import StudentPlacementsPage from './pages/Student/Placements/StudentPlacementsPage';
 
 // Workplace Supervisor Pages
 import WorkplaceSupervisorDashboard from './pages/WorkplaceSupervisor/Dashboard/WorkplaceSupervisorDashboard';
-import WorkplaceSupervisorProfilePage from './pages/WorkplaceSupervisor/Profile/WorkplaceSupervisorProfilePage';
+import WorkplaceSupervisorProfileDisplayPage from './pages/WorkplaceSupervisor/Profile/WorkplaceSupervisorProfileDisplayPage';
+import WorkplaceSupervisorProfileEditPage from './pages/WorkplaceSupervisor/Profile/WorkplaceSupervisorProfileEditPage';
 import WorkplaceSupervisorLogsPage from './pages/WorkplaceSupervisor/Logs/WorkplaceSupervisorLogsPage';
 import WorkplaceSupervisorPlacementsPage from './pages/WorkplaceSupervisor/Placements/WorkplaceSupervisorPlacementsPage';
 
 // Academic Supervisor Pages
 import AcademicSupervisorDashboard from './pages/AcademicSupervisor/Dashboard/AcademicSupervisorDashboard';
-import AcademicSupervisorProfilePage from './pages/AcademicSupervisor/Profile/AcademicSupervisorProfilePage';
+import AcademicSupervisorProfileDisplayPage from './pages/AcademicSupervisor/Profile/AcademicSupervisorProfileDisplayPage';
+import AcademicSupervisorProfileEditPage from './pages/AcademicSupervisor/Profile/AcademicSupervisorProfileEditPage';
 import AcademicSupervisorLogsPage from './pages/AcademicSupervisor/Logs/AcademicSupervisorLogsPage';
 import AcademicSupervisorPlacementsPage from './pages/AcademicSupervisor/Placements/AcademicSupervisorPlacementsPage';
 
 // Admin Pages
 import AdminDashboard from './pages/Admin/Dashboard/AdminDashboard';
-import AdminProfilePage from './pages/Admin/Profile/AdminProfilePage';
+import AdminProfileDisplayPage from './pages/Admin/Profile/AdminProfileDisplayPage';
+import AdminProfileEditPage from './pages/Admin/Profile/AdminProfileEditPage';
 import AdminLogsPage from './pages/Admin/LogsPage';
 import AdminPlacementsPage from './pages/Admin/Placements/AdminPlacementsPage';
 import AdminApprovalsPage from './pages/Admin/Approvals/AdminApprovalsPage';
@@ -200,7 +204,8 @@ const AppShell = () => {
             >
               <Route index element={<Navigate to="/dashboard" />} />
               <Route path="dashboard" element={<DashboardRouter />} />
-              <Route path="profile" element={<ProfileRouter />} />
+              <Route path="profile" element={<ProfileDisplayRouter />} />
+              <Route path="profile/edit" element={<ProfileEditRouter />} />
               <Route path="logs" element={<LogsRouter />} />
               <Route path="placements" element={<PlacementsRouter />} />
               <Route path="evaluations" element={<EvaluationsPage />} />
@@ -246,19 +251,37 @@ const DashboardRouter = () => {
   }
 };
 
-// Role-based Profile Router
-const ProfileRouter = () => {
+// Role-based Profile Display Router
+const ProfileDisplayRouter = () => {
   const { user } = useAuth();
   
   switch (user?.role) {
     case 'student':
-      return <StudentProfilePage />;
+      return <StudentProfileDisplayPage />;
     case 'workplace_supervisor':
-      return <WorkplaceSupervisorProfilePage />;
+      return <WorkplaceSupervisorProfileDisplayPage />;
     case 'academic_supervisor':
-      return <AcademicSupervisorProfilePage />;
+      return <AcademicSupervisorProfileDisplayPage />;
     case 'admin':
-      return <AdminProfilePage />;
+      return <AdminProfileDisplayPage />;
+    default:
+      return <Navigate to="/login" />;
+  }
+};
+
+// Role-based Profile Edit Router
+const ProfileEditRouter = () => {
+  const { user } = useAuth();
+  
+  switch (user?.role) {
+    case 'student':
+      return <StudentProfileEditPage />;
+    case 'workplace_supervisor':
+      return <WorkplaceSupervisorProfileEditPage />;
+    case 'academic_supervisor':
+      return <AcademicSupervisorProfileEditPage />;
+    case 'admin':
+      return <AdminProfileEditPage />;
     default:
       return <Navigate to="/login" />;
   }
