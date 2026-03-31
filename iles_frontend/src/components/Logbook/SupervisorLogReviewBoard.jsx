@@ -9,6 +9,9 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
+  List,
+  ListItem,
+  ListItemText,
   MenuItem,
   Pagination,
   Stack,
@@ -37,6 +40,7 @@ const SupervisorLogReviewBoard = ({ title, subtitle }) => {
     rating: '',
   });
   const [reviewing, setReviewing] = useState(false);
+  const [auditModal, setAuditModal] = useState({ open: false, data: null, loading: false });
 
   const fetchData = async (targetPage = page) => {
     try {
@@ -74,7 +78,7 @@ const SupervisorLogReviewBoard = ({ title, subtitle }) => {
   const stats = [
     {
       label: 'Pending',
-      value: String(logs.filter((l) => l.review_status === 'pending').length),
+      value: String(logs.filter((l) => ['pending', 'under_review'].includes(l.review_status)).length),
       helper: 'Awaiting review',
       accent: '#F59E0B',
     },
@@ -106,6 +110,31 @@ const SupervisorLogReviewBoard = ({ title, subtitle }) => {
       comments: '',
       rating: '',
     });
+  };
+
+  const startReviewThenOpen = async (log) => {
+    try {
+      if (log.workflow_state === 'submitted') {
+        await logbookAPI.startSupervisorLogReview(log.id);
+      }
+      openReview(log);
+      await fetchData(page);
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Failed to start review.';
+      notifyError(msg, { title: 'Start Review Failed' });
+    }
+  };
+
+  const openAuditTrail = async (log) => {
+    try {
+      setAuditModal({ open: true, data: null, loading: true });
+      const response = await logbookAPI.getLogAuditTrail(log.id);
+      setAuditModal({ open: true, data: response.data, loading: false });
+    } catch (err) {
+      setAuditModal({ open: false, data: null, loading: false });
+      const msg = err.response?.data?.error || 'Failed to load audit trail.';
+      notifyError(msg, { title: 'Audit Trail Failed' });
+    }
   };
 
   const submitReview = async () => {
@@ -159,9 +188,11 @@ const SupervisorLogReviewBoard = ({ title, subtitle }) => {
           >
             <MenuItem value="">All</MenuItem>
             <MenuItem value="pending">Pending</MenuItem>
+            <MenuItem value="under_review">Under Review</MenuItem>
             <MenuItem value="approved">Approved</MenuItem>
             <MenuItem value="needs_revision">Needs Revision</MenuItem>
             <MenuItem value="reviewed">Reviewed</MenuItem>
+            <MenuItem value="rejected">Rejected</MenuItem>
           </TextField>
           <Button variant="outlined" onClick={() => fetchData(1)}>Apply</Button>
         </Stack>
@@ -182,8 +213,21 @@ const SupervisorLogReviewBoard = ({ title, subtitle }) => {
                     </Typography>
                   </Box>
                   <Stack direction="row" spacing={1}>
-                    <Chip label={log.review_status} size="small" color={log.review_status === 'approved' ? 'success' : log.review_status === 'needs_revision' ? 'warning' : 'default'} />
+                    <Chip
+                      label={log.workflow_state || log.review_status}
+                      size="small"
+                      color={
+                        (log.workflow_state || log.review_status) === 'approved'
+                          ? 'success'
+                          : (log.workflow_state || log.review_status) === 'needs_revision'
+                            ? 'warning'
+                            : (log.workflow_state || log.review_status) === 'rejected'
+                              ? 'error'
+                              : 'default'
+                      }
+                    />
                     <Chip label={log.submission_status} size="small" variant="outlined" />
+                    <Chip label={`Round ${log.review_round || 0}`} size="small" variant="outlined" />
                     {log.is_late && <Chip label="Late" color="warning" size="small" />}
                   </Stack>
                 </Stack>
@@ -202,11 +246,14 @@ const SupervisorLogReviewBoard = ({ title, subtitle }) => {
                 </Typography>
 
                 <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                  {log.submission_status === 'submitted' && (
-                    <Button size="small" variant="contained" onClick={() => openReview(log)}>
+                  {['submitted', 'under_review'].includes(log.workflow_state) && (
+                    <Button size="small" variant="contained" onClick={() => startReviewThenOpen(log)}>
                       Review
                     </Button>
                   )}
+                  <Button size="small" variant="outlined" onClick={() => openAuditTrail(log)}>
+                    Audit Trail
+                  </Button>
                   {log.supervisor_comments && (
                     <Chip size="small" label="Feedback added" />
                   )}
@@ -262,6 +309,46 @@ const SupervisorLogReviewBoard = ({ title, subtitle }) => {
           <Button variant="contained" onClick={submitReview} disabled={reviewing}>
             {reviewing ? 'Saving...' : 'Submit Review'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={auditModal.open} onClose={() => setAuditModal({ open: false, data: null, loading: false })} maxWidth="md" fullWidth>
+        <DialogTitle>Audit Trail & Review History</DialogTitle>
+        <DialogContent>
+          {auditModal.loading && <Alert severity="info">Loading audit trail...</Alert>}
+          {!auditModal.loading && auditModal.data && (
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Transitions</Typography>
+                <List dense>
+                  {auditModal.data.audit_trail.map((item) => (
+                    <ListItem key={item.id} divider>
+                      <ListItemText
+                        primary={`${item.action_type}: ${item.previous_state} -> ${item.new_state}`}
+                        secondary={`${item.actor_name} at ${new Date(item.created_at).toLocaleString()}${item.notes ? ` | ${item.notes}` : ''}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Review Rounds</Typography>
+                <List dense>
+                  {auditModal.data.reviews.map((review) => (
+                    <ListItem key={review.id} divider>
+                      <ListItemText
+                        primary={`Round ${review.review_round} - ${review.decision}`}
+                        secondary={`${review.supervisor_name} at ${new Date(review.reviewed_at).toLocaleString()} | Rating: ${review.rating ?? 'N/A'} | ${review.comments}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAuditModal({ open: false, data: null, loading: false })}>Close</Button>
         </DialogActions>
       </Dialog>
     </PageScaffold>

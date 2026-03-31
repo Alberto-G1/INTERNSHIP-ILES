@@ -146,10 +146,13 @@ export const logbookAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   submitStudentLog: (logId) => api.post(`/logbook/student/${logId}/submit/`, {}),
+  resubmitStudentLog: (logId) => api.post(`/logbook/student/${logId}/resubmit/`, {}),
   getStudentProgress: () => api.get('/logbook/student/progress/'),
 
   getSupervisorLogs: (params = {}) => api.get('/logbook/supervisor/', { params }),
+  startSupervisorLogReview: (logId) => api.post(`/logbook/supervisor/${logId}/start-review/`, {}),
   reviewSupervisorLog: (logId, payload) => api.post(`/logbook/supervisor/${logId}/review/`, payload),
+  getLogAuditTrail: (logId) => api.get(`/logbook/audit/${logId}/`),
 
   getAdminOverview: () => api.get('/logbook/admin/overview/'),
 };

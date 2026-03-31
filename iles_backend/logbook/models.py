@@ -26,17 +26,33 @@ class WeeklyLog(models.Model):
     )
 
     REVIEW_PENDING = 'pending'
+    REVIEW_UNDER_REVIEW = 'under_review'
     REVIEW_REVIEWED = 'reviewed'
     REVIEW_APPROVED = 'approved'
     REVIEW_NEEDS_REVISION = 'needs_revision'
     REVIEW_REJECTED = 'rejected'
     REVIEW_STATUS_CHOICES = (
         (REVIEW_PENDING, 'Pending'),
+        (REVIEW_UNDER_REVIEW, 'Under Review'),
         (REVIEW_REVIEWED, 'Reviewed'),
         (REVIEW_APPROVED, 'Approved'),
         (REVIEW_NEEDS_REVISION, 'Needs Revision'),
         (REVIEW_REJECTED, 'Rejected'),
     )
+
+    ACTION_SUBMITTED = 'submitted'
+    ACTION_REVIEW_STARTED = 'review_started'
+    ACTION_APPROVED = 'approved'
+    ACTION_NEEDS_REVISION = 'needs_revision'
+    ACTION_REJECTED = 'rejected'
+    ACTION_RESUBMITTED = 'resubmitted'
+
+    WORKFLOW_DRAFT = 'draft'
+    WORKFLOW_SUBMITTED = 'submitted'
+    WORKFLOW_UNDER_REVIEW = 'under_review'
+    WORKFLOW_APPROVED = 'approved'
+    WORKFLOW_NEEDS_REVISION = 'needs_revision'
+    WORKFLOW_REJECTED = 'rejected'
 
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -95,6 +111,7 @@ class WeeklyLog(models.Model):
         choices=REVIEW_STATUS_CHOICES,
         default=REVIEW_PENDING,
     )
+    review_round = models.PositiveIntegerField(default=0)
     is_late = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -126,6 +143,88 @@ class WeeklyLog(models.Model):
         if self.attachment:
             return self.attachment.url
         return ''
+
+    @property
+    def workflow_state(self):
+        if self.submission_status == self.SUBMISSION_DRAFT and self.review_status == self.REVIEW_PENDING:
+            return self.WORKFLOW_DRAFT
+        if self.submission_status == self.SUBMISSION_SUBMITTED and self.review_status == self.REVIEW_PENDING:
+            return self.WORKFLOW_SUBMITTED
+        if self.submission_status == self.SUBMISSION_SUBMITTED and self.review_status == self.REVIEW_UNDER_REVIEW:
+            return self.WORKFLOW_UNDER_REVIEW
+        if self.submission_status == self.SUBMISSION_SUBMITTED and self.review_status == self.REVIEW_APPROVED:
+            return self.WORKFLOW_APPROVED
+        if self.submission_status == self.SUBMISSION_DRAFT and self.review_status == self.REVIEW_NEEDS_REVISION:
+            return self.WORKFLOW_NEEDS_REVISION
+        if self.submission_status == self.SUBMISSION_DRAFT and self.review_status == self.REVIEW_REJECTED:
+            return self.WORKFLOW_REJECTED
+
+        return self.WORKFLOW_SUBMITTED
+
+    def _allowed_transitions(self):
+        return {
+            self.WORKFLOW_DRAFT: {self.WORKFLOW_SUBMITTED},
+            self.WORKFLOW_SUBMITTED: {self.WORKFLOW_UNDER_REVIEW},
+            self.WORKFLOW_UNDER_REVIEW: {
+                self.WORKFLOW_APPROVED,
+                self.WORKFLOW_NEEDS_REVISION,
+                self.WORKFLOW_REJECTED,
+            },
+            self.WORKFLOW_NEEDS_REVISION: {self.WORKFLOW_SUBMITTED},
+            self.WORKFLOW_REJECTED: {self.WORKFLOW_SUBMITTED},
+            self.WORKFLOW_APPROVED: set(),
+        }
+
+    def can_transition_to(self, target_state):
+        return target_state in self._allowed_transitions().get(self.workflow_state, set())
+
+    def _apply_state(self, target_state):
+        if target_state == self.WORKFLOW_SUBMITTED:
+            self.submission_status = self.SUBMISSION_SUBMITTED
+            self.review_status = self.REVIEW_PENDING
+        elif target_state == self.WORKFLOW_UNDER_REVIEW:
+            self.submission_status = self.SUBMISSION_SUBMITTED
+            self.review_status = self.REVIEW_UNDER_REVIEW
+        elif target_state == self.WORKFLOW_APPROVED:
+            self.submission_status = self.SUBMISSION_SUBMITTED
+            self.review_status = self.REVIEW_APPROVED
+        elif target_state == self.WORKFLOW_NEEDS_REVISION:
+            self.submission_status = self.SUBMISSION_DRAFT
+            self.review_status = self.REVIEW_NEEDS_REVISION
+        elif target_state == self.WORKFLOW_REJECTED:
+            self.submission_status = self.SUBMISSION_DRAFT
+            self.review_status = self.REVIEW_REJECTED
+        elif target_state == self.WORKFLOW_DRAFT:
+            self.submission_status = self.SUBMISSION_DRAFT
+            self.review_status = self.REVIEW_PENDING
+
+    def transition_to(self, target_state, actor=None, action_type='', notes=''):
+        previous_state = self.workflow_state
+        if not self.can_transition_to(target_state):
+            raise ValidationError(
+                {
+                    'state': f'Invalid transition: {previous_state} -> {target_state}'
+                }
+            )
+
+        self._apply_state(target_state)
+
+        now = timezone.now()
+        if target_state == self.WORKFLOW_SUBMITTED:
+            self.submitted_at = now
+        if target_state in [self.WORKFLOW_APPROVED, self.WORKFLOW_NEEDS_REVISION, self.WORKFLOW_REJECTED]:
+            self.reviewed_at = now
+
+        self.save()
+
+        WeeklyLogAuditTrail.objects.create(
+            weekly_log=self,
+            actor=actor,
+            action_type=action_type,
+            previous_state=previous_state,
+            new_state=target_state,
+            notes=notes or '',
+        )
 
     def _validate_friday(self):
         if self.week_ending_date.weekday() != 4:
@@ -212,13 +311,123 @@ class WeeklyLog(models.Model):
         self._validate_submission_rules()
         self._validate_rating()
 
-        if self.review_status == self.REVIEW_NEEDS_REVISION and self.submission_status != self.SUBMISSION_DRAFT:
-            raise ValidationError(
-                {'submission_status': 'Needs revision logs must return to draft status for student editing.'}
-            )
+        state = self.workflow_state
+        valid_states = {
+            self.WORKFLOW_DRAFT,
+            self.WORKFLOW_SUBMITTED,
+            self.WORKFLOW_UNDER_REVIEW,
+            self.WORKFLOW_APPROVED,
+            self.WORKFLOW_NEEDS_REVISION,
+            self.WORKFLOW_REJECTED,
+        }
+        if state not in valid_states:
+            raise ValidationError({'state': 'Log is in an invalid workflow state.'})
+
+        if state == self.WORKFLOW_APPROVED and self.submission_status != self.SUBMISSION_SUBMITTED:
+            raise ValidationError({'submission_status': 'Approved logs cannot be edited back to draft.'})
 
     def save(self, *args, **kwargs):
         self._set_week_number()
         self._compute_late_flag()
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class SupervisorReview(models.Model):
+    DECISION_APPROVED = 'approved'
+    DECISION_NEEDS_REVISION = 'needs_revision'
+    DECISION_REJECTED = 'rejected'
+    DECISION_CHOICES = (
+        (DECISION_APPROVED, 'Approved'),
+        (DECISION_NEEDS_REVISION, 'Needs Revision'),
+        (DECISION_REJECTED, 'Rejected'),
+    )
+
+    weekly_log = models.ForeignKey(
+        WeeklyLog,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+    )
+    supervisor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='supervisor_reviews',
+    )
+    comments = models.TextField()
+    decision = models.CharField(max_length=20, choices=DECISION_CHOICES)
+    rating = models.PositiveIntegerField(null=True, blank=True)
+    review_round = models.PositiveIntegerField()
+    reviewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'weekly_log_reviews'
+        ordering = ['-reviewed_at']
+        indexes = [
+            models.Index(fields=['weekly_log', 'review_round']),
+            models.Index(fields=['supervisor', 'reviewed_at']),
+        ]
+
+    def __str__(self):
+        return f"Review #{self.review_round} for log {self.weekly_log_id}"
+
+    def clean(self):
+        if self.supervisor.role not in ['workplace_supervisor', 'academic_supervisor']:
+            raise ValidationError({'supervisor': 'Only supervisors can review logs.'})
+
+        if not self.comments or not self.comments.strip():
+            raise ValidationError({'comments': 'Review comments are required.'})
+
+        if self.rating is not None and (self.rating < 1 or self.rating > 5):
+            raise ValidationError({'rating': 'Rating must be between 1 and 5.'})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+class WeeklyLogAuditTrail(models.Model):
+    ACTION_SUBMITTED = 'submitted'
+    ACTION_REVIEW_STARTED = 'review_started'
+    ACTION_APPROVED = 'approved'
+    ACTION_NEEDS_REVISION = 'needs_revision'
+    ACTION_REJECTED = 'rejected'
+    ACTION_RESUBMITTED = 'resubmitted'
+
+    ACTION_TYPE_CHOICES = (
+        (ACTION_SUBMITTED, 'Submitted'),
+        (ACTION_REVIEW_STARTED, 'Review Started'),
+        (ACTION_APPROVED, 'Approved'),
+        (ACTION_NEEDS_REVISION, 'Needs Revision'),
+        (ACTION_REJECTED, 'Rejected'),
+        (ACTION_RESUBMITTED, 'Resubmitted'),
+    )
+
+    weekly_log = models.ForeignKey(
+        WeeklyLog,
+        on_delete=models.CASCADE,
+        related_name='audit_trail',
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='weekly_log_actions',
+    )
+    action_type = models.CharField(max_length=30, choices=ACTION_TYPE_CHOICES)
+    previous_state = models.CharField(max_length=30)
+    new_state = models.CharField(max_length=30)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'weekly_log_audit_trail'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['weekly_log', 'created_at']),
+            models.Index(fields=['actor', 'created_at']),
+            models.Index(fields=['action_type']),
+        ]
+
+    def __str__(self):
+        return f"{self.action_type} on log {self.weekly_log_id}"

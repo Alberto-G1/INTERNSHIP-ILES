@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from placements.models import Placement
 
-from .models import WeeklyLog
+from .models import SupervisorReview, WeeklyLog, WeeklyLogAuditTrail
 
 
 class WeeklyLogSerializer(serializers.ModelSerializer):
@@ -13,6 +13,9 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
     placement_summary = serializers.SerializerMethodField()
     reviewed_by_name = serializers.SerializerMethodField()
     attachment_url = serializers.SerializerMethodField()
+    workflow_state = serializers.ReadOnlyField()
+    can_student_edit = serializers.SerializerMethodField()
+    can_student_submit = serializers.SerializerMethodField()
 
     class Meta:
         model = WeeklyLog
@@ -39,7 +42,11 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
             'reviewed_by_name',
             'submission_status',
             'review_status',
+            'workflow_state',
+            'review_round',
             'is_late',
+            'can_student_edit',
+            'can_student_submit',
             'created_at',
             'updated_at',
             'submitted_at',
@@ -61,6 +68,9 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
             'student_name',
             'placement_summary',
             'attachment_url',
+            'workflow_state',
+            'can_student_edit',
+            'can_student_submit',
         ]
 
     def get_student_name(self, obj):
@@ -81,6 +91,12 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
     def get_placement_summary(self, obj):
         organization = obj.placement.organization.name if obj.placement.organization else 'Unknown Organization'
         return f"{organization} ({obj.placement.start_date} to {obj.placement.end_date})"
+
+    def get_can_student_edit(self, obj):
+        return obj.workflow_state in [WeeklyLog.WORKFLOW_DRAFT, WeeklyLog.WORKFLOW_NEEDS_REVISION, WeeklyLog.WORKFLOW_REJECTED]
+
+    def get_can_student_submit(self, obj):
+        return obj.workflow_state in [WeeklyLog.WORKFLOW_DRAFT, WeeklyLog.WORKFLOW_NEEDS_REVISION, WeeklyLog.WORKFLOW_REJECTED]
 
 
 class StudentWeeklyLogCreateSerializer(WeeklyLogSerializer):
@@ -125,25 +141,60 @@ class StudentWeeklyLogUpdateSerializer(WeeklyLogSerializer):
 class WeeklyLogSubmitSerializer(serializers.Serializer):
     def validate(self, attrs):
         weekly_log = self.context['weekly_log']
+        state = weekly_log.workflow_state
 
-        weekly_log.submission_status = WeeklyLog.SUBMISSION_SUBMITTED
-        weekly_log.review_status = WeeklyLog.REVIEW_PENDING
-        weekly_log.submitted_at = timezone.now()
-        weekly_log.full_clean()
+        if state == WeeklyLog.WORKFLOW_APPROVED:
+            raise serializers.ValidationError('Approved logs are final and cannot be resubmitted.')
+
+        if state not in [
+            WeeklyLog.WORKFLOW_DRAFT,
+            WeeklyLog.WORKFLOW_NEEDS_REVISION,
+            WeeklyLog.WORKFLOW_REJECTED,
+        ]:
+            raise serializers.ValidationError('Only draft or returned logs can be submitted.')
+
         return attrs
 
     def save(self, **kwargs):
         weekly_log = self.context['weekly_log']
-        weekly_log.submission_status = WeeklyLog.SUBMISSION_SUBMITTED
-        weekly_log.review_status = WeeklyLog.REVIEW_PENDING
-        weekly_log.submitted_at = timezone.now()
-        weekly_log.save(update_fields=['submission_status', 'review_status', 'submitted_at', 'updated_at', 'is_late'])
+        action = WeeklyLog.ACTION_SUBMITTED
+        notes = 'Initial submission.'
+        if weekly_log.workflow_state in [WeeklyLog.WORKFLOW_NEEDS_REVISION, WeeklyLog.WORKFLOW_REJECTED]:
+            action = WeeklyLog.ACTION_RESUBMITTED
+            notes = 'Resubmitted after supervisor feedback.'
+
+        weekly_log.transition_to(
+            WeeklyLog.WORKFLOW_SUBMITTED,
+            actor=self.context['request'].user,
+            action_type=action,
+            notes=notes,
+        )
+        return weekly_log
+
+
+class WeeklyLogStartReviewSerializer(serializers.Serializer):
+    def validate(self, attrs):
+        weekly_log = self.context['weekly_log']
+        if weekly_log.workflow_state != WeeklyLog.WORKFLOW_SUBMITTED:
+            raise serializers.ValidationError('Only submitted logs can be moved into review.')
+        return attrs
+
+    def save(self, **kwargs):
+        weekly_log = self.context['weekly_log']
+        weekly_log.review_round += 1
+        weekly_log.save(update_fields=['review_round', 'updated_at'])
+        weekly_log.transition_to(
+            WeeklyLog.WORKFLOW_UNDER_REVIEW,
+            actor=self.context['request'].user,
+            action_type=WeeklyLog.ACTION_REVIEW_STARTED,
+            notes=f'Review round {weekly_log.review_round} started.',
+        )
         return weekly_log
 
 
 class WeeklyLogReviewSerializer(serializers.Serializer):
     decision = serializers.ChoiceField(choices=['approve', 'needs_revision', 'reject'])
-    comments = serializers.CharField(required=False, allow_blank=True)
+    comments = serializers.CharField(required=True, allow_blank=False)
     rating = serializers.IntegerField(required=False, min_value=1, max_value=5)
 
     def validate(self, attrs):
@@ -151,11 +202,14 @@ class WeeklyLogReviewSerializer(serializers.Serializer):
         decision = attrs.get('decision')
         comments = (attrs.get('comments') or '').strip()
 
-        if weekly_log.submission_status != WeeklyLog.SUBMISSION_SUBMITTED:
-            raise serializers.ValidationError('Only submitted logs can be reviewed.')
+        if weekly_log.workflow_state != WeeklyLog.WORKFLOW_UNDER_REVIEW:
+            raise serializers.ValidationError('Log must be in Under Review state before decision.')
 
-        if decision in ['needs_revision', 'reject'] and not comments:
-            raise serializers.ValidationError({'comments': 'Comments are required for revision or rejection.'})
+        if not comments:
+            raise serializers.ValidationError({'comments': 'Comments are required for all review decisions.'})
+
+        if decision == 'approve' and attrs.get('rating') is None:
+            raise serializers.ValidationError({'rating': 'Rating is required when approving logs.'})
 
         return attrs
 
@@ -171,20 +225,47 @@ class WeeklyLogReviewSerializer(serializers.Serializer):
         weekly_log.reviewed_by = request_user
         weekly_log.reviewed_at = timezone.now()
 
+        review = SupervisorReview.objects.create(
+            weekly_log=weekly_log,
+            supervisor=request_user,
+            comments=comments,
+            decision={
+                'approve': SupervisorReview.DECISION_APPROVED,
+                'needs_revision': SupervisorReview.DECISION_NEEDS_REVISION,
+                'reject': SupervisorReview.DECISION_REJECTED,
+            }[decision],
+            rating=rating,
+            review_round=weekly_log.review_round,
+        )
+
         if decision == 'approve':
             weekly_log.supervisor_decision = WeeklyLog.REVIEW_APPROVED
-            weekly_log.review_status = WeeklyLog.REVIEW_APPROVED
-            weekly_log.submission_status = WeeklyLog.SUBMISSION_SUBMITTED
+            weekly_log.save(update_fields=['supervisor_comments', 'supervisor_rating', 'reviewed_by', 'reviewed_at', 'supervisor_decision', 'updated_at'])
+            weekly_log.transition_to(
+                WeeklyLog.WORKFLOW_APPROVED,
+                actor=request_user,
+                action_type=WeeklyLog.ACTION_APPROVED,
+                notes=f'Round {review.review_round}: {comments}',
+            )
         elif decision == 'needs_revision':
             weekly_log.supervisor_decision = WeeklyLog.REVIEW_NEEDS_REVISION
-            weekly_log.review_status = WeeklyLog.REVIEW_NEEDS_REVISION
-            weekly_log.submission_status = WeeklyLog.SUBMISSION_DRAFT
+            weekly_log.save(update_fields=['supervisor_comments', 'supervisor_rating', 'reviewed_by', 'reviewed_at', 'supervisor_decision', 'updated_at'])
+            weekly_log.transition_to(
+                WeeklyLog.WORKFLOW_NEEDS_REVISION,
+                actor=request_user,
+                action_type=WeeklyLog.ACTION_NEEDS_REVISION,
+                notes=f'Round {review.review_round}: {comments}',
+            )
         else:
             weekly_log.supervisor_decision = WeeklyLog.REVIEW_REJECTED
-            weekly_log.review_status = WeeklyLog.REVIEW_REVIEWED
-            weekly_log.submission_status = WeeklyLog.SUBMISSION_SUBMITTED
+            weekly_log.save(update_fields=['supervisor_comments', 'supervisor_rating', 'reviewed_by', 'reviewed_at', 'supervisor_decision', 'updated_at'])
+            weekly_log.transition_to(
+                WeeklyLog.WORKFLOW_REJECTED,
+                actor=request_user,
+                action_type=WeeklyLog.ACTION_REJECTED,
+                notes=f'Round {review.review_round}: {comments}',
+            )
 
-        weekly_log.save()
         return weekly_log
 
 
@@ -194,7 +275,54 @@ class StudentLogProgressSerializer(serializers.Serializer):
     total_expected_weeks = serializers.IntegerField()
     total_logs_submitted = serializers.IntegerField()
     approved_logs = serializers.IntegerField()
+    pending_logs = serializers.IntegerField()
+    revisions_count = serializers.IntegerField()
+    completion_percentage = serializers.FloatField()
     missing_weeks = serializers.ListField(child=serializers.DateField())
+
+
+class SupervisorReviewSerializer(serializers.ModelSerializer):
+    supervisor_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SupervisorReview
+        fields = [
+            'id',
+            'weekly_log',
+            'supervisor',
+            'supervisor_name',
+            'comments',
+            'decision',
+            'rating',
+            'review_round',
+            'reviewed_at',
+        ]
+
+    def get_supervisor_name(self, obj):
+        return obj.supervisor.get_full_name()
+
+
+class WeeklyLogAuditTrailSerializer(serializers.ModelSerializer):
+    actor_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WeeklyLogAuditTrail
+        fields = [
+            'id',
+            'weekly_log',
+            'actor',
+            'actor_name',
+            'action_type',
+            'previous_state',
+            'new_state',
+            'notes',
+            'created_at',
+        ]
+
+    def get_actor_name(self, obj):
+        if not obj.actor:
+            return 'System'
+        return obj.actor.get_full_name()
 
 
 def compute_missing_weeks(placement, submitted_week_end_dates):

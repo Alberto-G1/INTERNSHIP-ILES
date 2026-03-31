@@ -12,10 +12,13 @@ from placements.models import Placement
 
 from .models import WeeklyLog
 from .serializers import (
+    SupervisorReviewSerializer,
     StudentLogProgressSerializer,
     StudentWeeklyLogCreateSerializer,
     StudentWeeklyLogUpdateSerializer,
+    WeeklyLogAuditTrailSerializer,
     WeeklyLogReviewSerializer,
+    WeeklyLogStartReviewSerializer,
     WeeklyLogSerializer,
     WeeklyLogSubmitSerializer,
     compute_missing_weeks,
@@ -64,7 +67,11 @@ class StudentWeeklyLogDetailView(APIView):
     def patch(self, request, log_id):
         weekly_log = self.get_object(request, log_id)
 
-        editable = weekly_log.submission_status == WeeklyLog.SUBMISSION_DRAFT
+        editable = weekly_log.workflow_state in [
+            WeeklyLog.WORKFLOW_DRAFT,
+            WeeklyLog.WORKFLOW_NEEDS_REVISION,
+            WeeklyLog.WORKFLOW_REJECTED,
+        ]
         if not editable:
             return Response(
                 {'error': 'Only draft or revision-requested logs can be edited.'},
@@ -88,11 +95,18 @@ class StudentWeeklyLogSubmitView(APIView):
     def post(self, request, log_id):
         weekly_log = get_object_or_404(WeeklyLog, id=log_id, student=request.user)
 
-        serializer = WeeklyLogSubmitSerializer(data=request.data, context={'weekly_log': weekly_log})
+        serializer = WeeklyLogSubmitSerializer(
+            data=request.data,
+            context={'weekly_log': weekly_log, 'request': request},
+        )
         serializer.is_valid(raise_exception=True)
         submitted = serializer.save()
 
         return Response(WeeklyLogSerializer(submitted, context={'request': request}).data)
+
+
+class StudentWeeklyLogResubmitView(StudentWeeklyLogSubmitView):
+    pass
 
 
 class StudentLogProgressView(APIView):
@@ -120,6 +134,16 @@ class StudentLogProgressView(APIView):
                     'total_expected_weeks': len(week_dates) + len(missing),
                     'total_logs_submitted': logs.filter(submission_status=WeeklyLog.SUBMISSION_SUBMITTED).count(),
                     'approved_logs': logs.filter(review_status=WeeklyLog.REVIEW_APPROVED).count(),
+                    'pending_logs': logs.filter(review_status=WeeklyLog.REVIEW_PENDING).count(),
+                    'revisions_count': logs.filter(review_status=WeeklyLog.REVIEW_NEEDS_REVISION).count(),
+                    'completion_percentage': round(
+                        (
+                            logs.filter(review_status=WeeklyLog.REVIEW_APPROVED).count()
+                            / max(1, (len(week_dates) + len(missing)))
+                        )
+                        * 100,
+                        2,
+                    ),
                     'missing_weeks': missing,
                 }
             )
@@ -196,12 +220,74 @@ class SupervisorWeeklyLogReviewView(APIView):
         return Response(WeeklyLogSerializer(reviewed, context={'request': request}).data)
 
 
+class SupervisorWeeklyLogStartReviewView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAnySupervisor]
+
+    def get_object(self, request, log_id):
+        base = WeeklyLog.objects.select_related('placement')
+        if request.user.role == 'workplace_supervisor':
+            return get_object_or_404(base, id=log_id, placement__workplace_supervisor=request.user)
+        return get_object_or_404(base, id=log_id, placement__academic_supervisor=request.user)
+
+    def post(self, request, log_id):
+        weekly_log = self.get_object(request, log_id)
+
+        serializer = WeeklyLogStartReviewSerializer(
+            data=request.data,
+            context={'weekly_log': weekly_log, 'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        started = serializer.save()
+        return Response(WeeklyLogSerializer(started, context={'request': request}).data)
+
+
+class WeeklyLogAuditTrailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _can_access(self, request, weekly_log):
+        if request.user.role == 'admin':
+            return True
+
+        if request.user.role == 'student':
+            return weekly_log.student_id == request.user.id
+
+        if request.user.role == 'workplace_supervisor':
+            return weekly_log.placement.workplace_supervisor_id == request.user.id
+
+        if request.user.role == 'academic_supervisor':
+            return weekly_log.placement.academic_supervisor_id == request.user.id
+
+        return False
+
+    def get(self, request, log_id):
+        weekly_log = get_object_or_404(
+            WeeklyLog.objects.select_related('placement'),
+            id=log_id,
+        )
+
+        if not self._can_access(request, weekly_log):
+            return Response({'error': 'You do not have access to this audit trail.'}, status=status.HTTP_403_FORBIDDEN)
+
+        audits = weekly_log.audit_trail.select_related('actor').all()
+        reviews = weekly_log.reviews.select_related('supervisor').all()
+
+        return Response(
+            {
+                'log': WeeklyLogSerializer(weekly_log, context={'request': request}).data,
+                'audit_trail': WeeklyLogAuditTrailSerializer(audits, many=True).data,
+                'reviews': SupervisorReviewSerializer(reviews, many=True).data,
+            }
+        )
+
+
 class AdminLogbookOverviewView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
     def get(self, request):
         total_logs = WeeklyLog.objects.count()
-        pending_review = WeeklyLog.objects.filter(review_status=WeeklyLog.REVIEW_PENDING).count()
+        pending_review = WeeklyLog.objects.filter(
+            review_status__in=[WeeklyLog.REVIEW_PENDING, WeeklyLog.REVIEW_UNDER_REVIEW]
+        ).count()
         approved = WeeklyLog.objects.filter(review_status=WeeklyLog.REVIEW_APPROVED).count()
         revisions = WeeklyLog.objects.filter(review_status=WeeklyLog.REVIEW_NEEDS_REVISION).count()
         late_submissions = WeeklyLog.objects.filter(is_late=True).count()
