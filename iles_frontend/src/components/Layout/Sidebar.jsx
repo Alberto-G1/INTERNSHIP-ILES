@@ -13,7 +13,8 @@ import {
   Typography,
   Chip,
   Avatar,
-  Tooltip,
+  IconButton,
+  useTheme,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -28,9 +29,11 @@ import {
   BusinessCenter as PlacementsIcon,
   Logout as LogoutIcon,
   FiberManualRecord as DotIcon,
+  ChevronLeft as ChevronLeftIcon,
 } from '@mui/icons-material';
 import {
   DRAWER_WIDTH,
+  COLLAPSED_DRAWER_WIDTH,
   NAVIGATION,
   getRoleColor,
   getRoleLabel,
@@ -57,7 +60,6 @@ const navigation = NAVIGATION.map((item) => {
   };
 });
 
-/* ─── tiny keyframe injected once ─── */
 const STYLES = `
   @keyframes sidebarFadeIn {
     from { opacity: 0; transform: translateX(-8px); }
@@ -81,9 +83,10 @@ const STYLES = `
   }
 `;
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
   const { user, logout } = useAuth();
   const [pendingReviews] = useState(3);
   const [unreadNotifications] = useState(5);
@@ -92,7 +95,6 @@ const Sidebar = () => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // inject styles once
     if (!document.getElementById('sidebar-keyframes')) {
       const tag = document.createElement('style');
       tag.id = 'sidebar-keyframes';
@@ -123,33 +125,24 @@ const Sidebar = () => {
     ? `${user.first_name} ${user.last_name || ''}`.trim()
     : user?.username;
 
-  return (
-    <Drawer
-      variant="permanent"
+  const drawerContent = (
+    <Box
       sx={{
-        width: DRAWER_WIDTH,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: DRAWER_WIDTH,
-          boxSizing: 'border-box',
-          borderRight: '1px solid var(--gray-200)',
-          bgcolor: 'background.paper',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          /* subtle inner shadow on right edge */
-          boxShadow: '2px 0 12px rgba(0,0,0,0.04)',
-        },
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        bgcolor: 'background.paper',
       }}
     >
-      {/* ── Logo / Brand ── */}
+      {/* Header with close button for mobile */}
       <Box
         sx={{
           p: '18px 20px 16px',
-          borderBottom: '1px solid var(--gray-200)',
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateY(0)' : 'translateY(-6px)',
-          transition: 'opacity 0.35s ease 0.05s, transform 0.35s ease 0.05s',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -182,7 +175,7 @@ const Sidebar = () => {
                 fontSize: '15px',
                 lineHeight: 1.1,
                 letterSpacing: '0.5px',
-                color: 'var(--ink)',
+                color: 'text.primary',
                 fontFamily: "'Poppins', sans-serif",
               }}
             >
@@ -190,15 +183,20 @@ const Sidebar = () => {
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
               <DotIcon sx={{ fontSize: 6, color: 'var(--green-400)' }} />
-              <Typography sx={{ color: 'var(--gray-400)', fontSize: '10px', letterSpacing: '0.6px' }}>
+              <Typography sx={{ color: 'text.secondary', fontSize: '10px', letterSpacing: '0.6px' }}>
                 v2.4.0
               </Typography>
             </Box>
           </Box>
         </Box>
+        {isMobile && (
+          <IconButton onClick={onDrawerToggle} size="small">
+            <ChevronLeftIcon />
+          </IconButton>
+        )}
       </Box>
 
-      {/* ── Navigation ── */}
+      {/* Navigation */}
       <Box sx={{ flex: 1, py: 1.5, overflowY: 'auto', overflowX: 'hidden' }}>
         {groupedNav.map(({ section, items }, sectionIdx) =>
           items.length > 0 ? (
@@ -213,13 +211,12 @@ const Sidebar = () => {
                 transition: `opacity 0.35s ease ${0.1 + sectionIdx * 0.06}s, transform 0.35s ease ${0.1 + sectionIdx * 0.06}s`,
               }}
             >
-              {/* Section label */}
               <Typography
                 sx={{
                   px: 1,
                   pb: 0.6,
                   fontSize: '9.5px',
-                  color: 'var(--gray-400)',
+                  color: 'text.secondary',
                   letterSpacing: '1px',
                   textTransform: 'uppercase',
                   fontWeight: 600,
@@ -253,7 +250,10 @@ const Sidebar = () => {
                       }}
                     >
                       <ListItemButton
-                        onClick={() => navigate(item.path)}
+                        onClick={() => {
+                          navigate(item.path);
+                          if (isMobile) onDrawerToggle();
+                        }}
                         onMouseEnter={() => setHoveredPath(item.path)}
                         onMouseLeave={() => setHoveredPath(null)}
                         sx={{
@@ -263,13 +263,12 @@ const Sidebar = () => {
                           position: 'relative',
                           overflow: 'hidden',
                           bgcolor: isActive
-                            ? 'var(--green-50)'
+                            ? 'action.selected'
                             : isHovered
-                            ? 'var(--gray-100)'
+                            ? 'action.hover'
                             : 'transparent',
                           animation: isActive ? 'activeGlow 3s ease-in-out infinite' : 'none',
                           transition: 'background-color 0.18s ease, box-shadow 0.18s ease',
-                          /* Active left accent bar */
                           '&::before': isActive
                             ? {
                                 content: '""',
@@ -283,21 +282,12 @@ const Sidebar = () => {
                                 transition: 'height 0.2s ease',
                               }
                             : {},
-                          /* Hover ripple background */
-                          '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            inset: 0,
-                            bgcolor: 'transparent',
-                            transition: 'background-color 0.15s ease',
-                          },
-                          '&:hover': { bgcolor: isActive ? 'var(--green-50)' : 'var(--gray-100)' },
                         }}
                       >
                         <ListItemIcon
                           sx={{
                             minWidth: 28,
-                            color: isActive ? 'var(--green-700)' : isHovered ? 'var(--green-600)' : 'var(--gray-500)',
+                            color: isActive ? 'var(--green-700)' : isHovered ? 'var(--green-600)' : 'text.secondary',
                             transition: 'color 0.18s ease, transform 0.18s ease',
                             transform: isHovered && !isActive ? 'scale(1.1)' : 'scale(1)',
                           }}
@@ -310,7 +300,7 @@ const Sidebar = () => {
                           primaryTypographyProps={{
                             fontSize: '13px',
                             fontWeight: isActive ? 600 : 400,
-                            color: isActive ? 'var(--green-900)' : isHovered ? 'var(--gray-700)' : 'var(--gray-600)',
+                            color: isActive ? 'var(--green-900)' : isHovered ? 'text.primary' : 'text.secondary',
                             fontFamily: "'Poppins', sans-serif",
                             transition: 'color 0.18s ease, font-weight 0.18s ease',
                           }}
@@ -343,29 +333,29 @@ const Sidebar = () => {
         )}
       </Box>
 
-      {/* ── User Footer ── */}
+      {/* User Footer */}
       <Box
         sx={{
           p: 1.5,
-          borderTop: '1px solid var(--gray-200)',
+          borderTop: '1px solid',
+          borderColor: 'divider',
           opacity: mounted ? 1 : 0,
           transform: mounted ? 'translateY(0)' : 'translateY(8px)',
           transition: 'opacity 0.4s ease 0.3s, transform 0.4s ease 0.3s',
         }}
       >
-        {/* Profile row */}
         <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
-            onClick={() => navigate('/profile')}
+            onClick={() => {
+              navigate('/profile');
+              if (isMobile) onDrawerToggle();
+            }}
             sx={{
               borderRadius: '8px',
               py: 0.85,
               px: 1.1,
               transition: 'background-color 0.18s ease',
-              '&:hover': { bgcolor: 'var(--gray-100)' },
-              '&:hover .sidebar-avatar': {
-                animation: 'avatarRing 1.2s ease',
-              },
+              '&:hover': { bgcolor: 'action.hover' },
             }}
           >
             <ListItemIcon sx={{ minWidth: 34 }}>
@@ -391,13 +381,13 @@ const Sidebar = () => {
               primaryTypographyProps={{
                 fontSize: '12.5px',
                 fontWeight: 500,
-                color: 'var(--ink)',
+                color: 'text.primary',
                 fontFamily: "'Poppins', sans-serif",
                 noWrap: true,
               }}
               secondaryTypographyProps={{
                 fontSize: '10.5px',
-                color: 'var(--gray-400)',
+                color: 'text.secondary',
                 fontFamily: "'Poppins', sans-serif",
                 noWrap: true,
               }}
@@ -405,7 +395,6 @@ const Sidebar = () => {
           </ListItemButton>
         </ListItem>
 
-        {/* Logout row */}
         <ListItem disablePadding>
           <ListItemButton
             onClick={() => setSignoutModalOpen(true)}
@@ -426,9 +415,8 @@ const Sidebar = () => {
                 className="logout-icon"
                 sx={{
                   fontSize: 16,
-                  color: 'var(--gray-400)',
+                  color: 'text.secondary',
                   transition: 'transform 0.2s ease, color 0.18s ease',
-                  '.MuiListItemButton-root:hover &': { color: 'var(--coral-700)' },
                 }}
               />
             </ListItemIcon>
@@ -436,7 +424,7 @@ const Sidebar = () => {
               primary="Logout"
               primaryTypographyProps={{
                 fontSize: '13px',
-                color: 'var(--gray-500)',
+                color: 'text.secondary',
                 fontFamily: "'Poppins', sans-serif",
                 className: 'logout-text',
                 sx: { transition: 'color 0.18s ease' },
@@ -457,6 +445,35 @@ const Sidebar = () => {
         variant="signout"
         highlight={userName || ''}
       />
+    </Box>
+  );
+
+  return (
+    <Drawer
+      variant={isMobile ? 'temporary' : 'permanent'}
+      open={isMobile ? mobileOpen : true}
+      onClose={onDrawerToggle}
+      ModalProps={{
+        keepMounted: true, // Better mobile performance
+      }}
+      sx={{
+        width: DRAWER_WIDTH,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+          width: DRAWER_WIDTH,
+          boxSizing: 'border-box',
+          borderRight: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          overflow: 'hidden',
+          ...(isMobile && {
+            backgroundImage: 'none',
+            boxShadow: theme.shadows[8],
+          }),
+        },
+      }}
+    >
+      {drawerContent}
     </Drawer>
   );
 };

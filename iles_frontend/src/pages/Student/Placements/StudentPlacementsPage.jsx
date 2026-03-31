@@ -5,6 +5,10 @@ import {
   Button,
   Chip,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   Link,
   MenuItem,
@@ -47,6 +51,20 @@ const emptyForm = {
   placement_letter: null,
 };
 
+const emptyOrganizationForm = {
+  name: '',
+  industry: '',
+  contact_email: '',
+  contact_phone: '',
+  region: '',
+  district: '',
+  county: '',
+  sub_county: '',
+  parish: '',
+  village: '',
+  full_address: '',
+};
+
 const StudentPlacementsPage = () => {
   const [placements, setPlacements] = useState([]);
   const [organizations, setOrganizations] = useState([]);
@@ -56,6 +74,10 @@ const StudentPlacementsPage = () => {
   const [submittingId, setSubmittingId] = useState(null);
   const [error, setError] = useState('');
   const [confirmSubmit, setConfirmSubmit] = useState({ open: false, placementId: null });
+  const [placementModalOpen, setPlacementModalOpen] = useState(false);
+  const [useNewOrganization, setUseNewOrganization] = useState(false);
+  const [organizationForm, setOrganizationForm] = useState(emptyOrganizationForm);
+  const [organizationSaving, setOrganizationSaving] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -63,7 +85,7 @@ const StudentPlacementsPage = () => {
       setError('');
       const [placementsRes, organizationsRes] = await Promise.all([
         placementsAPI.getMyPlacements(),
-        placementsAPI.getOrganizations({ verified: 'true' }),
+        placementsAPI.getOrganizations(),
       ]);
       setPlacements(placementsRes.data || []);
       setOrganizations(organizationsRes.data || []);
@@ -101,6 +123,13 @@ const StudentPlacementsPage = () => {
     setForm(emptyForm);
   };
 
+  const openCreatePlacementModal = () => {
+    resetForm();
+    setUseNewOrganization(false);
+    setOrganizationForm(emptyOrganizationForm);
+    setPlacementModalOpen(true);
+  };
+
   const loadDraftToForm = (placement) => {
     setForm({
       id: placement.id,
@@ -112,11 +141,14 @@ const StudentPlacementsPage = () => {
       work_mode: placement.work_mode || 'on-site',
       placement_letter: null,
     });
+    setUseNewOrganization(false);
+    setOrganizationForm(emptyOrganizationForm);
+    setPlacementModalOpen(true);
   };
 
-  const buildFormData = () => {
+  const buildFormData = (organizationId = form.organization_id) => {
     const payload = new FormData();
-    if (form.organization_id) payload.append('organization_id', form.organization_id);
+    if (organizationId) payload.append('organization_id', organizationId);
     if (form.position_role) payload.append('position_role', form.position_role);
     if (form.start_date) payload.append('start_date', form.start_date);
     if (form.end_date) payload.append('end_date', form.end_date);
@@ -129,7 +161,37 @@ const StudentPlacementsPage = () => {
   const handleSaveDraft = async () => {
     try {
       setSaving(true);
-      const payload = buildFormData();
+      let organizationId = form.organization_id;
+
+      if (useNewOrganization) {
+        if (
+          !organizationForm.name.trim()
+          || !organizationForm.region.trim()
+          || !organizationForm.district.trim()
+          || !organizationForm.full_address.trim()
+        ) {
+          notifyError('Provide organization name, region, district, and full address.', {
+            title: 'Organization Details Missing',
+          });
+          return;
+        }
+
+        setOrganizationSaving(true);
+        const orgResponse = await placementsAPI.createOrganization({
+          ...organizationForm,
+          is_verified: false,
+        });
+
+        const createdOrg = orgResponse.data;
+        organizationId = createdOrg.id;
+        setOrganizations((prev) => {
+          const exists = prev.some((item) => item.id === createdOrg.id);
+          if (exists) return prev;
+          return [createdOrg, ...prev];
+        });
+      }
+
+      const payload = buildFormData(organizationId);
 
       if (form.id) {
         await placementsAPI.updateDraftPlacement(form.id, payload);
@@ -141,11 +203,15 @@ const StudentPlacementsPage = () => {
 
       await fetchData();
       resetForm();
+      setUseNewOrganization(false);
+      setOrganizationForm(emptyOrganizationForm);
+      setPlacementModalOpen(false);
     } catch (err) {
       const msg = err.response?.data?.error || 'Failed to save draft placement.';
       notifyError(msg, { title: 'Save Failed' });
     } finally {
       setSaving(false);
+      setOrganizationSaving(false);
     }
   };
 
@@ -176,6 +242,10 @@ const StudentPlacementsPage = () => {
 
   const draftPlacements = placements.filter((p) => p.submission_status === 'draft');
 
+  const handleOrganizationFieldChange = (field, value) => {
+    setOrganizationForm((prev) => ({ ...prev, [field]: value }));
+  };
+
   return (
     <PageScaffold
       title="My Placements"
@@ -186,89 +256,16 @@ const StudentPlacementsPage = () => {
         {error && <Alert severity="error">{error}</Alert>}
 
         <Box>
-          <Typography sx={{ fontWeight: 600, mb: 1 }}>Placement Draft Form</Typography>
-          <Grid container spacing={1.4}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                select
-                fullWidth
-                label="Organization"
-                value={form.organization_id}
-                onChange={(e) => handleFieldChange('organization_id', e.target.value)}
-              >
-                {organizations.map((org) => (
-                  <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Position / Role"
-                value={form.position_role}
-                onChange={(e) => handleFieldChange('position_role', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                type="date"
-                label="Start Date"
-                InputLabelProps={{ shrink: true }}
-                value={form.start_date}
-                onChange={(e) => handleFieldChange('start_date', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                type="date"
-                label="End Date"
-                InputLabelProps={{ shrink: true }}
-                value={form.end_date}
-                onChange={(e) => handleFieldChange('end_date', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                type="number"
-                label="Allowance (Optional)"
-                value={form.allowance}
-                onChange={(e) => handleFieldChange('allowance', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                select
-                fullWidth
-                label="Work Mode"
-                value={form.work_mode}
-                onChange={(e) => handleFieldChange('work_mode', e.target.value)}
-              >
-                {workModes.map((mode) => (
-                  <MenuItem key={mode.value} value={mode.value}>{mode.label}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Button variant="outlined" component="label" fullWidth sx={{ height: '54px' }}>
-                {form.placement_letter ? 'Letter Selected (PDF)' : 'Upload Placement Letter (PDF)'}
-                <input
-                  type="file"
-                  hidden
-                  accept="application/pdf"
-                  onChange={(e) => handleFieldChange('placement_letter', e.target.files?.[0] || null)}
-                />
-              </Button>
-            </Grid>
-          </Grid>
-
-          <Stack direction="row" spacing={1} sx={{ mt: 1.4 }}>
-            <Button variant="contained" onClick={handleSaveDraft} disabled={saving}>
-              {saving ? 'Saving...' : form.id ? 'Update Draft' : 'Save Draft'}
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>
+            <Box>
+              <Typography sx={{ fontWeight: 600 }}>Placement Draft</Typography>
+              <Typography sx={{ fontSize: '12px', color: 'text.secondary' }}>
+                Use the popup form to create or update your draft placement before submission.
+              </Typography>
+            </Box>
+            <Button variant="contained" onClick={openCreatePlacementModal}>
+              Create Draft Placement
             </Button>
-            <Button variant="outlined" onClick={resetForm} disabled={saving}>Reset</Button>
           </Stack>
         </Box>
 
@@ -373,6 +370,245 @@ const StudentPlacementsPage = () => {
           cancelLabel="Keep Draft"
           variant="submit"
         />
+
+        <Dialog
+          open={placementModalOpen}
+          onClose={() => {
+            setPlacementModalOpen(false);
+            resetForm();
+          }}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>{form.id ? 'Edit Draft Placement' : 'Create Draft Placement'}</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={1.4} sx={{ mt: 0.1 }}>
+              <Grid item xs={12} md={6}>
+                <Stack spacing={0.8}>
+                  {!useNewOrganization ? (
+                    <TextField
+                      select
+                      fullWidth
+                      label="Organization"
+                      value={form.organization_id}
+                      onChange={(e) => handleFieldChange('organization_id', e.target.value)}
+                    >
+                      {organizations.map((org) => (
+                        <MenuItem key={org.id} value={org.id}>
+                          {org.name} {org.is_verified ? '' : '(Unverified)'}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  ) : (
+                    <Alert severity="info" sx={{ mb: 0.5 }}>
+                      Enter your specific organization details below. It will be created and linked to this placement.
+                    </Alert>
+                  )}
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      size="small"
+                      variant={useNewOrganization ? 'outlined' : 'contained'}
+                      onClick={() => setUseNewOrganization(false)}
+                    >
+                      Select Existing
+                    </Button>
+                    <Button
+                      size="small"
+                      variant={useNewOrganization ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setUseNewOrganization(true);
+                        handleFieldChange('organization_id', '');
+                      }}
+                    >
+                      Add Specific Organization
+                    </Button>
+                  </Stack>
+                </Stack>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Position / Role"
+                  value={form.position_role}
+                  onChange={(e) => handleFieldChange('position_role', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Start Date"
+                  InputLabelProps={{ shrink: true }}
+                  value={form.start_date}
+                  onChange={(e) => handleFieldChange('start_date', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="End Date"
+                  InputLabelProps={{ shrink: true }}
+                  value={form.end_date}
+                  onChange={(e) => handleFieldChange('end_date', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Allowance (Optional)"
+                  value={form.allowance}
+                  onChange={(e) => handleFieldChange('allowance', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Work Mode"
+                  value={form.work_mode}
+                  onChange={(e) => handleFieldChange('work_mode', e.target.value)}
+                >
+                  {workModes.map((mode) => (
+                    <MenuItem key={mode.value} value={mode.value}>{mode.label}</MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Button variant="outlined" component="label" fullWidth sx={{ height: '54px' }}>
+                  {form.placement_letter ? 'Letter Selected (PDF)' : 'Upload Placement Letter (PDF)'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="application/pdf"
+                    onChange={(e) => handleFieldChange('placement_letter', e.target.files?.[0] || null)}
+                  />
+                </Button>
+              </Grid>
+
+              {useNewOrganization && (
+                <>
+                  <Grid item xs={12}>
+                    <Divider sx={{ my: 0.5 }} />
+                    <Typography sx={{ fontWeight: 600, fontSize: '13px' }}>Specific Organization Details</Typography>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Organization Name"
+                      value={organizationForm.name}
+                      onChange={(e) => handleOrganizationFieldChange('name', e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Industry"
+                      value={organizationForm.industry}
+                      onChange={(e) => handleOrganizationFieldChange('industry', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Contact Email"
+                      type="email"
+                      value={organizationForm.contact_email}
+                      onChange={(e) => handleOrganizationFieldChange('contact_email', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Contact Phone"
+                      value={organizationForm.contact_phone}
+                      onChange={(e) => handleOrganizationFieldChange('contact_phone', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Region"
+                      value={organizationForm.region}
+                      onChange={(e) => handleOrganizationFieldChange('region', e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="District"
+                      value={organizationForm.district}
+                      onChange={(e) => handleOrganizationFieldChange('district', e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="County"
+                      value={organizationForm.county}
+                      onChange={(e) => handleOrganizationFieldChange('county', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Sub-County"
+                      value={organizationForm.sub_county}
+                      onChange={(e) => handleOrganizationFieldChange('sub_county', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Parish"
+                      value={organizationForm.parish}
+                      onChange={(e) => handleOrganizationFieldChange('parish', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Village"
+                      value={organizationForm.village}
+                      onChange={(e) => handleOrganizationFieldChange('village', e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={3}
+                      label="Full Address"
+                      value={organizationForm.full_address}
+                      onChange={(e) => handleOrganizationFieldChange('full_address', e.target.value)}
+                      required
+                    />
+                  </Grid>
+                </>
+              )}
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setPlacementModalOpen(false);
+                resetForm();
+                setUseNewOrganization(false);
+                setOrganizationForm(emptyOrganizationForm);
+              }}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={handleSaveDraft} disabled={saving || organizationSaving}>
+              {saving ? 'Saving...' : form.id ? 'Update Draft' : 'Save Draft'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Stack>
     </PageScaffold>
   );
