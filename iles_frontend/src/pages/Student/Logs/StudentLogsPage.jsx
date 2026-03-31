@@ -11,6 +11,9 @@ import {
   Divider,
   Grid,
   Link,
+  List,
+  ListItem,
+  ListItemText,
   MenuItem,
   Stack,
   TextField,
@@ -31,6 +34,7 @@ const StudentLogsPage = () => {
   const [error, setError] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState({ open: false, logId: null });
+  const [auditModal, setAuditModal] = useState({ open: false, loading: false, data: null });
   const [form, setForm] = useState({
     id: null,
     placement: '',
@@ -184,16 +188,30 @@ const StudentLogsPage = () => {
     }
   };
 
+  const openAuditTrail = async (logId) => {
+    try {
+      setAuditModal({ open: true, loading: true, data: null });
+      const response = await logbookAPI.getLogAuditTrail(logId);
+      setAuditModal({ open: true, loading: false, data: response.data });
+    } catch (err) {
+      setAuditModal({ open: false, loading: false, data: null });
+      const msg = err.response?.data?.error || 'Failed to load audit trail.';
+      notifyError(msg, { title: 'Audit Trail Failed' });
+    }
+  };
+
   const statusChip = (log) => {
-    const label = `${log.submission_status} / ${log.review_status}`;
+    const label = log.workflow_state || `${log.submission_status} / ${log.review_status}`;
     let color = 'default';
-    if (log.review_status === 'approved') color = 'success';
-    if (log.review_status === 'needs_revision') color = 'warning';
-    if (log.review_status === 'pending') color = 'info';
+    if (label === 'approved') color = 'success';
+    if (label === 'needs_revision') color = 'warning';
+    if (label === 'rejected') color = 'error';
+    if (label === 'submitted' || label === 'under_review') color = 'info';
     return <Chip label={label} color={color} size="small" />;
   };
 
-  const editable = (log) => log.submission_status === 'draft';
+  const editable = (log) => Boolean(log.can_student_edit);
+  const submittable = (log) => Boolean(log.can_student_submit);
 
   return (
     <PageScaffold
@@ -229,7 +247,7 @@ const StudentLogsPage = () => {
                     Placement {item.placement_id}: {item.placement_range}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Submitted: {item.total_logs_submitted} | Approved: {item.approved_logs} | Missing Weeks: {item.missing_weeks.length}
+                    Submitted: {item.total_logs_submitted} | Approved: {item.approved_logs} | Pending: {item.pending_logs} | Revisions: {item.revisions_count} | Completion: {item.completion_percentage}% | Missing Weeks: {item.missing_weeks.length}
                   </Typography>
                 </Box>
               ))}
@@ -256,6 +274,7 @@ const StudentLogsPage = () => {
                   </Box>
                   <Stack direction="row" spacing={1} alignItems="center">
                     {statusChip(log)}
+                    <Chip label={`Round ${log.review_round || 0}`} size="small" variant="outlined" />
                     {log.is_late && <Chip label="Late" color="warning" size="small" />}
                   </Stack>
                 </Stack>
@@ -269,22 +288,31 @@ const StudentLogsPage = () => {
                   </Alert>
                 )}
 
+                {log.workflow_state === 'approved' && (
+                  <Alert severity="success" sx={{ mt: 1 }}>
+                    Approved log is now locked for editing.
+                  </Alert>
+                )}
+
                 <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                   {editable(log) && (
                     <Button size="small" variant="outlined" onClick={() => openEdit(log)}>
-                      Edit Draft
+                      {log.workflow_state === 'needs_revision' ? 'Revise Log' : log.workflow_state === 'rejected' ? 'Edit Rejected Log' : 'Edit Draft'}
                     </Button>
                   )}
-                  {editable(log) && (
+                  {submittable(log) && (
                     <Button
                       size="small"
                       variant="contained"
                       disabled={submittingId === log.id}
                       onClick={() => setConfirmSubmit({ open: true, logId: log.id })}
                     >
-                      Submit
+                      {['needs_revision', 'rejected'].includes(log.workflow_state) ? 'Resubmit' : 'Submit'}
                     </Button>
                   )}
+                  <Button size="small" variant="outlined" onClick={() => openAuditTrail(log.id)}>
+                    Audit Trail
+                  </Button>
                   {log.attachment_url && (
                     <Button size="small" component={Link} href={log.attachment_url} target="_blank" rel="noreferrer">
                       Attachment
@@ -410,6 +438,46 @@ const StudentLogsPage = () => {
         onClose={() => setConfirmSubmit({ open: false, logId: null })}
         onConfirm={submitLog}
       />
+
+      <Dialog open={auditModal.open} onClose={() => setAuditModal({ open: false, loading: false, data: null })} maxWidth="md" fullWidth>
+        <DialogTitle>Log Audit Trail</DialogTitle>
+        <DialogContent>
+          {auditModal.loading && <Alert severity="info">Loading audit trail...</Alert>}
+          {!auditModal.loading && auditModal.data && (
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Transition History</Typography>
+                <List dense>
+                  {auditModal.data.audit_trail.map((event) => (
+                    <ListItem key={event.id} divider>
+                      <ListItemText
+                        primary={`${event.action_type}: ${event.previous_state} -> ${event.new_state}`}
+                        secondary={`${event.actor_name} at ${new Date(event.created_at).toLocaleString()}${event.notes ? ` | ${event.notes}` : ''}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Supervisor Review Rounds</Typography>
+                <List dense>
+                  {auditModal.data.reviews.map((review) => (
+                    <ListItem key={review.id} divider>
+                      <ListItemText
+                        primary={`Round ${review.review_round}: ${review.decision}`}
+                        secondary={`${review.supervisor_name} at ${new Date(review.reviewed_at).toLocaleString()} | Rating: ${review.rating ?? 'N/A'} | ${review.comments}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAuditModal({ open: false, loading: false, data: null })}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </PageScaffold>
   );
 };
