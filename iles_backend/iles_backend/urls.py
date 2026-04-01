@@ -38,6 +38,7 @@ urlpatterns = [
     path('api/placements/', include('placements.urls')),
     path('api/logbook/', include('logbook.urls')),
     path('api/evaluations/', include('evaluations.urls')),
+    path('api/auditing/', include('auditing.urls')),
 
     # Future apps will be added here:
     # path('api/logs/', include('logs.urls')),

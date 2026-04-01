@@ -180,4 +180,13 @@ export const evaluationsAPI = {
   getStudentFinalScores: () => api.get('/evaluations/final-scores/student/'),
 };
 
+export const auditingAPI = {
+  getAdminAuditLogs: (params = {}) => api.get('/auditing/admin/logs/', { params }),
+  
+  getNotifications: (params = {}) => api.get('/auditing/notifications/', { params }),
+  getNotificationStats: () => api.get('/auditing/notifications/stats/'),
+  markNotificationAsRead: (notificationId) => api.patch(`/auditing/notifications/${notificationId}/`, { is_read: true }),
+  markAllNotificationsAsRead: () => api.post('/auditing/notifications/bulk-mark-read/', {}),
+};
+
 export default api;

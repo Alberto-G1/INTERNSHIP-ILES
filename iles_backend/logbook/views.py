@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import IsAdmin, IsAnySupervisor, IsStudent
+from auditing.services import notify_user
 from placements.models import Placement
 
 from .models import WeeklyLog
@@ -101,6 +102,29 @@ class StudentWeeklyLogSubmitView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         submitted = serializer.save()
+
+        # Notify assigned supervisors
+        placement = submitted.placement
+        if placement.workplace_supervisor_id:
+            notify_user(
+                recipient_id=placement.workplace_supervisor_id,
+                title='New Log Submitted for Review 📝',
+                message=f'{request.user.get_full_name()} submitted a weekly log for review (Week ending {submitted.week_ending_date})',
+                notification_type='info',
+                reference_type='WeeklyLog',
+                reference_id=submitted.id,
+                send_email=True,
+            )
+        if placement.academic_supervisor_id:
+            notify_user(
+                recipient_id=placement.academic_supervisor_id,
+                title='New Log Submitted for Review 📝',
+                message=f'{request.user.get_full_name()} submitted a weekly log for review (Week ending {submitted.week_ending_date})',
+                notification_type='info',
+                reference_type='WeeklyLog',
+                reference_id=submitted.id,
+                send_email=True,
+            )
 
         return Response(WeeklyLogSerializer(submitted, context={'request': request}).data)
 
@@ -217,6 +241,29 @@ class SupervisorWeeklyLogReviewView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         reviewed = serializer.save()
+        
+        # Notify student about review result
+        if reviewed.review_status == WeeklyLog.REVIEW_APPROVED:
+            notify_user(
+                recipient_id=reviewed.student_id,
+                title='Log Approved ✅',
+                message=f'Your weekly log (ending {reviewed.week_ending_date}) has been approved!',
+                notification_type='success',
+                reference_type='WeeklyLog',
+                reference_id=reviewed.id,
+                send_email=True,
+            )
+        elif reviewed.review_status == WeeklyLog.REVIEW_NEEDS_REVISION:
+            notify_user(
+                recipient_id=reviewed.student_id,
+                title='Log Needs Revision ✏️',
+                message=f'Your weekly log (ending {reviewed.week_ending_date}) requires revision.',
+                notification_type='warning',
+                reference_type='WeeklyLog',
+                reference_id=reviewed.id,
+                send_email=True,
+            )
+        
         return Response(WeeklyLogSerializer(reviewed, context={'request': request}).data)
 
 

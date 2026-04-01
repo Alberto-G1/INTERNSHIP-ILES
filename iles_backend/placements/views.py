@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import IsAdmin, IsAnySupervisor, IsStudent
+from auditing.services import notify_user
 
 from .models import Organization, Placement
 from .serializers import (
@@ -210,6 +211,29 @@ class AdminPlacementDecisionView(APIView):
         serializer.is_valid(raise_exception=True)
         updated = serializer.save()
         sync_student_internship_status(updated)
+        
+        # Send notifications based on decision
+        if updated.approval_status == Placement.APPROVAL_APPROVED:
+            notify_user(
+                recipient_id=updated.student_id,
+                title='Placement Approved ✅',
+                message=f'Your placement at {updated.organization.name} has been approved!',
+                notification_type='success',
+                reference_type='Placement',
+                reference_id=updated.id,
+                send_email=True,
+            )
+        elif updated.approval_status == Placement.APPROVAL_REJECTED:
+            notify_user(
+                recipient_id=updated.student_id,
+                title='Placement Rejected',
+                message=f'Your placement at {updated.organization.name} was rejected.',
+                notification_type='warning',
+                reference_type='Placement',
+                reference_id=updated.id,
+                send_email=True,
+            )
+        
         return Response(PlacementSerializer(updated, context={'request': request}).data)
 
 

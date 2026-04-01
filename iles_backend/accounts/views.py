@@ -10,6 +10,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 from datetime import timedelta
 
+from auditing.audit import log_action
+from auditing.models import AuditLog
+
 from .models import PasswordResetCode, User
 from .permissions import IsAdmin
 from .serializers import (
@@ -70,6 +73,17 @@ class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
+            user = getattr(serializer, 'user', None)
+            if user:
+                log_action(
+                    action=AuditLog.ACTION_LOGIN,
+                    entity_type=AuditLog.ENTITY_USER,
+                    entity_id=user.id,
+                    entity_description=f'User login: {user.username}',
+                    actor=user,
+                    previous_value={'status': 'anonymous'},
+                    new_value={'status': 'authenticated'},
+                )
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -81,6 +95,17 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
+            if request.user and request.user.is_authenticated:
+                log_action(
+                    action=AuditLog.ACTION_LOGOUT,
+                    entity_type=AuditLog.ENTITY_USER,
+                    entity_id=request.user.id,
+                    entity_description=f'User logout: {request.user.username}',
+                    actor=request.user,
+                    previous_value={'status': 'authenticated'},
+                    new_value={'status': 'logged_out'},
+                )
+
             refresh_token = request.data.get("refresh")
             if not refresh_token:
                 return Response(

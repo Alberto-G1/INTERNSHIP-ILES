@@ -1,0 +1,10 @@
+Hello {{ recipient_name }},
+
+{{ message }}
+
+Open system: {{ action_url }}
+
+Notification type: {{ notification_type }}
+
+Regards,
+ILES System

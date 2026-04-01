@@ -41,6 +41,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useThemeMode } from '../../context/ThemeModeContext';
 import { PAGE_TITLES, getRoleLabel, getUserMenuLinks } from './layoutConfig';
 import AppConfirmModal from '../Common/AppConfirmModal';
+import NotificationBell from '../Common/NotificationBell';
 
 const iconByPath = {
   '/dashboard': DashboardIcon,
@@ -308,6 +309,9 @@ const Topbar = ({ onMenuClick, isMobile }) => {
               <DarkModeIcon sx={{ fontSize: 17 }} />
             )}
           </IconButton>
+
+          {/* Notifications */}
+          <NotificationBell />
 
           {/* User button */}
           <Button
