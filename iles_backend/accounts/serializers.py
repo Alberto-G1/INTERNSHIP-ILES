@@ -102,6 +102,7 @@ class LoginSerializer(serializers.Serializer):
             user.save(update_fields=['first_login_completed', 'updated_at'])
 
         refresh = RefreshToken.for_user(user)
+        self.user = user
         return {
             'user': UserSerializer(user).data,
             'refresh': str(refresh),

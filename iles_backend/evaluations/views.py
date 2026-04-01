@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import IsAcademicSupervisor, IsAdmin, IsStudent
+from auditing.services import notify_user
 from placements.models import Placement
 
 from .models import EvaluationCriterion, FinalInternshipScore, PlacementEvaluation
@@ -118,6 +119,17 @@ class SupervisorEvaluationFinalizeView(APIView):
         serializer.is_valid(raise_exception=True)
         finalized = serializer.save()
 
+        # Notify student about evaluation finalization
+        notify_user(
+            recipient_id=finalized.student_id,
+            title='Evaluation Finalized 📋',
+            message=f'Your evaluation has been finalized with a score of {finalized.total_score}/{finalized.max_possible_score}',
+            notification_type='info',
+            reference_type='PlacementEvaluation',
+            reference_id=finalized.id,
+            send_email=True,
+        )
+
         # Attempt auto-computation when all dependencies are ready.
         try:
             compute_final_score_for_placement(finalized.placement, computed_by=request.user)
@@ -171,6 +183,17 @@ class AdminFinalScoreComputeView(APIView):
             final_score = compute_final_score_for_placement(placement, computed_by=request.user)
         except DjangoValidationError as exc:
             return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Notify student about final score release
+        notify_user(
+            recipient_id=final_score.student_id,
+            title='Final Score Released 🎉',
+            message=f'Your final internship score is {final_score.final_score} (Grade: {final_score.grade})',
+            notification_type='success',
+            reference_type='FinalInternshipScore',
+            reference_id=final_score.id,
+            send_email=True,
+        )
 
         return Response(FinalInternshipScoreSerializer(final_score).data, status=status.HTTP_201_CREATED)
 
