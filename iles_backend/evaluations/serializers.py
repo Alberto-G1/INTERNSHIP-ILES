@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from placements.models import Placement
 
-from .models import EvaluationCriterion, EvaluationScore, PlacementEvaluation
+from .models import EvaluationCriterion, EvaluationScore, FinalInternshipScore, PlacementEvaluation
 
 
 class EvaluationCriterionSerializer(serializers.ModelSerializer):
@@ -230,3 +230,55 @@ class EvaluationFinalizeSerializer(serializers.Serializer):
             evaluation.finalized_at = timezone.now()
         evaluation.save(update_fields=['status', 'finalized_at', 'total_score', 'grade', 'updated_at'])
         return evaluation
+
+
+class FinalInternshipScoreSerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField()
+    placement_summary = serializers.SerializerMethodField()
+    computed_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FinalInternshipScore
+        fields = [
+            'id',
+            'student',
+            'student_name',
+            'placement',
+            'placement_summary',
+            'academic_score',
+            'supervisor_score',
+            'logbook_score',
+            'academic_weight',
+            'supervisor_weight',
+            'logbook_weight',
+            'final_score',
+            'grade',
+            'remarks',
+            'computed_by',
+            'computed_by_name',
+            'computed_at',
+            'is_locked',
+            'created_at',
+            'updated_at',
+        ]
+
+    def get_student_name(self, obj):
+        return obj.student.get_full_name()
+
+    def get_placement_summary(self, obj):
+        org = obj.placement.organization.name if obj.placement.organization else 'Unknown Organization'
+        return f"{org} ({obj.placement.start_date} to {obj.placement.end_date})"
+
+    def get_computed_by_name(self, obj):
+        if not obj.computed_by:
+            return 'System'
+        return obj.computed_by.get_full_name()
+
+
+class FinalScoreComputeRequestSerializer(serializers.Serializer):
+    placement_id = serializers.IntegerField()
+
+    def validate_placement_id(self, value):
+        if not Placement.objects.filter(id=value).exists():
+            raise serializers.ValidationError('Placement not found.')
+        return value

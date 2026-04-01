@@ -212,3 +212,65 @@ class EvaluationScore(models.Model):
         evaluation.total_score = evaluation.calculate_total_score()
         evaluation.grade = evaluation.calculate_grade(evaluation.total_score)
         evaluation.save(update_fields=['total_score', 'grade', 'updated_at'])
+
+
+class FinalInternshipScore(models.Model):
+    GRADE_A = 'A'
+    GRADE_B = 'B'
+    GRADE_C = 'C'
+    GRADE_D = 'D'
+    GRADE_F = 'F'
+    GRADE_CHOICES = (
+        (GRADE_A, 'A'),
+        (GRADE_B, 'B'),
+        (GRADE_C, 'C'),
+        (GRADE_D, 'D'),
+        (GRADE_F, 'F'),
+    )
+
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='final_internship_scores',
+    )
+    placement = models.OneToOneField(
+        Placement,
+        on_delete=models.CASCADE,
+        related_name='final_internship_score',
+    )
+
+    academic_score = models.DecimalField(max_digits=6, decimal_places=2)
+    supervisor_score = models.DecimalField(max_digits=6, decimal_places=2)
+    logbook_score = models.DecimalField(max_digits=6, decimal_places=2)
+
+    academic_weight = models.DecimalField(max_digits=4, decimal_places=2, default=Decimal('0.40'))
+    supervisor_weight = models.DecimalField(max_digits=4, decimal_places=2, default=Decimal('0.30'))
+    logbook_weight = models.DecimalField(max_digits=4, decimal_places=2, default=Decimal('0.30'))
+
+    final_score = models.DecimalField(max_digits=6, decimal_places=2)
+    grade = models.CharField(max_length=2, choices=GRADE_CHOICES)
+    remarks = models.CharField(max_length=40)
+
+    computed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='computed_final_internship_scores',
+    )
+    computed_at = models.DateTimeField(auto_now_add=True)
+    is_locked = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'final_internship_scores'
+        ordering = ['-computed_at']
+        indexes = [
+            models.Index(fields=['grade']),
+            models.Index(fields=['final_score']),
+            models.Index(fields=['student']),
+        ]
+
+    def __str__(self):
+        return f"Final score for placement #{self.placement_id}: {self.final_score}"
