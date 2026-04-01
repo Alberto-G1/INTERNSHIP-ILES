@@ -159,6 +159,8 @@ export const logbookAPI = {
 
 export const evaluationsAPI = {
   getCriteria: () => api.get('/evaluations/criteria/'),
+  createCriterion: (payload) => api.post('/evaluations/criteria/', payload),
+  updateCriterion: (criterionId, payload) => api.patch(`/evaluations/criteria/${criterionId}/`, payload),
 
   getSupervisorEvaluations: () => api.get('/evaluations/supervisor/'),
   getSupervisorEvaluation: (evaluationId) => api.get(`/evaluations/supervisor/${evaluationId}/`),
@@ -172,6 +174,10 @@ export const evaluationsAPI = {
 
   getStudentEvaluations: () => api.get('/evaluations/student/'),
   getStudentEvaluation: (evaluationId) => api.get(`/evaluations/student/${evaluationId}/`),
+
+  computeAdminFinalScore: (payload) => api.post('/evaluations/final-scores/admin/compute/', payload),
+  getAdminFinalScores: (params = {}) => api.get('/evaluations/final-scores/admin/', { params }),
+  getStudentFinalScores: () => api.get('/evaluations/final-scores/student/'),
 };
 
 export default api;

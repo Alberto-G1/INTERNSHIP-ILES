@@ -14,4 +14,8 @@ urlpatterns = [
 
     path('student/', views.StudentEvaluationListView.as_view(), name='student-evaluation-list'),
     path('student/<int:evaluation_id>/', views.StudentEvaluationDetailView.as_view(), name='student-evaluation-detail'),
+
+    path('final-scores/admin/compute/', views.AdminFinalScoreComputeView.as_view(), name='admin-final-score-compute'),
+    path('final-scores/admin/', views.AdminFinalScoreListView.as_view(), name='admin-final-score-list'),
+    path('final-scores/student/', views.StudentFinalScoreListView.as_view(), name='student-final-score-list'),
 ]

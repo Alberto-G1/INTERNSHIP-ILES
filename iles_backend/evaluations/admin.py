@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import EvaluationCriterion, EvaluationScore, PlacementEvaluation
+from .models import EvaluationCriterion, EvaluationScore, FinalInternshipScore, PlacementEvaluation
 
 
 @admin.register(EvaluationCriterion)
@@ -38,3 +38,23 @@ class EvaluationScoreAdmin(admin.ModelAdmin):
     list_display = ['id', 'evaluation', 'criterion', 'score', 'updated_at']
     list_filter = ['criterion']
     search_fields = ['evaluation__student__username', 'criterion__name']
+
+
+@admin.register(FinalInternshipScore)
+class FinalInternshipScoreAdmin(admin.ModelAdmin):
+    list_display = [
+        'id',
+        'student',
+        'placement',
+        'academic_score',
+        'supervisor_score',
+        'logbook_score',
+        'final_score',
+        'grade',
+        'remarks',
+        'computed_at',
+        'is_locked',
+    ]
+    list_filter = ['grade', 'is_locked', 'computed_at']
+    search_fields = ['student__username', 'student__first_name', 'student__last_name']
+    readonly_fields = ['computed_at', 'created_at', 'updated_at']
