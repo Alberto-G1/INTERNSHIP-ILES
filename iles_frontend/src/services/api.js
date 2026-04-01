@@ -157,4 +157,21 @@ export const logbookAPI = {
   getAdminOverview: () => api.get('/logbook/admin/overview/'),
 };
 
+export const evaluationsAPI = {
+  getCriteria: () => api.get('/evaluations/criteria/'),
+
+  getSupervisorEvaluations: () => api.get('/evaluations/supervisor/'),
+  getSupervisorEvaluation: (evaluationId) => api.get(`/evaluations/supervisor/${evaluationId}/`),
+  createSupervisorEvaluation: (payload) => api.post('/evaluations/supervisor/', payload),
+  updateSupervisorEvaluation: (evaluationId, payload) =>
+    api.patch(`/evaluations/supervisor/${evaluationId}/`, payload),
+  submitSupervisorEvaluation: (evaluationId) =>
+    api.post(`/evaluations/supervisor/${evaluationId}/submit/`, {}),
+  finalizeSupervisorEvaluation: (evaluationId) =>
+    api.post(`/evaluations/supervisor/${evaluationId}/finalize/`, {}),
+
+  getStudentEvaluations: () => api.get('/evaluations/student/'),
+  getStudentEvaluation: (evaluationId) => api.get(`/evaluations/student/${evaluationId}/`),
+};
+
 export default api;
