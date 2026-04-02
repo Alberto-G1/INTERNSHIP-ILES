@@ -22,6 +22,9 @@ import {
 import { useAuth } from '../../../context/AuthContext';
 import { profileAPI } from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../components/Common/AppToast';
+import ProfilePictureField from '../../../components/Common/ProfilePictureField';
+import { buildProfileUpdateFormData } from '../../../utils/profileFormData';
+import { resolveMediaUrl } from '../../../utils/mediaUrl';
 
 const WorkplaceSupervisorProfileEditPage = () => {
   const { user } = useAuth();
@@ -74,11 +77,24 @@ const WorkplaceSupervisorProfileEditPage = () => {
     }));
   };
 
+  const handleProfilePictureChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      profile_picture: file,
+    }));
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
-      await profileAPI.updateProfile(formData);
-      setProfile(formData);
+      const response = await profileAPI.updateProfile(buildProfileUpdateFormData(formData));
+      setProfile(response.data);
+      setFormData(response.data);
       notifySuccess('Profile updated successfully', { title: 'Profile Saved' });
       navigate('/profile');
     } catch (err) {
@@ -104,6 +120,17 @@ const WorkplaceSupervisorProfileEditPage = () => {
           Update your workplace supervision information
         </Typography>
       </Box>
+
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <ProfilePictureField
+            label="Profile Picture"
+            currentSrc={resolveMediaUrl(profile.profile_picture)}
+            value={formData?.profile_picture}
+            onChange={handleProfilePictureChange}
+          />
+        </CardContent>
+      </Card>
 
       {/* Core Identity & Contact */}
       <Card sx={{ mb: 3 }}>

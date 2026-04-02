@@ -393,8 +393,12 @@ class SupervisorProfile(models.Model):
     
     def save(self, *args, **kwargs):
         """Override save to check profile completion"""
-        # Don't run full_clean if we have temporary data
-        if self.organization_name != "To be updated" and self.position != "To be updated":
+        # Skip full_clean for temporary/placeholder data to allow graceful profile creation
+        skip_validation = any(
+            str(getattr(self, field, '')).startswith('To be updated')
+            for field in ['organization_name', 'position', 'department', 'faculty', 'location']
+        )
+        if not skip_validation:
             self.full_clean()
         
         # Check if profile is complete

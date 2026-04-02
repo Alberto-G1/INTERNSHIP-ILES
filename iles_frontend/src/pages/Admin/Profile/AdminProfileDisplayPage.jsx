@@ -22,6 +22,7 @@ import {
 import { useAuth } from '../../../context/AuthContext';
 import { profileAPI } from '../../../services/api';
 import { notifyError } from '../../../components/Common/AppToast';
+import { resolveMediaUrl } from '../../../utils/mediaUrl';
 
 const AdminProfileDisplayPage = () => {
   const { user } = useAuth();
@@ -93,7 +94,7 @@ const AdminProfileDisplayPage = () => {
         <Grid item xs={12}>
           <Card>
             <CardHeader
-              avatar={<Avatar src={profile.profile_picture} alt={profile.full_name} />}
+              avatar={<Avatar src={resolveMediaUrl(profile.profile_picture)} alt={profile.full_name} />}
               title={profile.full_name}
               subheader={profile.email}
             />

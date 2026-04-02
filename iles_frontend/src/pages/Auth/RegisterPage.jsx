@@ -3,7 +3,7 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { Box, Button, Checkbox, CircularProgress, FormControlLabel, Link, Stack, Typography } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import AuthShell from '../../components/Auth/AuthShell';
-import { notifyInfo } from '../../components/Common/AppToast';
+import { notifyError, notifyInfo } from '../../components/Common/AppToast';
 
 /* ══════════════════════════════════════
    SHARED STYLE TOKENS
@@ -120,11 +120,6 @@ const EyeOffIcon = () => (
     <line x1="1" y1="1" x2="23" y2="23" />
   </svg>
 );
-const AlertCircleIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={15} height={15} style={{ flexShrink: 0, marginTop: 1 }}>
-    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-  </svg>
-);
 
 /* Role card icons */
 const GraduateIcon = () => (
@@ -149,7 +144,7 @@ const AcademicIcon = () => (
 ══════════════════════════════════════ */
 
 /* Icon-prefixed input */
-const IconInput = ({ id, type = 'text', placeholder, value, onChange, name, icon, rightSlot, required }) => (
+const IconInput = ({ id, type = 'text', placeholder, value, onChange, name, icon, rightSlot }) => (
   <Box sx={inputWrapSx}>
     <Box component="span" sx={{ position: 'absolute', left: '13px', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
       {icon}
@@ -162,7 +157,6 @@ const IconInput = ({ id, type = 'text', placeholder, value, onChange, name, icon
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      required={required}
       sx={{ ...baseInputSx, pr: rightSlot ? '42px' : '13px' }}
     />
     {rightSlot && (
@@ -174,10 +168,10 @@ const IconInput = ({ id, type = 'text', placeholder, value, onChange, name, icon
 );
 
 /* No-icon input */
-const PlainInput = ({ id, type = 'text', placeholder, value, onChange, name, required }) => (
+const PlainInput = ({ id, type = 'text', placeholder, value, onChange, name }) => (
   <Box component="input"
     id={id} name={name} type={type} placeholder={placeholder}
-    value={value} onChange={onChange} required={required}
+    value={value} onChange={onChange}
     sx={noIconInputSx}
   />
 );
@@ -260,7 +254,6 @@ const RegisterPage = () => {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPw, setShowPw]           = useState(false);
   const [showPw2, setShowPw2]         = useState(false);
-  const [error, setError]             = useState('');
   const [loading, setLoading]         = useState(false);
 
   const { register } = useAuth();
@@ -271,10 +264,9 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     if (!acceptTerms) {
-      setError('You must agree to the Terms of Service and Privacy Policy.');
+      notifyError('You must agree to the Terms of Service and Privacy Policy.', { title: 'Registration Failed' });
       setLoading(false);
       return;
     }
@@ -314,9 +306,9 @@ const RegisterPage = () => {
         for (const [field, messages] of Object.entries(err.response.data)) {
           errs.push(Array.isArray(messages) ? `${field}: ${messages.join(', ')}` : messages);
         }
-        setError(errs.join('\n'));
+        notifyError(errs.join(' | '), { title: 'Registration Failed' });
       } else {
-        setError('Registration failed. Please try again.');
+        notifyError('Registration failed. Please try again.', { title: 'Registration Failed' });
       }
     } finally {
       setLoading(false);
@@ -334,24 +326,6 @@ const RegisterPage = () => {
       <Typography sx={{ fontSize: '14px', color: 'var(--gray-500)', mb: 3.5, lineHeight: 1.5 }}>
         Fill in your details to get started with AILES.
       </Typography>
-
-      {/* Error */}
-      {error && (
-        <Box
-          sx={{
-            display: 'flex', alignItems: 'flex-start', gap: '10px',
-            padding: '11px 14px', borderRadius: '10px',
-            fontSize: '13px', mb: 2.5, lineHeight: 1.4, whiteSpace: 'pre-line',
-            background: 'var(--coral-100)', color: 'var(--coral-700)',
-            border: '1px solid rgba(192,57,43,0.2)',
-            animation: 'slideIn 0.3s ease both',
-            '@keyframes slideIn': { from: { opacity: 0, transform: 'translateY(-6px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
-          }}
-        >
-          <AlertCircleIcon />
-          <span>{error}</span>
-        </Box>
-      )}
 
       <Box component="form" onSubmit={handleSubmit}>
 
@@ -426,10 +400,10 @@ const RegisterPage = () => {
         {/* ── Name row ── */}
         <FieldRow>
           <Field label="First Name" required>
-            <PlainInput id="su-firstname" name="first_name" placeholder="First name" value={formData.first_name} onChange={handleChange} required />
+            <PlainInput id="su-firstname" name="first_name" placeholder="First name" value={formData.first_name} onChange={handleChange} />
           </Field>
           <Field label="Last Name" required>
-            <PlainInput id="su-lastname" name="last_name" placeholder="Last name" value={formData.last_name} onChange={handleChange} required />
+            <PlainInput id="su-lastname" name="last_name" placeholder="Last name" value={formData.last_name} onChange={handleChange} />
           </Field>
         </FieldRow>
 
@@ -441,17 +415,17 @@ const RegisterPage = () => {
         {/* ── Username + Email ── */}
         <FieldRow>
           <Field label="Username" required>
-            <IconInput id="su-username" name="username" placeholder="Choose username" value={formData.username} onChange={handleChange} icon={<UserIcon />} required />
+            <IconInput id="su-username" name="username" placeholder="Choose username" value={formData.username} onChange={handleChange} icon={<UserIcon />} />
           </Field>
           <Field label="Email" required>
-            <IconInput id="su-email" name="email" type="email" placeholder="you@example.com" value={formData.email} onChange={handleChange} icon={<EmailIcon />} required />
+            <IconInput id="su-email" name="email" type="email" placeholder="you@example.com" value={formData.email} onChange={handleChange} icon={<EmailIcon />} />
           </Field>
         </FieldRow>
 
         {/* ── Phone ── */}
         <FieldRow>
           <Field label="Phone" required>
-            <IconInput id="su-phone" name="phone" type="tel" placeholder="+233 XX XXX XXXX" value={formData.phone} onChange={handleChange} icon={<PhoneIcon />} required />
+            <IconInput id="su-phone" name="phone" type="tel" placeholder="+233 XX XXX XXXX" value={formData.phone} onChange={handleChange} icon={<PhoneIcon />} />
           </Field>
           <Field label="Alternative Phone">
             <IconInput id="su-altphone" name="alternative_phone" type="tel" placeholder="Optional" value={formData.alternative_phone} onChange={handleChange} icon={<PhoneIcon />} />
@@ -461,7 +435,7 @@ const RegisterPage = () => {
         {/* ── Country + City ── */}
         <FieldRow>
           <Field label="Country" required>
-            <IconInput id="su-country" name="country" placeholder="e.g. Ghana" value={formData.country} onChange={handleChange} icon={<HomeIcon />} required />
+            <IconInput id="su-country" name="country" placeholder="e.g. Ghana" value={formData.country} onChange={handleChange} icon={<HomeIcon />} />
           </Field>
           <Field label="City">
             <IconInput id="su-city" name="city" placeholder="e.g. Accra" value={formData.city} onChange={handleChange} icon={<HomeIcon />} />
@@ -478,13 +452,13 @@ const RegisterPage = () => {
         {r === 'academic_supervisor' && (
           <>
             <Field label="Institution / University" required>
-              <IconInput id="su-org" name="organization_name" placeholder="e.g. KNUST, UG…" value={formData.organization_name} onChange={handleChange} icon={<BuildingIcon />} required />
+              <IconInput id="su-org" name="organization_name" placeholder="e.g. KNUST, UG…" value={formData.organization_name} onChange={handleChange} icon={<BuildingIcon />} />
             </Field>
             <Field label="Department" required>
-              <IconInput id="su-dept" name="department" placeholder="e.g. Computer Science" value={formData.department} onChange={handleChange} icon={<BuildingIcon />} required />
+              <IconInput id="su-dept" name="department" placeholder="e.g. Computer Science" value={formData.department} onChange={handleChange} icon={<BuildingIcon />} />
             </Field>
             <Field label="Position / Title" required>
-              <IconInput id="su-pos" name="position" placeholder="e.g. Senior Lecturer" value={formData.position} onChange={handleChange} icon={<BriefcaseIcon />} required />
+              <IconInput id="su-pos" name="position" placeholder="e.g. Senior Lecturer" value={formData.position} onChange={handleChange} icon={<BriefcaseIcon />} />
             </Field>
           </>
         )}
@@ -492,11 +466,11 @@ const RegisterPage = () => {
         {r === 'workplace_supervisor' && (
           <>
             <Field label="Company Name" required>
-              <IconInput id="su-org" name="organization_name" placeholder="e.g. Ashesi University" value={formData.organization_name} onChange={handleChange} icon={<BuildingIcon />} required />
+              <IconInput id="su-org" name="organization_name" placeholder="e.g. Ashesi University" value={formData.organization_name} onChange={handleChange} icon={<BuildingIcon />} />
             </Field>
             <FieldRow>
               <Field label="Position" required>
-                <IconInput id="su-pos" name="position" placeholder="e.g. HR Manager" value={formData.position} onChange={handleChange} icon={<BriefcaseIcon />} required />
+                <IconInput id="su-pos" name="position" placeholder="e.g. HR Manager" value={formData.position} onChange={handleChange} icon={<BriefcaseIcon />} />
               </Field>
               <Field label="Company Department">
                 <IconInput id="su-company" name="company" placeholder="e.g. Operations" value={formData.company} onChange={handleChange} icon={<BuildingIcon />} />
@@ -514,7 +488,6 @@ const RegisterPage = () => {
               placeholder="Min 8 characters"
               value={formData.password} onChange={handleChange}
               icon={<LockIcon />}
-              required
               rightSlot={<EyeBtn show={showPw} onToggle={() => setShowPw((v) => !v)} />}
             />
             <StrengthBar value={formData.password} />
@@ -526,7 +499,6 @@ const RegisterPage = () => {
               placeholder="Re-enter password"
               value={formData.password2} onChange={handleChange}
               icon={<LockIcon />}
-              required
               rightSlot={<EyeBtn show={showPw2} onToggle={() => setShowPw2((v) => !v)} />}
             />
           </Field>
