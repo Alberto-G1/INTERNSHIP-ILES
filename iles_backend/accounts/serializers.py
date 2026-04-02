@@ -122,7 +122,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
-    completion_percentage = serializers.ReadOnlyField()
+    completion_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentProfile
@@ -151,9 +151,12 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'profile_completed', 'completion_percentage', 'created_at', 'updated_at']
 
+    def get_completion_percentage(self, obj):
+        return obj.completion_percentage()
+
 
 class SupervisorProfileSerializer(serializers.ModelSerializer):
-    completion_percentage = serializers.ReadOnlyField()
+    completion_percentage = serializers.SerializerMethodField()
     supervisor_type_display = serializers.CharField(source='get_supervisor_type_display', read_only=True)
 
     class Meta:
@@ -182,6 +185,9 @@ class SupervisorProfileSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['id', 'profile_completed', 'completion_percentage', 'created_at', 'updated_at']
+
+    def get_completion_percentage(self, obj):
+        return obj.completion_percentage()
 
 
 class AdminProfileSerializer(serializers.ModelSerializer):
@@ -348,7 +354,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 user=user,
                 supervisor_type=supervisor_type or ('workplace' if role == 'workplace_supervisor' else 'academic'),
                 organization_name=organization_name,
-                department=department,
+                department=department or 'To be updated',
                 faculty='To be updated' if role == 'academic_supervisor' else '',
                 location='To be updated' if role == 'workplace_supervisor' else '',
                 position=position,

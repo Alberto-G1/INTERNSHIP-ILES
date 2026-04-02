@@ -99,7 +99,10 @@ export const authAPI = {
 // Profile API endpoints
 export const profileAPI = {
   getProfile: () => api.get('/auth/profile/'),
-  updateProfile: (data) => api.put('/auth/profile/', data),
+  updateProfile: (data) => {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    return api.put('/auth/profile/', data, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined);
+  },
   getCompletion: () => api.get('/auth/profile/completion/'),
 };
 

@@ -137,6 +137,12 @@ class UserProfileView(APIView):
         user = request.user
         payload = request.data
 
+        def _extract_allowed_fields(nested_key, allowed_fields):
+            nested_payload = payload.get(nested_key)
+            if isinstance(nested_payload, dict):
+                return {k: v for k, v in nested_payload.items() if k in allowed_fields}
+            return {field: payload.get(field) for field in allowed_fields if field in payload}
+
         # Update core user fields.
         for field in [
             "first_name",
@@ -152,10 +158,57 @@ class UserProfileView(APIView):
                 setattr(user, field, payload[field])
         user.save()
 
-        # Support both nested and flat payloads.
-        student_payload = payload.get("student_profile", payload)
-        supervisor_payload = payload.get("supervisor_profile", payload)
-        admin_payload = payload.get("admin_profile", payload)
+        # Support both nested JSON payloads and flat multipart payloads.
+        student_payload = _extract_allowed_fields(
+            "student_profile",
+            [
+                "registration_number",
+                "student_number",
+                "institution",
+                "faculty",
+                "department",
+                "course",
+                "year_of_study",
+                "semester",
+                "date_of_birth",
+                "gender",
+                "nationality",
+                "expected_graduation_year",
+                "internship_status",
+                "disability_status",
+                "special_needs",
+            ],
+        )
+        supervisor_payload = _extract_allowed_fields(
+            "supervisor_profile",
+            [
+                "supervisor_type",
+                "organization_name",
+                "organization_type",
+                "industry",
+                "location",
+                "faculty",
+                "department",
+                "position",
+                "work_email",
+                "work_phone",
+                "office_phone",
+                "office_address",
+                "specialization",
+                "years_of_experience",
+            ],
+        )
+        admin_payload = _extract_allowed_fields(
+            "admin_profile",
+            [
+                "admin_level",
+                "department",
+                "permissions",
+                "can_manage_users",
+                "can_assign_placements",
+                "can_view_reports",
+            ],
+        )
 
         if user.role == "student" and hasattr(user, "student_profile"):
             serializer = StudentProfileSerializer(user.student_profile, data=student_payload, partial=True)

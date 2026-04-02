@@ -3,6 +3,7 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { Box, Button, Checkbox, FormControlLabel, Link, Stack, Typography } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import AuthShell from '../../components/Auth/AuthShell';
+import { notifyError } from '../../components/Common/AppToast';
 
 /* ── Shared field style ── */
 const fieldSx = {
@@ -69,14 +70,6 @@ const EyeOffIcon = () => (
     <line x1="1" y1="1" x2="23" y2="23" />
   </svg>
 );
-const AlertCircleIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={15} height={15} style={{ flexShrink: 0, marginTop: 1 }}>
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" y1="8" x2="12" y2="12" />
-    <line x1="12" y1="16" x2="12.01" y2="16" />
-  </svg>
-);
-
 /* ── Icon-prefixed input ── */
 const IconInput = ({ id, type = 'text', placeholder, value, onChange, icon, rightSlot }) => (
   <Box component="div" sx={inputWrapSx}>
@@ -129,7 +122,6 @@ const LoginPage = () => {
   const [username, setUsername]       = useState('');
   const [password, setPassword]       = useState('');
   const [showPw, setShowPw]           = useState(false);
-  const [error, setError]             = useState('');
   const [loading, setLoading]         = useState(false);
   const { login }                     = useAuth();
   const navigate                      = useNavigate();
@@ -137,7 +129,6 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
     try {
       await login(username, password);
       navigate('/dashboard');
@@ -147,7 +138,7 @@ const LoginPage = () => {
         err.response?.data?.detail ||
         err.response?.data?.error ||
         'Login failed. Please check your credentials.';
-      setError(message);
+      notifyError(message, { title: 'Login Failed' });
     } finally {
       setLoading(false);
     }
@@ -171,33 +162,6 @@ const LoginPage = () => {
       <Typography sx={{ fontSize: '14px', color: 'var(--gray-500)', mb: 3.5, lineHeight: 1.5 }}>
         Sign in to your AILES account to continue.
       </Typography>
-
-      {/* Error alert */}
-      {error && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '10px',
-            padding: '11px 14px',
-            borderRadius: '10px',
-            fontSize: '13px',
-            mb: 2.5,
-            lineHeight: 1.4,
-            background: 'var(--coral-100)',
-            color: 'var(--coral-700)',
-            border: '1px solid rgba(192,57,43,0.2)',
-            animation: 'slideIn 0.3s ease both',
-            '@keyframes slideIn': {
-              from: { opacity: 0, transform: 'translateY(-6px)' },
-              to:   { opacity: 1, transform: 'translateY(0)' },
-            },
-          }}
-        >
-          <AlertCircleIcon />
-          <span>{error}</span>
-        </Box>
-      )}
 
       {/* Form */}
       <Box component="form" onSubmit={handleSubmit}>

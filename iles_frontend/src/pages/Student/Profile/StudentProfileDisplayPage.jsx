@@ -23,6 +23,7 @@ import {
 import { useAuth } from '../../../context/AuthContext';
 import { profileAPI } from '../../../services/api';
 import { notifyError } from '../../../components/Common/AppToast';
+import { resolveMediaUrl } from '../../../utils/mediaUrl';
 
 const StudentProfileDisplayPage = () => {
   const { user } = useAuth();
@@ -52,7 +53,7 @@ const StudentProfileDisplayPage = () => {
   if (!profile) return <Alert severity="error">{error}</Alert>;
 
   const studentProfile = profile.student_profile || {};
-  const completionPercent = studentProfile.completion_percentage || 0;
+  const completionPercent = Math.max(0, Math.min(100, Number(studentProfile.completion_percentage) || 0));
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -98,7 +99,7 @@ const StudentProfileDisplayPage = () => {
         <Grid item xs={12}>
           <Card>
             <CardHeader
-              avatar={<Avatar src={profile.profile_picture} alt={profile.full_name} />}
+              avatar={<Avatar src={resolveMediaUrl(profile.profile_picture)} alt={profile.full_name} />}
               title={profile.full_name}
               subheader={profile.email}
             />
