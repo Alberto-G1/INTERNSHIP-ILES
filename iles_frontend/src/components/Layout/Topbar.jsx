@@ -42,6 +42,7 @@ import { useThemeMode } from '../../context/ThemeModeContext';
 import { PAGE_TITLES, getRoleLabel, getUserMenuLinks } from './layoutConfig';
 import AppConfirmModal from '../Common/AppConfirmModal';
 import NotificationBell from '../Common/NotificationBell';
+import { resolveMediaUrl } from '../../utils/mediaUrl';
 
 const iconByPath = {
   '/dashboard': DashboardIcon,
@@ -76,7 +77,7 @@ const TOPBAR_STYLES = `
   }
 `;
 
-const Topbar = ({ onMenuClick, isMobile }) => {
+const Topbar = ({ onMenuClick, isMobile, profile }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -109,13 +110,16 @@ const Topbar = ({ onMenuClick, isMobile }) => {
     }
   }, [location.pathname]);
 
+  const activeProfile = profile || user || {};
   const pageInfo = PAGE_TITLES[location.pathname] || { title: 'AILES', subtitle: '' };
-  const userName = user?.first_name
-    ? `${user.first_name} ${user.last_name || ''}`.trim()
-    : user?.username || 'User';
-  const roleLabel = getRoleLabel(user?.role);
-  const menuLinks = getUserMenuLinks(user?.role);
-  const userInitial = user?.first_name?.[0] || user?.username?.[0]?.toUpperCase() || 'U';
+  const userName = activeProfile?.full_name
+    || (activeProfile?.first_name
+      ? `${activeProfile.first_name} ${activeProfile.last_name || ''}`.trim()
+      : activeProfile?.username || 'User');
+  const roleLabel = getRoleLabel(activeProfile?.role);
+  const menuLinks = getUserMenuLinks(activeProfile?.role);
+  const userInitial = activeProfile?.first_name?.[0] || activeProfile?.username?.[0]?.toUpperCase() || 'U';
+  const userAvatarSrc = resolveMediaUrl(activeProfile?.profile_picture);
 
   const handleThemeToggle = () => {
     setThemeSpinning(true);
@@ -336,6 +340,7 @@ const Topbar = ({ onMenuClick, isMobile }) => {
             }}
           >
             <Avatar
+              src={userAvatarSrc || undefined}
               sx={{
                 width: { xs: 26, sm: 28 },
                 height: { xs: 26, sm: 28 },
@@ -418,6 +423,7 @@ const Topbar = ({ onMenuClick, isMobile }) => {
               }}
             >
               <Avatar
+                  src={userAvatarSrc || undefined}
                 sx={{
                   width: 36,
                   height: 36,

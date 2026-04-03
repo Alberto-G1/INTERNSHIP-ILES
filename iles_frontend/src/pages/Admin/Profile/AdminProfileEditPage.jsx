@@ -29,7 +29,7 @@ import { buildProfileUpdateFormData } from '../../../utils/profileFormData';
 import { resolveMediaUrl } from '../../../utils/mediaUrl';
 
 const AdminProfileEditPage = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -108,6 +108,7 @@ const AdminProfileEditPage = () => {
       const response = await profileAPI.updateProfile(buildProfileUpdateFormData(formData));
       setProfile(response.data);
       setFormData(response.data);
+      updateUser(response.data);
       notifySuccess('Profile updated successfully', { title: 'Profile Saved' });
       navigate('/profile');
     } catch (err) {

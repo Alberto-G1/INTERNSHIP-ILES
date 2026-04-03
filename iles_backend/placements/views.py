@@ -61,11 +61,32 @@ class StudentPlacementListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        if student_has_submitted_placement(request.user):
+            return Response(
+                {
+                    'error': (
+                        'You have already submitted a placement. '
+                        'New drafts are not allowed after submission.'
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = StudentPlacementCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         placement = serializer.save()
         response = PlacementSerializer(placement, context={'request': request})
         return Response(response.data, status=status.HTTP_201_CREATED)
+
+
+def student_has_submitted_placement(student, exclude_placement_id=None):
+    queryset = Placement.objects.filter(
+        student=student,
+        submission_status=Placement.SUBMISSION_SUBMITTED,
+    )
+    if exclude_placement_id is not None:
+        queryset = queryset.exclude(id=exclude_placement_id)
+    return queryset.exists()
 
 
 class OrganizationListCreateView(APIView):
@@ -122,6 +143,17 @@ class StudentPlacementDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if student_has_submitted_placement(request.user):
+            return Response(
+                {
+                    'error': (
+                        'You already submitted a placement. '
+                        'Remaining drafts can only be deleted.'
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = StudentPlacementUpdateSerializer(
             placement,
             data=request.data,
@@ -132,12 +164,41 @@ class StudentPlacementDetailView(APIView):
         updated = serializer.save()
         return Response(PlacementSerializer(updated, context={'request': request}).data)
 
+    def delete(self, request, placement_id):
+        placement = self.get_object(request, placement_id)
+
+        if placement.submission_status != Placement.SUBMISSION_DRAFT:
+            return Response(
+                {'error': 'Only draft placements can be deleted by students.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        placement.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class StudentPlacementSubmitView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsStudent]
 
     def post(self, request, placement_id):
         placement = get_object_or_404(Placement, id=placement_id, student=request.user)
+
+        if placement.submission_status != Placement.SUBMISSION_DRAFT:
+            return Response(
+                {'error': 'Only draft placements can be submitted.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if student_has_submitted_placement(request.user, exclude_placement_id=placement.id):
+            return Response(
+                {
+                    'error': (
+                        'You can only submit one placement. '
+                        'Other placements must remain drafts or be deleted.'
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         serializer = PlacementSubmissionSerializer(data=request.data, context={'placement': placement})
         serializer.is_valid(raise_exception=True)
@@ -157,6 +218,9 @@ class AdminPlacementListView(APIView):
             'workplace_supervisor',
             'academic_supervisor',
         ).all()
+
+        # Admins can only see submitted placements, not student drafts
+        queryset = queryset.filter(submission_status=Placement.SUBMISSION_SUBMITTED)
 
         submission_status = request.query_params.get('submission_status')
         approval_status = request.query_params.get('approval_status')
