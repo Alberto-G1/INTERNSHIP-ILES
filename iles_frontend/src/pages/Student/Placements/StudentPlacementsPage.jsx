@@ -19,7 +19,7 @@ import {
 import PageScaffold from '../../../components/Common/PageScaffold';
 import AppConfirmModal from '../../../components/Common/AppConfirmModal';
 import { notifyError, notifySuccess } from '../../../components/Common/AppToast';
-import { placementsAPI } from '../../../services/api';
+import { placementsAPI, profileAPI } from '../../../services/api';
 
 const workModes = [
   { value: 'on-site', label: 'On-site' },
@@ -80,17 +80,21 @@ const StudentPlacementsPage = () => {
   const [useNewOrganization, setUseNewOrganization] = useState(false);
   const [organizationForm, setOrganizationForm] = useState(emptyOrganizationForm);
   const [organizationSaving, setOrganizationSaving] = useState(false);
+  const [profileComplete, setProfileComplete] = useState(false);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError('');
-      const [placementsRes, organizationsRes] = await Promise.all([
+      const [placementsRes, organizationsRes, profileRes] = await Promise.all([
         placementsAPI.getMyPlacements(),
         placementsAPI.getOrganizations(),
+        profileAPI.getProfile(),
       ]);
       setPlacements(placementsRes.data || []);
       setOrganizations(organizationsRes.data || []);
+      const profileData = profileRes.data || {};
+      setProfileComplete(Boolean(profileData?.has_complete_profile || profileData?.student_profile?.profile_completed));
     } catch (err) {
       setError('Failed to load placements data.');
       notifyError('Failed to load placements data', { title: 'Load Failed' });
@@ -224,6 +228,14 @@ const StudentPlacementsPage = () => {
   const handleSubmitPlacement = async () => {
     if (!confirmSubmit.placementId) return;
 
+    if (!profileComplete) {
+      setConfirmSubmit({ open: false, placementId: null });
+      notifyError('Complete your student profile before submitting a placement.', {
+        title: 'Profile Incomplete',
+      });
+      return;
+    }
+
     try {
       setSubmittingId(confirmSubmit.placementId);
       await placementsAPI.submitPlacement(confirmSubmit.placementId);
@@ -271,6 +283,7 @@ const StudentPlacementsPage = () => {
 
   const draftPlacements = placements.filter((p) => p.submission_status === 'draft');
   const hasSubmittedPlacement = placements.some((p) => p.submission_status === 'submitted');
+  const canSubmitPlacement = profileComplete && !hasSubmittedPlacement;
 
   const handleOrganizationFieldChange = (field, value) => {
     setOrganizationForm((prev) => ({ ...prev, [field]: value }));
@@ -367,7 +380,7 @@ const StudentPlacementsPage = () => {
                               size="small"
                               variant="contained"
                               onClick={() => openSubmitConfirm(placement.id)}
-                              disabled={submitting}
+                              disabled={submitting || !profileComplete}
                             >
                               {submitting ? 'Submitting...' : 'Submit'}
                             </Button>
@@ -407,6 +420,12 @@ const StudentPlacementsPage = () => {
           {hasSubmittedPlacement && draftPlacements.length > 0 && (
             <Alert severity="info" sx={{ mt: 1 }}>
               You already submitted one placement. Remaining drafts are locked and can only be deleted.
+            </Alert>
+          )}
+
+          {!profileComplete && (
+            <Alert severity="warning" sx={{ mt: 1 }}>
+              Complete your student profile first before submitting any placement.
             </Alert>
           )}
         </Box>

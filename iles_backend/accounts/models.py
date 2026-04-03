@@ -191,11 +191,11 @@ class StudentProfile(models.Model):
     def clean(self):
         """Validate registration number format and year of study"""
         # Only validate registration number if provided and not temporary
-        if self.registration_number and not self.registration_number.startswith('TEMP'):
-            import re
-            if not re.match(r'^[A-Z0-9]{6,20}$', self.registration_number):
+        if self.registration_number and not self.registration_number.upper().startswith('TEMP'):
+            self.registration_number = self.registration_number.strip().upper()
+            if not re.match(r'^[a-zA-Z0-9]+(?:/[a-zA-Z0-9]+)*$', self.registration_number):
                 raise ValidationError({
-                    'registration_number': 'Registration number must be 6-20 alphanumeric characters'
+                    'registration_number': 'Registration number must use uppercase letters, numbers, and slashes only.'
                 })
         
         # Only validate year_of_study if it's not None
@@ -208,7 +208,7 @@ class StudentProfile(models.Model):
     def save(self, *args, **kwargs):
         """Override save to check profile completion"""
         # Don't run full_clean if we have temporary data
-        if not self.registration_number.startswith('TEMP'):
+        if not (self.registration_number or '').upper().startswith('TEMP'):
             self.full_clean()
         
         # Check if profile is complete (skip temporary registration numbers)
@@ -222,7 +222,7 @@ class StudentProfile(models.Model):
             'expected_graduation_year',
         ]
         self.profile_completed = all(
-            getattr(self, field) and not str(getattr(self, field)).startswith('TEMP')
+            getattr(self, field) and not str(getattr(self, field)).upper().startswith('TEMP')
             for field in required_fields
         )
         
@@ -240,7 +240,7 @@ class StudentProfile(models.Model):
         ]
         completed = sum(
             1 for field in fields 
-            if getattr(self, field) and not str(getattr(self, field)).startswith('TEMP')
+            if getattr(self, field) and not str(getattr(self, field)).upper().startswith('TEMP')
         )
         return int((completed / len(fields)) * 100)
 
