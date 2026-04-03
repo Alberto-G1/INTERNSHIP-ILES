@@ -14,10 +14,29 @@ SENSITIVE_KEYS = {
 }
 
 
+def _normalize_json_value(value):
+    if value is None:
+        return None
+
+    if hasattr(value, 'isoformat'):
+        return value.isoformat()
+
+    if hasattr(value, '_meta') and hasattr(value, 'pk'):
+        return value.pk
+
+    if isinstance(value, dict):
+        return {key: _normalize_json_value(item) for key, item in value.items()}
+
+    if isinstance(value, (list, tuple, set)):
+        return [_normalize_json_value(item) for item in value]
+
+    return value
+
+
 def _sanitize_value(key, value):
     if isinstance(key, str) and key.lower() in SENSITIVE_KEYS:
         return '***REDACTED***'
-    return value
+    return _normalize_json_value(value)
 
 
 def _serialize_model(instance):
@@ -27,12 +46,12 @@ def _serialize_model(instance):
             continue
 
         value = getattr(instance, field.name, None)
-        if hasattr(value, 'isoformat'):
-            serialized = value.isoformat()
-        elif hasattr(value, 'name') and field.get_internal_type() in {'FileField', 'ImageField'}:
+        if hasattr(value, 'name') and field.get_internal_type() in {'FileField', 'ImageField'}:
             serialized = value.name if value else None
+        elif hasattr(value, '_meta') and hasattr(value, 'pk'):
+            serialized = value.pk
         else:
-            serialized = value
+            serialized = _normalize_json_value(value)
 
         data[field.name] = _sanitize_value(field.name, serialized)
 
@@ -40,8 +59,8 @@ def _serialize_model(instance):
 
 
 def _dict_diff(previous_value, new_value):
-    previous_value = previous_value or {}
-    new_value = new_value or {}
+    previous_value = _normalize_json_value(previous_value or {})
+    new_value = _normalize_json_value(new_value or {})
 
     keys = set(previous_value.keys()) | set(new_value.keys())
     old_changes = {}

@@ -125,6 +125,7 @@ export const placementsAPI = {
     api.patch(`/placements/student/${placementId}/`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+  deleteDraftPlacement: (placementId) => api.delete(`/placements/student/${placementId}/`),
   submitPlacement: (placementId) => api.post(`/placements/student/${placementId}/submit/`, {}),
   getAssignedPlacements: () => api.get('/placements/supervisor/assigned/'),
 };

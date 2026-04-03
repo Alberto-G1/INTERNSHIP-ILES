@@ -72,8 +72,10 @@ const StudentPlacementsPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submittingId, setSubmittingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState('');
   const [confirmSubmit, setConfirmSubmit] = useState({ open: false, placementId: null });
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, placementId: null });
   const [placementModalOpen, setPlacementModalOpen] = useState(false);
   const [useNewOrganization, setUseNewOrganization] = useState(false);
   const [organizationForm, setOrganizationForm] = useState(emptyOrganizationForm);
@@ -240,7 +242,35 @@ const StudentPlacementsPage = () => {
     }
   };
 
+  const openDeleteConfirm = (placementId) => {
+    setConfirmDelete({ open: true, placementId });
+  };
+
+  const handleDeleteDraft = async () => {
+    if (!confirmDelete.placementId) return;
+
+    try {
+      setDeletingId(confirmDelete.placementId);
+      await placementsAPI.deleteDraftPlacement(confirmDelete.placementId);
+      notifySuccess('Draft placement deleted successfully', { title: 'Draft Deleted' });
+      await fetchData();
+
+      if (form.id === confirmDelete.placementId) {
+        resetForm();
+        setPlacementModalOpen(false);
+      }
+    } catch (err) {
+      const data = err.response?.data;
+      const message = typeof data === 'string' ? data : data?.error || 'Failed to delete draft placement.';
+      notifyError(message, { title: 'Delete Failed' });
+    } finally {
+      setDeletingId(null);
+      setConfirmDelete({ open: false, placementId: null });
+    }
+  };
+
   const draftPlacements = placements.filter((p) => p.submission_status === 'draft');
+  const hasSubmittedPlacement = placements.some((p) => p.submission_status === 'submitted');
 
   const handleOrganizationFieldChange = (field, value) => {
     setOrganizationForm((prev) => ({ ...prev, [field]: value }));
@@ -263,9 +293,11 @@ const StudentPlacementsPage = () => {
                 Use the popup form to create or update your draft placement before submission.
               </Typography>
             </Box>
-            <Button variant="contained" onClick={openCreatePlacementModal}>
-              Create Draft Placement
-            </Button>
+            {!hasSubmittedPlacement && (
+              <Button variant="contained" onClick={openCreatePlacementModal}>
+                Create Draft Placement
+              </Button>
+            )}
           </Stack>
         </Box>
 
@@ -283,7 +315,9 @@ const StudentPlacementsPage = () => {
                 const lifecycle = placement.current_lifecycle_status;
                 const chipStyle = lifecycleColor(lifecycle);
                 const isDraft = placement.submission_status === 'draft';
+                const isDraftLocked = isDraft && hasSubmittedPlacement;
                 const submitting = submittingId === placement.id;
+                const deleting = deletingId === placement.id;
 
                 return (
                   <Box
@@ -324,7 +358,7 @@ const StudentPlacementsPage = () => {
                             Letter
                           </Link>
                         )}
-                        {isDraft && (
+                        {isDraft && !isDraftLocked && (
                           <>
                             <Button size="small" variant="outlined" onClick={() => loadDraftToForm(placement)}>
                               Edit
@@ -338,6 +372,17 @@ const StudentPlacementsPage = () => {
                               {submitting ? 'Submitting...' : 'Submit'}
                             </Button>
                           </>
+                        )}
+                        {isDraft && (
+                          <Button
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            onClick={() => openDeleteConfirm(placement.id)}
+                            disabled={deleting}
+                          >
+                            {deleting ? 'Deleting...' : 'Delete'}
+                          </Button>
                         )}
                       </Stack>
                     </Stack>
@@ -358,6 +403,12 @@ const StudentPlacementsPage = () => {
               Only draft placements can be edited and submitted from this page.
             </Typography>
           )}
+
+          {hasSubmittedPlacement && draftPlacements.length > 0 && (
+            <Alert severity="info" sx={{ mt: 1 }}>
+              You already submitted one placement. Remaining drafts are locked and can only be deleted.
+            </Alert>
+          )}
         </Box>
 
         <AppConfirmModal
@@ -369,6 +420,17 @@ const StudentPlacementsPage = () => {
           confirmLabel="Submit"
           cancelLabel="Keep Draft"
           variant="submit"
+        />
+
+        <AppConfirmModal
+          open={confirmDelete.open}
+          onClose={() => setConfirmDelete({ open: false, placementId: null })}
+          onConfirm={handleDeleteDraft}
+          title="Delete Draft Placement?"
+          description="This draft placement will be permanently removed."
+          confirmLabel="Delete"
+          cancelLabel="Keep Draft"
+          variant="delete"
         />
 
         <Dialog

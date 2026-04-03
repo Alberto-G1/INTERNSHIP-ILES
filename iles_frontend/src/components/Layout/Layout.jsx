@@ -5,14 +5,18 @@ import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { DRAWER_WIDTH, COLLAPSED_DRAWER_WIDTH } from './layoutConfig';
 import { useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { profileAPI } from '../../services/api';
 
 const Layout = () => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { user } = useAuth();
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [displayLocation, setDisplayLocation] = useState(location);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     if (location !== displayLocation) {
@@ -25,6 +29,34 @@ const Layout = () => {
     }
   }, [location]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProfile = async () => {
+      if (!user) {
+        setProfile(null);
+        return;
+      }
+
+      try {
+        const response = await profileAPI.getProfile();
+        if (isMounted) {
+          setProfile(response.data);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setProfile(user);
+        }
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
@@ -35,6 +67,7 @@ const Layout = () => {
         mobileOpen={mobileOpen} 
         onDrawerToggle={handleDrawerToggle}
         isMobile={isMobile}
+        profile={profile || user}
       />
       <Box
         component="main"
@@ -50,7 +83,7 @@ const Layout = () => {
           }),
         }}
       >
-        <Topbar onMenuClick={handleDrawerToggle} isMobile={isMobile} />
+        <Topbar onMenuClick={handleDrawerToggle} isMobile={isMobile} profile={profile || user} />
         <Box
           sx={{
             flex: 1,

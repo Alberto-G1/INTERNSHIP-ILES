@@ -39,6 +39,7 @@ import {
   getRoleLabel,
 } from './layoutConfig';
 import AppConfirmModal from '../Common/AppConfirmModal';
+import { resolveMediaUrl } from '../../utils/mediaUrl';
 
 const navigation = NAVIGATION.map((item) => {
   const iconMap = {
@@ -83,7 +84,7 @@ const STYLES = `
   }
 `;
 
-const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile }) => {
+const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile, profile }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -105,8 +106,9 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile }) => {
     return () => clearTimeout(t);
   }, []);
 
+  const activeProfile = profile || user || {};
   const filteredNav = navigation.filter(item =>
-    item.roles.includes(user?.role || 'student')
+    item.roles.includes(activeProfile?.role || 'student')
   );
 
   const groupedNav = ['Overview', 'Management', 'System'].map((section) => ({
@@ -120,10 +122,12 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile }) => {
     navigate('/login');
   };
 
-  const userInitial = user?.first_name?.[0] || user?.username?.[0]?.toUpperCase() || 'U';
-  const userName = user?.first_name
-    ? `${user.first_name} ${user.last_name || ''}`.trim()
-    : user?.username;
+  const userInitial = activeProfile?.first_name?.[0] || activeProfile?.username?.[0]?.toUpperCase() || 'U';
+  const userName = activeProfile?.full_name
+    || (activeProfile?.first_name
+      ? `${activeProfile.first_name} ${activeProfile.last_name || ''}`.trim()
+      : activeProfile?.username);
+  const userAvatarSrc = resolveMediaUrl(activeProfile?.profile_picture);
 
   const drawerContent = (
     <Box
@@ -361,10 +365,11 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile }) => {
             <ListItemIcon sx={{ minWidth: 34 }}>
               <Avatar
                 className="sidebar-avatar"
+                src={userAvatarSrc || undefined}
                 sx={{
                   width: 28,
                   height: 28,
-                  bgcolor: getRoleColor(user?.role),
+                  bgcolor: getRoleColor(activeProfile?.role),
                   fontSize: '11px',
                   fontWeight: 700,
                   fontFamily: "'Poppins', sans-serif",
@@ -377,7 +382,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile }) => {
             </ListItemIcon>
             <ListItemText
               primary={userName}
-              secondary={getRoleLabel(user?.role)}
+              secondary={getRoleLabel(activeProfile?.role)}
               primaryTypographyProps={{
                 fontSize: '12.5px',
                 fontWeight: 500,
