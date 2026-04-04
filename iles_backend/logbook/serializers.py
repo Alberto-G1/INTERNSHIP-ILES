@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -122,7 +123,12 @@ class StudentWeeklyLogCreateSerializer(WeeklyLogSerializer):
         validated_data['student'] = self.context['request'].user
         validated_data['submission_status'] = WeeklyLog.SUBMISSION_DRAFT
         validated_data['review_status'] = WeeklyLog.REVIEW_PENDING
-        return super().create(validated_data)
+        try:
+            return super().create(validated_data)
+        except DjangoValidationError as exc:
+            if hasattr(exc, 'message_dict'):
+                raise serializers.ValidationError(exc.message_dict)
+            raise serializers.ValidationError(exc.messages)
 
 
 class StudentWeeklyLogUpdateSerializer(WeeklyLogSerializer):
@@ -133,6 +139,14 @@ class StudentWeeklyLogUpdateSerializer(WeeklyLogSerializer):
             'supervisor_rating',
             'reviewed_by',
         ]
+
+    def update(self, instance, validated_data):
+        try:
+            return super().update(instance, validated_data)
+        except DjangoValidationError as exc:
+            if hasattr(exc, 'message_dict'):
+                raise serializers.ValidationError(exc.message_dict)
+            raise serializers.ValidationError(exc.messages)
 
 
 class WeeklyLogSubmitSerializer(serializers.Serializer):
