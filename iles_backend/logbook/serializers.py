@@ -116,9 +116,6 @@ class StudentWeeklyLogCreateSerializer(WeeklyLogSerializer):
         if placement.approval_status != Placement.APPROVAL_APPROVED:
             raise serializers.ValidationError('Placement must be approved.')
 
-        if placement.current_lifecycle_status != 'active':
-            raise serializers.ValidationError('Placement must be active.')
-
         return placement
 
     def create(self, validated_data):

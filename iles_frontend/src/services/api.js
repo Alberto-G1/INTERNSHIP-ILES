@@ -112,6 +112,17 @@ export const adminAPI = {
     api.patch(`/auth/admin/approvals/${userId}/`, { approved }),
 };
 
+export const supervisorAPI = {
+  getSupervisors: (params = {}) => api.get('/auth/supervisors/', { params }),
+  getWorkplaceSupervisors: () => api.get('/auth/supervisors/workplace/'),
+  getAcademicSupervisors: () => api.get('/auth/supervisors/academic/'),
+};
+
+export const adminUsersAPI = {
+  getUsers: (params = {}) => api.get('/auth/admin/profiles/', { params }),
+  updateUser: (userId, payload) => api.patch(`/auth/admin/users/${userId}/`, payload),
+};
+
 export const placementsAPI = {
   getOrganizations: (params = {}) => api.get('/placements/organizations/', { params }),
   createOrganization: (payload) => api.post('/placements/organizations/', payload),
@@ -128,6 +139,9 @@ export const placementsAPI = {
   deleteDraftPlacement: (placementId) => api.delete(`/placements/student/${placementId}/`),
   submitPlacement: (placementId) => api.post(`/placements/student/${placementId}/submit/`, {}),
   getAssignedPlacements: () => api.get('/placements/supervisor/assigned/'),
+  assignWorkplaceSupervisor: (placementId, payload) =>
+    api.patch(`/placements/student/${placementId}/workplace-supervisor/`, payload),
+  getAvailableWorkplaceSupervisors: () => api.get('/auth/supervisors/workplace/'),
 };
 
 export const adminPlacementsAPI = {

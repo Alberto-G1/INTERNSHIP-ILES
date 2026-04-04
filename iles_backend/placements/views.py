@@ -1,5 +1,6 @@
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils.crypto import get_random_string
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.pagination import PageNumberPagination
@@ -8,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import IsAdmin, IsAnySupervisor, IsStudent
+from accounts.models import SupervisorProfile, User
 from auditing.services import notify_user
 
 from .models import Organization, Placement
@@ -204,6 +206,93 @@ class StudentPlacementSubmitView(APIView):
         serializer.is_valid(raise_exception=True)
         submitted = serializer.save()
         return Response(PlacementSerializer(submitted, context={'request': request}).data)
+
+class StudentWorkplaceSupervisorAssignView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsStudent]
+
+    def patch(self, request, placement_id):
+        placement = get_object_or_404(Placement, id=placement_id, student=request.user)
+
+        if placement.submission_status != Placement.SUBMISSION_SUBMITTED:
+            return Response(
+                {'error': 'Only submitted placements can be assigned a workplace supervisor.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if placement.approval_status != Placement.APPROVAL_APPROVED:
+            return Response(
+                {'error': 'Placement must be approved before assigning a workplace supervisor.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        new_supervisor = request.data.get('new_supervisor')
+        if new_supervisor:
+            required_fields = ['first_name', 'last_name', 'email', 'organization_name', 'department', 'position', 'location']
+            missing = [field for field in required_fields if not str(new_supervisor.get(field, '')).strip()]
+            if missing:
+                return Response(
+                    {'error': f'Missing required new supervisor fields: {", ".join(missing)}'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            email = str(new_supervisor.get('email', '')).strip().lower()
+            phone = str(new_supervisor.get('phone', '')).strip()
+            first_name = str(new_supervisor.get('first_name', '')).strip()
+            last_name = str(new_supervisor.get('last_name', '')).strip()
+
+            # Reuse existing workplace supervisor account by email when possible.
+            existing_user = User.objects.filter(
+                role='workplace_supervisor',
+                email__iexact=email,
+            ).first()
+
+            if existing_user:
+                placement.workplace_supervisor = existing_user
+                placement.save(update_fields=['workplace_supervisor', 'updated_at'])
+                return Response(PlacementSerializer(placement, context={'request': request}).data)
+
+            username_seed = email.split('@')[0] if '@' in email else f'workplace_{placement.id}'
+            username = username_seed
+            while User.objects.filter(username=username).exists():
+                username = f"{username_seed}_{get_random_string(4).lower()}"
+
+            password = get_random_string(12)
+            created_user = User.objects.create_user(
+                username=username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                phone=phone,
+                role='workplace_supervisor',
+                admin_approved=True,
+                first_login_completed=True,
+                password=password,
+            )
+
+            SupervisorProfile.objects.create(
+                user=created_user,
+                supervisor_type='workplace',
+                organization_name=str(new_supervisor.get('organization_name')).strip(),
+                department=str(new_supervisor.get('department')).strip(),
+                position=str(new_supervisor.get('position')).strip(),
+                location=str(new_supervisor.get('location')).strip(),
+                work_email=email,
+                work_phone=phone,
+            )
+
+            placement.workplace_supervisor = created_user
+            placement.save(update_fields=['workplace_supervisor', 'updated_at'])
+            return Response(PlacementSerializer(placement, context={'request': request}).data)
+
+        serializer = SupervisorAssignmentSerializer(
+            data=request.data,
+            context={'placement': placement},
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        updated = serializer.save()
+        return Response(PlacementSerializer(updated, context={'request': request}).data)
+
 
 
 class AdminPlacementListView(APIView):

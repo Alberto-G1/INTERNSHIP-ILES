@@ -35,6 +35,7 @@ const StudentLogsPage = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState({ open: false, logId: null });
   const [auditModal, setAuditModal] = useState({ open: false, loading: false, data: null });
+  const [viewModal, setViewModal] = useState({ open: false, log: null });
   const [form, setForm] = useState({
     id: null,
     placement: '',
@@ -61,7 +62,7 @@ const StudentLogsPage = () => {
 
       const placements = placementsRes.data || [];
       const eligible = placements.filter(
-        (p) => p.approval_status === 'approved' && p.current_lifecycle_status === 'active'
+        (p) => p.approval_status === 'approved'
       );
 
       setLogs(logsRes.data || []);
@@ -128,6 +129,10 @@ const StudentLogsPage = () => {
       attachment: null,
     });
     setFormOpen(true);
+  };
+
+  const openView = (log) => {
+    setViewModal({ open: true, log });
   };
 
   const updateField = (field, value) => {
@@ -295,11 +300,17 @@ const StudentLogsPage = () => {
                 )}
 
                 <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                  {editable(log) && (
-                    <Button size="small" variant="outlined" onClick={() => openEdit(log)}>
-                      {log.workflow_state === 'needs_revision' ? 'Revise Log' : log.workflow_state === 'rejected' ? 'Edit Rejected Log' : 'Edit Draft'}
-                    </Button>
-                  )}
+                  <Button size="small" variant="outlined" onClick={() => openView(log)}>
+                    View
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => openEdit(log)}
+                    disabled={!editable(log)}
+                  >
+                    {log.workflow_state === 'needs_revision' ? 'Revise Log' : log.workflow_state === 'rejected' ? 'Edit Rejected Log' : 'Edit'}
+                  </Button>
                   {submittable(log) && (
                     <Button
                       size="small"
@@ -476,6 +487,72 @@ const StudentLogsPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAuditModal({ open: false, loading: false, data: null })}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={viewModal.open} onClose={() => setViewModal({ open: false, log: null })} maxWidth="md" fullWidth>
+        <DialogTitle>Weekly Log Details</DialogTitle>
+        <DialogContent>
+          {viewModal.log && (
+            <Stack spacing={1.5} sx={{ mt: 0.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Week {viewModal.log.week_number} ending {viewModal.log.week_ending_date}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {viewModal.log.placement_summary}
+              </Typography>
+
+              <Divider />
+
+              <Box>
+                <Typography variant="caption" color="text.secondary">Tasks Completed</Typography>
+                <Typography variant="body2">{viewModal.log.tasks_completed || 'N/A'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Tasks In Progress</Typography>
+                <Typography variant="body2">{viewModal.log.tasks_in_progress || 'N/A'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Next Week Tasks</Typography>
+                <Typography variant="body2">{viewModal.log.next_week_tasks || 'N/A'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Challenges</Typography>
+                <Typography variant="body2">{viewModal.log.challenges || 'N/A'}</Typography>
+              </Box>
+
+              <Grid container spacing={1}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" color="text.secondary">Hours Worked</Typography>
+                  <Typography variant="body2">{viewModal.log.hours_worked ?? 'N/A'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" color="text.secondary">Skills Gained</Typography>
+                  <Typography variant="body2">{viewModal.log.skills_gained || 'N/A'}</Typography>
+                </Grid>
+              </Grid>
+
+              {viewModal.log.supervisor_comments && (
+                <Alert severity="info">
+                  Supervisor feedback: {viewModal.log.supervisor_comments}
+                </Alert>
+              )}
+
+              <Stack direction="row" spacing={1}>
+                {statusChip(viewModal.log)}
+                <Chip label={`Round ${viewModal.log.review_round || 0}`} size="small" variant="outlined" />
+              </Stack>
+
+              {viewModal.log.attachment_url && (
+                <Button component={Link} href={viewModal.log.attachment_url} target="_blank" rel="noreferrer" size="small" variant="outlined">
+                  Open Attachment
+                </Button>
+              )}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewModal({ open: false, log: null })}>Close</Button>
         </DialogActions>
       </Dialog>
     </PageScaffold>

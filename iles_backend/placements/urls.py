@@ -10,6 +10,7 @@ urlpatterns = [
     path('student/', views.StudentPlacementListCreateView.as_view(), name='student-placements'),
     path('student/<int:placement_id>/', views.StudentPlacementDetailView.as_view(), name='student-placement-detail'),
     path('student/<int:placement_id>/submit/', views.StudentPlacementSubmitView.as_view(), name='student-placement-submit'),
+    path('student/<int:placement_id>/workplace-supervisor/', views.StudentWorkplaceSupervisorAssignView.as_view(), name='student-placement-workplace-supervisor'),
 
     # Admin actions
     path('admin/', views.AdminPlacementListView.as_view(), name='admin-placements'),

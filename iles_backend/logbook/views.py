@@ -137,12 +137,9 @@ class StudentLogProgressView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsStudent]
 
     def get(self, request):
-        today = timezone.now().date()
         active_placements = Placement.objects.filter(
             student=request.user,
             approval_status=Placement.APPROVAL_APPROVED,
-            start_date__lte=today,
-            end_date__gte=today,
         ).select_related('organization')
 
         payload = []

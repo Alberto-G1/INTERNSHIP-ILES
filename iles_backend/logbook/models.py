@@ -251,10 +251,6 @@ class WeeklyLog(models.Model):
         if self.placement.approval_status != Placement.APPROVAL_APPROVED:
             raise ValidationError({'placement': 'Placement must be approved to log weekly activity.'})
 
-        lifecycle = self.placement.current_lifecycle_status
-        if lifecycle != 'active':
-            raise ValidationError({'placement': 'Placement is not active for weekly logging.'})
-
     def _validate_required_content(self):
         required_fields = {
             'tasks_completed': self.tasks_completed,

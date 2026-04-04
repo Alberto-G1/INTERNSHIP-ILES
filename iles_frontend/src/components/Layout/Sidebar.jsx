@@ -26,6 +26,7 @@ import {
   Settings as SettingsIcon,
   HowToReg as ApprovalsIcon,
   Person as ProfileIcon,
+  Person as PersonIcon,
   BusinessCenter as PlacementsIcon,
   Logout as LogoutIcon,
   FiberManualRecord as DotIcon,
@@ -40,6 +41,7 @@ import {
 } from './layoutConfig';
 import AppConfirmModal from '../Common/AppConfirmModal';
 import { resolveMediaUrl } from '../../utils/mediaUrl';
+import { placementsAPI } from '../../services/api';
 
 const navigation = NAVIGATION.map((item) => {
   const iconMap = {
@@ -53,6 +55,8 @@ const navigation = NAVIGATION.map((item) => {
     Approvals: ApprovalsIcon,
     Settings: SettingsIcon,
     Placements: PlacementsIcon,
+    Staff: InternsIcon,
+    'Supervisor Assignment': PersonIcon,
   };
 
   return {
@@ -89,11 +93,13 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile, profile }) => {
   const location = useLocation();
   const theme = useTheme();
   const { user, logout } = useAuth();
+  const activeProfile = profile || user || {};
   const [pendingReviews] = useState(3);
   const [unreadNotifications] = useState(5);
   const [signoutModalOpen, setSignoutModalOpen] = useState(false);
   const [hoveredPath, setHoveredPath] = useState(null);
   const [mounted, setMounted] = useState(false);
+  const [hasApprovedPlacement, setHasApprovedPlacement] = useState(false);
 
   useEffect(() => {
     if (!document.getElementById('sidebar-keyframes')) {
@@ -106,10 +112,37 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile, profile }) => {
     return () => clearTimeout(t);
   }, []);
 
-  const activeProfile = profile || user || {};
-  const filteredNav = navigation.filter(item =>
-    item.roles.includes(activeProfile?.role || 'student')
-  );
+  useEffect(() => {
+    const loadApprovedPlacementStatus = async () => {
+      if (activeProfile?.role !== 'student') {
+        setHasApprovedPlacement(false);
+        return;
+      }
+
+      try {
+        const response = await placementsAPI.getMyPlacements();
+        const placements = response.data || [];
+        const hasApproved = placements.some((p) => p.approval_status === 'approved');
+        setHasApprovedPlacement(hasApproved);
+      } catch {
+        setHasApprovedPlacement(false);
+      }
+    };
+
+    loadApprovedPlacementStatus();
+  }, [activeProfile?.role]);
+
+  const filteredNav = navigation.filter((item) => {
+    if (!item.roles.includes(activeProfile?.role || 'student')) {
+      return false;
+    }
+
+    if (item.path === '/placements/supervisor-assignment') {
+      return hasApprovedPlacement;
+    }
+
+    return true;
+  });
 
   const groupedNav = ['Overview', 'Management', 'System'].map((section) => ({
     section,

@@ -27,8 +27,14 @@ urlpatterns = [
     path('profile/', views.UserProfileView.as_view(), name='profile'),
     path('profile/completion/', views.ProfileCompletionView.as_view(), name='profile-completion'),
     
+        # Supervisor endpoints
+        path('supervisors/', views.AvailableSupervisorsView.as_view(), name='available-supervisors'),
+        path('supervisors/workplace/', views.AvailableSupervisorsView.as_view(), name='available-workplace-supervisors'),
+        path('supervisors/academic/', views.AvailableSupervisorsView.as_view(), name='available-academic-supervisors'),
+    
     # Admin endpoints
     path('admin/profiles/', views.AdminProfileListView.as_view(), name='admin-profiles'),
     path('admin/approvals/', views.AdminSupervisorApprovalListView.as_view(), name='admin-supervisor-approvals'),
     path('admin/approvals/<int:user_id>/', views.AdminSupervisorApprovalActionView.as_view(), name='admin-supervisor-approval-action'),
+    path('admin/users/<int:user_id>/', views.AdminUserManagementActionView.as_view(), name='admin-user-management-action'),
 ]
