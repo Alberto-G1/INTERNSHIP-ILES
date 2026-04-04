@@ -23,7 +23,7 @@ import {
 } from '@mui/icons-material';
 import PageScaffold from '../../../components/Common/PageScaffold';
 import { notifyError, notifySuccess } from '../../../components/Common/AppToast';
-import { placementsAPI, supervisorAPI } from '../../../services/api';
+import { extractErrorMessage, placementsAPI, supervisorAPI } from '../../../services/api';
 
 const WorkplaceSupervisorAssignmentPage = () => {
   const { placementId } = useParams();
@@ -78,6 +78,10 @@ const WorkplaceSupervisorAssignmentPage = () => {
     return approvedPlacements[0];
   }, [approvedPlacements, placementId]);
 
+  const hasWorkplaceSupervisorAssigned = Boolean(targetPlacement?.workplace_supervisor);
+  const workplaceSupervisor = targetPlacement?.workplace_supervisor_details;
+  const academicSupervisor = targetPlacement?.academic_supervisor_details;
+
   const refreshPlacement = async () => {
     const res = await placementsAPI.getMyPlacements();
     setPlacements(res.data || []);
@@ -97,10 +101,9 @@ const WorkplaceSupervisorAssignmentPage = () => {
       await refreshPlacement();
       notifySuccess('Workplace supervisor assigned successfully', { title: 'Success' });
     } catch (err) {
-      notifyError(
-        err.response?.data?.error || 'Failed to assign workplace supervisor',
-        { title: 'Error' }
-      );
+      notifyError(extractErrorMessage(err.response?.data) || 'Failed to assign workplace supervisor', {
+        title: 'Error',
+      });
     } finally {
       setSaving(false);
     }
@@ -136,7 +139,7 @@ const WorkplaceSupervisorAssignmentPage = () => {
         location: '',
       });
     } catch (err) {
-      notifyError(err.response?.data?.error || 'Failed to create and assign supervisor', {
+      notifyError(extractErrorMessage(err.response?.data) || 'Failed to create and assign supervisor', {
         title: 'Error',
       });
     } finally {
@@ -191,17 +194,13 @@ const WorkplaceSupervisorAssignmentPage = () => {
                 <Box>
                   <Typography color="textSecondary" variant="caption">Academic Supervisor</Typography>
                   <Typography variant="body1">
-                    {targetPlacement?.academic_supervisor
-                      ? `${targetPlacement.academic_supervisor.first_name || ''} ${targetPlacement.academic_supervisor.last_name || ''}`.trim()
-                      : 'Not assigned yet'}
+                    {academicSupervisor?.full_name || 'Not assigned yet'}
                   </Typography>
                 </Box>
                 <Box>
                   <Typography color="textSecondary" variant="caption">Current Workplace Supervisor</Typography>
                   <Typography variant="body1">
-                    {targetPlacement?.workplace_supervisor
-                      ? `${targetPlacement.workplace_supervisor.first_name || ''} ${targetPlacement.workplace_supervisor.last_name || ''}`.trim()
-                      : 'Not assigned yet'}
+                    {workplaceSupervisor?.full_name || (hasWorkplaceSupervisorAssigned ? 'Assigned' : 'Not assigned yet')}
                   </Typography>
                 </Box>
               </Stack>
@@ -212,129 +211,170 @@ const WorkplaceSupervisorAssignmentPage = () => {
         <Grid item xs={12} md={7}>
           <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6">Assign Workplace Supervisor</Typography>
-                {targetPlacement?.workplace_supervisor && <Chip size="small" label="Assigned" color="success" icon={<CheckIcon />} />}
-              </Box>
-              <Divider sx={{ mb: 2 }} />
+              {hasWorkplaceSupervisorAssigned ? (
+                <>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6">Assigned Supervisors</Typography>
+                    <Chip size="small" label="Complete" color="success" icon={<CheckIcon />} />
+                  </Box>
+                  <Divider sx={{ mb: 2 }} />
 
-              <Alert severity="info" sx={{ mb: 2 }}>
-                Choose an existing workplace supervisor or register a new one provided by your organization.
-              </Alert>
+                  <Alert severity="success" sx={{ mb: 2 }}>
+                    Workplace supervisor already assigned. Assignment section is hidden.
+                  </Alert>
 
-              <Stack spacing={1} sx={{ mb: 2 }}>
-                {availableSupervisors.map((supervisor) => (
-                  <Paper
-                    key={supervisor.id}
-                    onClick={() => setSelectedSupervisorId(String(supervisor.id))}
-                    sx={{
-                      p: 1.2,
-                      border: selectedSupervisorId === String(supervisor.id) ? '2px solid #2E8B5B' : '1px solid #e5e7eb',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Avatar sx={{ bgcolor: '#F59E0B' }}>
-                        <PersonIcon />
-                      </Avatar>
-                      <Box>
-                        <Typography sx={{ fontWeight: 600 }}>
-                          {(supervisor.first_name || '').trim()} {(supervisor.last_name || '').trim()}
+                  <Stack spacing={1.2}>
+                    <Paper sx={{ p: 1.2, border: '1px solid #e5e7eb' }}>
+                      <Typography sx={{ fontWeight: 600, mb: 0.5 }}>Academic Supervisor</Typography>
+                      <Typography sx={{ fontSize: 14 }}>
+                        {academicSupervisor?.full_name || 'Not assigned yet'}
+                      </Typography>
+                      {academicSupervisor?.email && (
+                        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                          {academicSupervisor.email}
                         </Typography>
-                        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{supervisor.email}</Typography>
-                      </Box>
-                    </Stack>
-                  </Paper>
-                ))}
-              </Stack>
+                      )}
+                    </Paper>
 
-              <Button
-                variant="contained"
-                onClick={handleAssignExistingSupervisor}
-                disabled={saving || !selectedSupervisorId}
-                sx={{ mb: 2 }}
-              >
-                {saving ? 'Assigning...' : 'Assign Selected Existing Supervisor'}
-              </Button>
+                    <Paper sx={{ p: 1.2, border: '1px solid #e5e7eb' }}>
+                      <Typography sx={{ fontWeight: 600, mb: 0.5 }}>Workplace Supervisor</Typography>
+                      <Typography sx={{ fontSize: 14 }}>
+                        {workplaceSupervisor?.full_name || (hasWorkplaceSupervisorAssigned ? 'Assigned' : 'Not assigned yet')}
+                      </Typography>
+                      {workplaceSupervisor?.email && (
+                        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                          {workplaceSupervisor.email}
+                        </Typography>
+                      )}
+                    </Paper>
+                  </Stack>
+                </>
+              ) : (
+                <>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6">Assign Workplace Supervisor</Typography>
+                  </Box>
+                  <Divider sx={{ mb: 2 }} />
 
-              <Divider sx={{ mb: 2 }} />
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    Choose an existing workplace supervisor or add a new one from your workplace.
+                  </Alert>
 
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>Add New Workplace Supervisor</Typography>
-              <Grid container spacing={1.2}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="First name"
-                    value={newSupervisor.first_name}
-                    onChange={(e) => setNewSupervisor((prev) => ({ ...prev, first_name: e.target.value }))}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Last name"
-                    value={newSupervisor.last_name}
-                    onChange={(e) => setNewSupervisor((prev) => ({ ...prev, last_name: e.target.value }))}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    value={newSupervisor.email}
-                    onChange={(e) => setNewSupervisor((prev) => ({ ...prev, email: e.target.value }))}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Phone (optional)"
-                    value={newSupervisor.phone}
-                    onChange={(e) => setNewSupervisor((prev) => ({ ...prev, phone: e.target.value }))}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Organization"
-                    value={newSupervisor.organization_name}
-                    onChange={(e) => setNewSupervisor((prev) => ({ ...prev, organization_name: e.target.value }))}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Department"
-                    value={newSupervisor.department}
-                    onChange={(e) => setNewSupervisor((prev) => ({ ...prev, department: e.target.value }))}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Position"
-                    value={newSupervisor.position}
-                    onChange={(e) => setNewSupervisor((prev) => ({ ...prev, position: e.target.value }))}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Location"
-                    value={newSupervisor.location}
-                    onChange={(e) => setNewSupervisor((prev) => ({ ...prev, location: e.target.value }))}
-                  />
-                </Grid>
-              </Grid>
+                  <Stack spacing={1} sx={{ mb: 2 }}>
+                    {availableSupervisors.map((supervisor) => (
+                      <Paper
+                        key={supervisor.id}
+                        onClick={() => setSelectedSupervisorId(String(supervisor.id))}
+                        sx={{
+                          p: 1.2,
+                          border: selectedSupervisorId === String(supervisor.id) ? '2px solid #2E8B5B' : '1px solid #e5e7eb',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Avatar sx={{ bgcolor: '#F59E0B' }}>
+                            <PersonIcon />
+                          </Avatar>
+                          <Box>
+                            <Typography sx={{ fontWeight: 600 }}>
+                              {(supervisor.first_name || '').trim()} {(supervisor.last_name || '').trim()}
+                            </Typography>
+                            <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{supervisor.email}</Typography>
+                          </Box>
+                        </Stack>
+                      </Paper>
+                    ))}
+                  </Stack>
 
-              <Button
-                variant="outlined"
-                onClick={handleCreateAndAssignSupervisor}
-                disabled={saving}
-                sx={{ mt: 1.5 }}
-              >
-                {saving ? 'Saving...' : 'Create and Assign New Supervisor'}
-              </Button>
+                  <Button
+                    variant="contained"
+                    onClick={handleAssignExistingSupervisor}
+                    disabled={saving || !selectedSupervisorId}
+                    sx={{ mb: 2 }}
+                  >
+                    {saving ? 'Assigning...' : 'Assign Selected Existing Supervisor'}
+                  </Button>
+
+                  <Divider sx={{ mb: 2 }} />
+
+                  <Typography sx={{ fontWeight: 600, mb: 1 }}>Add New Workplace Supervisor</Typography>
+                  <Grid container spacing={1.2}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="First name"
+                        value={newSupervisor.first_name}
+                        onChange={(e) => setNewSupervisor((prev) => ({ ...prev, first_name: e.target.value }))}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Last name"
+                        value={newSupervisor.last_name}
+                        onChange={(e) => setNewSupervisor((prev) => ({ ...prev, last_name: e.target.value }))}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Email"
+                        value={newSupervisor.email}
+                        onChange={(e) => setNewSupervisor((prev) => ({ ...prev, email: e.target.value }))}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Phone (optional)"
+                        value={newSupervisor.phone}
+                        onChange={(e) => setNewSupervisor((prev) => ({ ...prev, phone: e.target.value }))}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Organization"
+                        value={newSupervisor.organization_name}
+                        onChange={(e) => setNewSupervisor((prev) => ({ ...prev, organization_name: e.target.value }))}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Department"
+                        value={newSupervisor.department}
+                        onChange={(e) => setNewSupervisor((prev) => ({ ...prev, department: e.target.value }))}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Position"
+                        value={newSupervisor.position}
+                        onChange={(e) => setNewSupervisor((prev) => ({ ...prev, position: e.target.value }))}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Location"
+                        value={newSupervisor.location}
+                        onChange={(e) => setNewSupervisor((prev) => ({ ...prev, location: e.target.value }))}
+                      />
+                    </Grid>
+                  </Grid>
+
+                  <Button
+                    variant="outlined"
+                    onClick={handleCreateAndAssignSupervisor}
+                    disabled={saving}
+                    sx={{ mt: 1.5 }}
+                  >
+                    {saving ? 'Saving...' : 'Create and Assign New Supervisor'}
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         </Grid>
