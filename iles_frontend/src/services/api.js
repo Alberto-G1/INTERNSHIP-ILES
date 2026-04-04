@@ -13,6 +13,39 @@ const api = axios.create({
   },
 });
 
+const extractErrorMessage = (data) => {
+  if (!data) return null;
+
+  if (typeof data === 'string') {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    const parts = data
+      .map((item) => extractErrorMessage(item))
+      .filter(Boolean);
+    return parts.length ? parts.join(' | ') : null;
+  }
+
+  if (typeof data === 'object') {
+    if (data.error) return extractErrorMessage(data.error);
+    if (data.detail) return extractErrorMessage(data.detail);
+    if (data.message) return extractErrorMessage(data.message);
+
+    const fieldMessages = Object.entries(data)
+      .map(([field, value]) => {
+        const msg = extractErrorMessage(value);
+        if (!msg) return null;
+        return field === 'non_field_errors' ? msg : `${field}: ${msg}`;
+      })
+      .filter(Boolean);
+
+    return fieldMessages.length ? fieldMessages.join(' | ') : null;
+  }
+
+  return null;
+};
+
 // Request interceptor - Add auth token to every request
 api.interceptors.request.use(
   (config) => {
@@ -63,9 +96,7 @@ api.interceptors.response.use(
     }
 
     // Show error toast for user-friendly messages
-    const errorMessage = error.response?.data?.error || 
-                         error.response?.data?.message || 
-                         'An error occurred';
+    const errorMessage = extractErrorMessage(error.response?.data) || 'An error occurred';
     
     // Don't show toast for 401 errors (handled above)
     if (error.response?.status !== 401) {
@@ -208,3 +239,4 @@ export const auditingAPI = {
 };
 
 export default api;
+export { extractErrorMessage };

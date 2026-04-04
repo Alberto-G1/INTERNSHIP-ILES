@@ -59,6 +59,8 @@ class PlacementSerializer(serializers.ModelSerializer):
     duration_weeks = serializers.ReadOnlyField()
     current_lifecycle_status = serializers.ReadOnlyField()
     placement_letter_url = serializers.SerializerMethodField()
+    workplace_supervisor_details = serializers.SerializerMethodField()
+    academic_supervisor_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Placement
@@ -78,8 +80,10 @@ class PlacementSerializer(serializers.ModelSerializer):
             'work_mode',
             'workplace_supervisor',
             'workplace_supervisor_id',
+            'workplace_supervisor_details',
             'academic_supervisor',
             'academic_supervisor_id',
+            'academic_supervisor_details',
             'submission_status',
             'approval_status',
             'current_lifecycle_status',
@@ -123,6 +127,25 @@ class PlacementSerializer(serializers.ModelSerializer):
             url = obj.placement_letter.url
             return request.build_absolute_uri(url) if request else url
         return ''
+
+    def _serialize_supervisor(self, user):
+        if not user:
+            return None
+        return {
+            'id': user.id,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'full_name': user.get_full_name(),
+            'email': user.email,
+            'phone': user.phone,
+            'role': user.role,
+        }
+
+    def get_workplace_supervisor_details(self, obj):
+        return self._serialize_supervisor(obj.workplace_supervisor)
+
+    def get_academic_supervisor_details(self, obj):
+        return self._serialize_supervisor(obj.academic_supervisor)
 
 
 class StudentPlacementCreateSerializer(PlacementSerializer):
