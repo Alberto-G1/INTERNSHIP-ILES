@@ -21,7 +21,7 @@ import StudentProfileDisplayPage from './pages/Student/Profile/StudentProfileDis
 import StudentProfileEditPage from './pages/Student/Profile/StudentProfileEditPage';
 import StudentLogsPage from './pages/Student/Logs/StudentLogsPage';
 import StudentPlacementsPage from './pages/Student/Placements/StudentPlacementsPage';
-
+import WorkplaceSupervisorAssignmentPage from './pages/Student/Placements/WorkplaceSupervisorAssignmentPage';
 // Workplace Supervisor Pages
 import WorkplaceSupervisorDashboard from './pages/WorkplaceSupervisor/Dashboard/WorkplaceSupervisorDashboard';
 import WorkplaceSupervisorProfileDisplayPage from './pages/WorkplaceSupervisor/Profile/WorkplaceSupervisorProfileDisplayPage';
@@ -43,6 +43,7 @@ import AdminProfileEditPage from './pages/Admin/Profile/AdminProfileEditPage';
 import AdminLogsPage from './pages/Admin/LogsPage';
 import AdminPlacementsPage from './pages/Admin/Placements/AdminPlacementsPage';
 import AdminApprovalsPage from './pages/Admin/Approvals/AdminApprovalsPage';
+import AdminStaffManagementPage from './pages/Admin/UserManagement/AdminStaffManagementPage';
 
 // Shared Feature Pages
 import EvaluationsPage from './pages/Evaluations/EvaluationsPage';
@@ -208,12 +209,15 @@ const AppShell = () => {
               <Route path="profile/edit" element={<ProfileEditRouter />} />
               <Route path="logs" element={<LogsRouter />} />
               <Route path="placements" element={<PlacementsRouter />} />
+              <Route path="placements/supervisor-assignment" element={<WorkplaceSupervisorAssignmentPage />} />
+              <Route path="placements/:placementId/supervisor" element={<WorkplaceSupervisorAssignmentPage />} />
               <Route path="evaluations" element={<EvaluationsPage />} />
               <Route path="interns" element={<InternsPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="admin/approvals" element={<AdminApprovalsRoute />} />
+              <Route path="admin/staff" element={<AdminStaffRoute />} />
             </Route>
           </Routes>
         </AuthProvider>
@@ -329,6 +333,16 @@ const AdminApprovalsRoute = () => {
   }
 
   return <AdminApprovalsPage />;
+};
+
+const AdminStaffRoute = () => {
+  const { user } = useAuth();
+
+  if (user?.role !== 'admin') {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return <AdminStaffManagementPage />;
 };
 
 export default App;

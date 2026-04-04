@@ -7,6 +7,7 @@ export const PAGE_TITLES = {
   '/dashboard': { title: 'Dashboard', subtitle: 'Good morning, Spring 2025 cohort' },
   '/logs': { title: 'Logs', subtitle: 'Weekly internship log entries' },
   '/placements': { title: 'Placements', subtitle: 'Placement coordination and tracking' },
+  '/placements/supervisor-assignment': { title: 'Supervisor Assignment', subtitle: 'Assign and manage workplace supervisor for approved placement' },
   '/evaluations': { title: 'Evaluations', subtitle: 'Supervisor reviews and assessments' },
   '/interns': { title: 'Interns', subtitle: 'Cohort intern management' },
   '/reports': { title: 'Reports', subtitle: 'Cohort analytics and insights' },
@@ -14,6 +15,7 @@ export const PAGE_TITLES = {
   '/profile': { title: 'Profile', subtitle: 'Your personal information' },
   '/settings': { title: 'Settings', subtitle: 'System configuration' },
   '/admin/approvals': { title: 'Supervisor Approvals', subtitle: 'Review and approve supervisor accounts' },
+  '/admin/staff': { title: 'Staff Management', subtitle: 'Manage students and staff members' },
 };
 
 export const NAVIGATION = [
@@ -21,11 +23,13 @@ export const NAVIGATION = [
   { section: 'Overview', path: '/logs', label: 'Logs', roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
   { section: 'Overview', path: '/evaluations', label: 'Evaluations', roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
   { section: 'Management', path: '/placements', label: 'Placements', roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
+  { section: 'Management', path: '/placements/supervisor-assignment', label: 'Supervisor Assignment', roles: ['student'] },
   { section: 'Management', path: '/interns', label: 'Interns', roles: ['workplace_supervisor', 'academic_supervisor', 'admin'] },
   { section: 'Management', path: '/reports', label: 'Reports', roles: ['admin'] },
   { section: 'Management', path: '/notifications', label: 'Notifications', roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
   { section: 'System', path: '/profile', label: 'Profile', roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
   { section: 'System', path: '/admin/approvals', label: 'Approvals', roles: ['admin'] },
+  { section: 'System', path: '/admin/staff', label: 'Staff', roles: ['admin'] },
   { section: 'System', path: '/settings', label: 'Settings', roles: ['admin'] },
 ];
 

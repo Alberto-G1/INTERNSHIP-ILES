@@ -315,6 +315,30 @@ class AdminProfileListView(APIView):
         return Response(serializer.data)
 
 
+class AvailableSupervisorsView(APIView):
+    """List available supervisors for assignment to placements."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        supervisor_type = request.query_params.get('type')  # 'workplace' or 'academic'
+        if not supervisor_type:
+            if request.path.endswith('/supervisors/workplace/'):
+                supervisor_type = 'workplace'
+            elif request.path.endswith('/supervisors/academic/'):
+                supervisor_type = 'academic'
+        
+        if supervisor_type == 'workplace':
+            users = User.objects.filter(role='workplace_supervisor', admin_approved=True).order_by('first_name', 'last_name')
+        elif supervisor_type == 'academic':
+            users = User.objects.filter(role='academic_supervisor', admin_approved=True).order_by('first_name', 'last_name')
+        else:
+            users = User.objects.filter(role__in=['workplace_supervisor', 'academic_supervisor'], admin_approved=True).order_by('first_name', 'last_name')
+        
+        serializer = UserProfileSerializer(users, many=True)
+        return Response(serializer.data)
+
+
 class AdminSupervisorApprovalListView(APIView):
     """List supervisor accounts and their approval status."""
 
@@ -354,6 +378,50 @@ class AdminSupervisorApprovalActionView(APIView):
         return Response(
             {
                 'message': 'Approval status updated successfully',
+                'user': UserProfileSerializer(target_user).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminUserManagementActionView(APIView):
+    """Update admin-managed user flags (active status, supervisor approval)."""
+
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def patch(self, request, user_id):
+        target_user = User.objects.filter(id=user_id).first()
+        if not target_user:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if target_user.id == request.user.id and 'is_active' in request.data:
+            return Response(
+                {'error': 'You cannot deactivate your own account.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        updated_fields = []
+
+        if 'is_active' in request.data:
+            target_user.is_active = bool(request.data.get('is_active'))
+            updated_fields.append('is_active')
+
+        if 'admin_approved' in request.data:
+            target_user.admin_approved = bool(request.data.get('admin_approved'))
+            updated_fields.append('admin_approved')
+
+        if not updated_fields:
+            return Response(
+                {'error': 'No valid fields provided. Use is_active or admin_approved.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        updated_fields.append('updated_at')
+        target_user.save(update_fields=updated_fields)
+
+        return Response(
+            {
+                'message': 'User updated successfully',
                 'user': UserProfileSerializer(target_user).data,
             },
             status=status.HTTP_200_OK,

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -66,6 +67,7 @@ const emptyOrganizationForm = {
 };
 
 const StudentPlacementsPage = () => {
+  const navigate = useNavigate();
   const [placements, setPlacements] = useState([]);
   const [organizations, setOrganizations] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -331,6 +333,8 @@ const StudentPlacementsPage = () => {
                 const isDraftLocked = isDraft && hasSubmittedPlacement;
                 const submitting = submittingId === placement.id;
                 const deleting = deletingId === placement.id;
+                const canAssignSupervisor =
+                  placement.submission_status === 'submitted' && placement.approval_status === 'approved';
 
                 return (
                   <Box
@@ -395,6 +399,15 @@ const StudentPlacementsPage = () => {
                             disabled={deleting}
                           >
                             {deleting ? 'Deleting...' : 'Delete'}
+                          </Button>
+                        )}
+                        {canAssignSupervisor && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => navigate(`/placements/${placement.id}/supervisor`)}
+                          >
+                            Supervisor
                           </Button>
                         )}
                       </Stack>
