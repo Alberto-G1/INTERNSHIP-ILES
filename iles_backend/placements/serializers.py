@@ -131,14 +131,31 @@ class PlacementSerializer(serializers.ModelSerializer):
     def _serialize_supervisor(self, user):
         if not user:
             return None
+
+        supervisor_profile = getattr(user, 'supervisor_profile', None)
         return {
             'id': user.id,
             'first_name': user.first_name,
             'last_name': user.last_name,
             'full_name': user.get_full_name(),
             'email': user.email,
+            'profile_picture': user.profile_picture.url if getattr(user, 'profile_picture', None) else '',
             'phone': user.phone,
+            'alternative_phone': user.alternative_phone,
             'role': user.role,
+            'organization_name': getattr(supervisor_profile, 'organization_name', ''),
+            'organization_type': getattr(supervisor_profile, 'organization_type', ''),
+            'industry': getattr(supervisor_profile, 'industry', ''),
+            'location': getattr(supervisor_profile, 'location', ''),
+            'department': getattr(supervisor_profile, 'department', ''),
+            'faculty': getattr(supervisor_profile, 'faculty', ''),
+            'position': getattr(supervisor_profile, 'position', ''),
+            'work_email': getattr(supervisor_profile, 'work_email', ''),
+            'work_phone': getattr(supervisor_profile, 'work_phone', ''),
+            'office_phone': getattr(supervisor_profile, 'office_phone', ''),
+            'office_address': getattr(supervisor_profile, 'office_address', ''),
+            'specialization': getattr(supervisor_profile, 'specialization', ''),
+            'years_of_experience': getattr(supervisor_profile, 'years_of_experience', None),
         }
 
     def get_workplace_supervisor_details(self, obj):

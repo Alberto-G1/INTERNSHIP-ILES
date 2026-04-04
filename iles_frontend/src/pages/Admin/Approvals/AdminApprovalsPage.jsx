@@ -1,20 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Avatar,
   Box,
   Button,
-  Card,
-  CardContent,
   Chip,
   CircularProgress,
-  Grid,
+  Paper,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Typography,
 } from '@mui/material';
 import PageScaffold from '../../../components/Common/PageScaffold';
 import { adminAPI } from '../../../services/api';
 import AppConfirmModal from '../../../components/Common/AppConfirmModal';
 import { notifyError, notifySuccess } from '../../../components/Common/AppToast';
+import { resolveMediaUrl } from '../../../utils/mediaUrl';
 
 const getRoleChipColor = (role) => {
   if (role === 'workplace_supervisor') return { bg: '#FEF3C7', color: '#B45309' };
@@ -116,20 +122,60 @@ const AdminApprovalsPage = () => {
           <Alert severity="info">No supervisor accounts found.</Alert>
         )}
 
-        <Grid container spacing={2}>
-          {supervisors.map((item) => {
-            const roleStyle = getRoleChipColor(item.role);
-            const name = item.full_name || `${item.first_name || ''} ${item.last_name || ''}`.trim() || item.username;
-            const isPending = !item.admin_approved;
-            const busy = Boolean(actionLoading[item.id]);
+        {supervisors.length > 0 && (
+          <TableContainer component={Paper} sx={{ border: '1px solid var(--gray-200)' }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Supervisor</TableCell>
+                  <TableCell>Role</TableCell>
+                  <TableCell>First Login</TableCell>
+                  <TableCell>Approval</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {supervisors.map((item) => {
+                  const roleStyle = getRoleChipColor(item.role);
+                  const name = item.full_name || `${item.first_name || ''} ${item.last_name || ''}`.trim() || item.username;
+                  const isPending = !item.admin_approved;
+                  const busy = Boolean(actionLoading[item.id]);
 
-            return (
-              <Grid item xs={12} md={6} key={item.id}>
-                <Card sx={{ border: '1px solid var(--gray-200)' }}>
-                  <CardContent>
-                    <Stack spacing={1.2}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-                        <Typography sx={{ fontWeight: 600 }}>{name}</Typography>
+                  return (
+                    <TableRow key={item.id} hover>
+                      <TableCell>
+                        <Stack direction="row" spacing={1.2} alignItems="center">
+                          <Avatar
+                            src={resolveMediaUrl(item.profile_picture)}
+                            alt={name}
+                            sx={{ width: 36, height: 36 }}
+                          >
+                            {name.charAt(0).toUpperCase()}
+                          </Avatar>
+                          <Box>
+                            <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{name}</Typography>
+                            <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{item.email}</Typography>
+                          </Box>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={item.role === 'academic_supervisor' ? 'Academic Supervisor' : 'Workplace Supervisor'}
+                          sx={{ bgcolor: roleStyle.bg, color: roleStyle.color }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={item.first_login_completed ? 'Completed' : 'Pending'}
+                          sx={{
+                            bgcolor: item.first_login_completed ? 'var(--slate-100)' : 'var(--gray-100)',
+                            color: item.first_login_completed ? 'var(--slate-800)' : 'var(--gray-600)',
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
                         <Chip
                           size="small"
                           label={isPending ? 'Pending Approval' : 'Approved'}
@@ -139,52 +185,35 @@ const AdminApprovalsPage = () => {
                             fontWeight: 600,
                           }}
                         />
-                      </Box>
-
-                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
-                        <Chip
-                          size="small"
-                          label={item.role === 'academic_supervisor' ? 'Academic Supervisor' : 'Workplace Supervisor'}
-                          sx={{ bgcolor: roleStyle.bg, color: roleStyle.color }}
-                        />
-                        <Chip
-                          size="small"
-                          label={item.first_login_completed ? 'First Login Completed' : 'No First Login Yet'}
-                          sx={{
-                            bgcolor: item.first_login_completed ? 'var(--slate-100)' : 'var(--gray-100)',
-                            color: item.first_login_completed ? 'var(--slate-800)' : 'var(--gray-600)',
-                          }}
-                        />
-                      </Stack>
-
-                      <Typography sx={{ fontSize: '13px', color: 'text.secondary' }}>{item.email}</Typography>
-
-                      <Box sx={{ display: 'flex', gap: 1, pt: 0.5 }}>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          disabled={busy || !isPending}
-                          onClick={() => openConfirm(item, true)}
-                        >
-                          {busy ? 'Updating...' : 'Approve'}
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          color="error"
-                          disabled={busy || isPending}
-                          onClick={() => openConfirm(item, false)}
-                        >
-                          {busy ? 'Updating...' : 'Revoke'}
-                        </Button>
-                      </Box>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              </Grid>
-            );
-          })}
-        </Grid>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                          <Button
+                            variant="contained"
+                            size="small"
+                            disabled={busy || !isPending}
+                            onClick={() => openConfirm(item, true)}
+                          >
+                            {busy ? 'Updating...' : 'Approve'}
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="error"
+                            disabled={busy || isPending}
+                            onClick={() => openConfirm(item, false)}
+                          >
+                            {busy ? 'Updating...' : 'Revoke'}
+                          </Button>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
         <AppConfirmModal
           open={confirmState.open}

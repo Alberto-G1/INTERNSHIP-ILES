@@ -12,53 +12,146 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
 import StatCard from '../../../components/dashboard/StatCard';
 import RecentActivity from '../../../components/dashboard/RecentActivity';
 import QuickActions from '../../../components/dashboard/QuickActions';
+import { adminAPI, adminPlacementsAPI, adminUsersAPI, evaluationsAPI, logbookAPI } from '../../../services/api';
+
+const toDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const timeAgo = (value) => {
+  const date = toDate(value);
+  if (!date) return 'Recently';
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+};
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState([]);
+  const [placements, setPlacements] = useState([]);
+  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [overview, setOverview] = useState({
+    total_logs: 0,
+    pending_review: 0,
+    approved: 0,
+    revisions: 0,
+    late_submissions: 0,
+    approval_rate: 0,
+  });
+  const [finalScores, setFinalScores] = useState([]);
 
-  // Mock data - replace with actual API calls
-  const stats = {
-    totalUsers: 245,
-    totalPlacements: 78,
-    activeInternships: 52,
-    pendingApprovals: 8,
-    students: 156,
-    supervisors: 45,
-    admins: 4,
-    systemHealth: 98,
-  };
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setLoading(true);
+        const [usersRes, placementsRes, approvalsRes, overviewRes, finalScoresRes] = await Promise.allSettled([
+          adminUsersAPI.getUsers(),
+          adminPlacementsAPI.getPlacements({ page_size: 200 }),
+          adminAPI.getSupervisorApprovals(),
+          logbookAPI.getAdminOverview(),
+          evaluationsAPI.getAdminFinalScores(),
+        ]);
 
-  const userGrowth = {
-    monthly: '+12%',
-    weekly: '+3%',
-  };
+        if (usersRes.status === 'fulfilled') {
+          setUsers(Array.isArray(usersRes.value.data) ? usersRes.value.data : []);
+        }
+        if (placementsRes.status === 'fulfilled') {
+          const data = placementsRes.value.data;
+          setPlacements(Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : []);
+        }
+        if (approvalsRes.status === 'fulfilled') {
+          const approvalUsers = Array.isArray(approvalsRes.value.data) ? approvalsRes.value.data : [];
+          setPendingApprovals(approvalUsers.filter((user) => !user.admin_approved));
+        }
+        if (overviewRes.status === 'fulfilled') {
+          setOverview({ ...overview, ...overviewRes.value.data });
+        }
+        if (finalScoresRes.status === 'fulfilled') {
+          setFinalScores(Array.isArray(finalScoresRes.value.data) ? finalScoresRes.value.data : []);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const recentActivities = [
-    {
+    loadDashboard();
+  }, []);
+
+  const stats = useMemo(() => {
+    const students = users.filter((user) => user.role === 'student').length;
+    const supervisors = users.filter((user) => ['academic_supervisor', 'workplace_supervisor'].includes(user.role)).length;
+    const admins = users.filter((user) => user.role === 'admin').length;
+    const activeInternships = placements.filter((placement) => ['active', 'approved'].includes(placement.current_lifecycle_status)).length;
+
+    const healthScore = Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round((Number(overview.approval_rate || 0) * 0.7) + ((pendingApprovals.length ? 0 : 100) * 0.3))
+      )
+    );
+
+    return {
+      totalUsers: users.length,
+      totalPlacements: placements.length,
+      activeInternships,
+      pendingApprovals: pendingApprovals.length,
+      students,
+      supervisors,
+      admins,
+      systemHealth: healthScore,
+    };
+  }, [users, placements, pendingApprovals, overview.approval_rate]);
+
+  const recentActivities = useMemo(() => {
+    const approvalActivities = pendingApprovals.slice(0, 3).map((user) => ({
       type: 'approval',
-      title: 'New Supervisor Request',
-      description: 'John Smith requested supervisor approval',
-      time: '30 minutes ago',
-      status: 'Pending',
-    },
-    {
+      title: 'Supervisor approval pending',
+      description: `${user.full_name || user.username} (${user.role})`,
+      time: timeAgo(user.created_at),
+      status: 'pending',
+      sortAt: toDate(user.created_at),
+    }));
+
+    const placementActivities = placements.slice(0, 4).map((placement) => ({
       type: 'placement',
-      title: 'Placement Created',
-      description: 'New internship placement at Tech Corp',
-      time: '2 hours ago',
-      status: 'Active',
-    },
-    {
-      type: 'warning',
-      title: 'System Update',
-      description: 'New version v2.5.0 available',
-      time: 'Yesterday',
-      status: 'Info',
-    },
-  ];
+      title: `Placement ${placement.approval_status}`,
+      description: `${placement.student_name || 'Student'} • ${placement.organization?.name || 'Organization'}`,
+      time: timeAgo(placement.updated_at || placement.created_at),
+      status: placement.approval_status,
+      sortAt: toDate(placement.updated_at || placement.created_at),
+    }));
+
+    const scoreActivities = finalScores.slice(0, 3).map((score) => ({
+      type: 'evaluation',
+      title: 'Final score computed',
+      description: `${score.student_name || 'Student'} • Grade ${score.grade || 'N/A'}`,
+      time: timeAgo(score.computed_at || score.updated_at),
+      status: score.grade || 'graded',
+      sortAt: toDate(score.computed_at || score.updated_at),
+    }));
+
+    return [...approvalActivities, ...placementActivities, ...scoreActivities]
+      .sort((a, b) => (b.sortAt?.getTime() || 0) - (a.sortAt?.getTime() || 0))
+      .slice(0, 5)
+      .map(({ sortAt, ...activity }) => activity);
+  }, [pendingApprovals, placements, finalScores]);
 
   const quickActions = [
     { label: 'Add User', icon: <PeopleIcon sx={{ fontSize: 18 }} />, onClick: () => navigate('/users') },
@@ -70,10 +163,26 @@ const AdminDashboard = () => {
   ];
 
   const systemMetrics = [
-    { label: 'Active Users', value: '156', change: '+8%', color: 'green' },
-    { label: 'API Calls', value: '2.4k', change: '+23%', color: 'blue' },
-    { label: 'Error Rate', value: '0.3%', change: '-0.1%', color: 'green' },
-    { label: 'Response Time', value: '124ms', change: '-12ms', color: 'green' },
+    {
+      label: 'Active Users',
+      value: users.filter((user) => user.is_active).length,
+      change: `${users.length ? Math.round((users.filter((user) => user.is_active).length / users.length) * 100) : 0}% active`,
+    },
+    {
+      label: 'Pending Log Reviews',
+      value: overview.pending_review || 0,
+      change: `${overview.total_logs || 0} total logs`,
+    },
+    {
+      label: 'Late Submissions',
+      value: overview.late_submissions || 0,
+      change: `${overview.approval_rate || 0}% approval rate`,
+    },
+    {
+      label: 'Final Scores Released',
+      value: finalScores.length,
+      change: `${finalScores.filter((score) => score.grade === 'A').length} grade A`,
+    },
   ];
 
   return (
@@ -103,9 +212,9 @@ const AdminDashboard = () => {
             value={stats.totalUsers}
             subtitle="Registered users across all roles"
             color="primary"
-            trend={+12}
             actionLabel="Manage Users"
-            onAction={() => navigate('/users')}
+            onAction={() => navigate('/admin/staff')}
+            loading={loading}
           />
         </Grid>
 
@@ -117,9 +226,9 @@ const AdminDashboard = () => {
             value={stats.activeInternships}
             subtitle="Current internship placements"
             color="success"
-            trend={+5}
             actionLabel="View Placements"
             onAction={() => navigate('/placements')}
+            loading={loading}
           />
         </Grid>
 
@@ -133,6 +242,7 @@ const AdminDashboard = () => {
             color="warning"
             actionLabel="Review Approvals"
             onAction={() => navigate('/admin/approvals')}
+            loading={loading}
           />
         </Grid>
 
@@ -145,6 +255,7 @@ const AdminDashboard = () => {
             subtitle="Platform uptime and performance"
             color="info"
             progress={stats.systemHealth}
+            loading={loading}
           />
         </Grid>
 
@@ -162,7 +273,7 @@ const AdminDashboard = () => {
                     <Typography variant="caption" sx={{ color: 'var(--gray-500)' }}>Students</Typography>
                     <LinearProgress 
                       variant="determinate" 
-                      value={(stats.students / stats.totalUsers) * 100} 
+                      value={stats.totalUsers ? (stats.students / stats.totalUsers) * 100 : 0} 
                       sx={{ mt: 1, height: 4, borderRadius: 2 }} 
                     />
                   </Box>
@@ -175,7 +286,7 @@ const AdminDashboard = () => {
                     <Typography variant="caption" sx={{ color: 'var(--gray-500)' }}>Supervisors</Typography>
                     <LinearProgress 
                       variant="determinate" 
-                      value={(stats.supervisors / stats.totalUsers) * 100} 
+                      value={stats.totalUsers ? (stats.supervisors / stats.totalUsers) * 100 : 0} 
                       sx={{ mt: 1, height: 4, borderRadius: 2 }} 
                     />
                   </Box>
@@ -188,7 +299,7 @@ const AdminDashboard = () => {
                     <Typography variant="caption" sx={{ color: 'var(--gray-500)' }}>Admins</Typography>
                     <LinearProgress 
                       variant="determinate" 
-                      value={(stats.admins / stats.totalUsers) * 100} 
+                      value={stats.totalUsers ? (stats.admins / stats.totalUsers) * 100 : 0} 
                       sx={{ mt: 1, height: 4, borderRadius: 2 }} 
                     />
                   </Box>
@@ -216,7 +327,7 @@ const AdminDashboard = () => {
                       <Typography 
                         variant="caption" 
                         sx={{ 
-                          color: metric.change.includes('-') ? 'var(--red-500)' : 'var(--green-600)',
+                          color: 'var(--green-600)',
                           display: 'flex',
                           alignItems: 'center',
                           gap: 0.5,
@@ -258,20 +369,20 @@ const AdminDashboard = () => {
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--gray-50)', borderRadius: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>{Math.round((stats.activeInternships / stats.totalPlacements) * 100)}%</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>{stats.totalPlacements ? Math.round((stats.activeInternships / stats.totalPlacements) * 100) : 0}%</Typography>
                     <Typography variant="caption">Placement Rate</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--gray-50)', borderRadius: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>4.2</Typography>
-                    <Typography variant="caption">Avg Rating</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>{overview.approval_rate || 0}%</Typography>
+                    <Typography variant="caption">Log Approval Rate</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--gray-50)', borderRadius: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>92%</Typography>
-                    <Typography variant="caption">Completion Rate</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>{finalScores.length}</Typography>
+                    <Typography variant="caption">Computed Final Scores</Typography>
                   </Box>
                 </Grid>
               </Grid>
@@ -281,7 +392,7 @@ const AdminDashboard = () => {
 
         {/* Recent Activity */}
         <Grid item xs={12} md={6}>
-          <RecentActivity activities={recentActivities} />
+          <RecentActivity activities={recentActivities} loading={loading} />
         </Grid>
 
         {/* Quick Actions */}

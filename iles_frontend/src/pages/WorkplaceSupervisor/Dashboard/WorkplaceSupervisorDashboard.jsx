@@ -6,50 +6,112 @@ import {
   CheckCircle as CheckCircleIcon,
   TrendingUp as TrendingUpIcon,
   Assignment as AssignmentIcon,
-  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
 import StatCard from '../../../components/dashboard/StatCard';
 import RecentActivity from '../../../components/dashboard/RecentActivity';
 import QuickActions from '../../../components/dashboard/QuickActions';
+import { logbookAPI, placementsAPI } from '../../../services/api';
+
+const toDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const timeAgo = (value) => {
+  const date = toDate(value);
+  if (!date) return 'Recently';
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+};
 
 const WorkplaceSupervisorDashboard = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [placements, setPlacements] = useState([]);
+  const [logs, setLogs] = useState([]);
 
-  // Mock data - replace with actual API calls
-  const stats = {
-    pendingReviews: 3,
-    studentsAssigned: 5,
-    logsReviewed: 12,
-    approvalsGiven: 8,
-    rejections: 2,
-    avgRating: 4.2,
-  };
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setLoading(true);
+        const [placementRes, logsRes] = await Promise.allSettled([
+          placementsAPI.getAssignedPlacements(),
+          logbookAPI.getSupervisorLogs({ page_size: 200 }),
+        ]);
 
-  const recentActivities = [
-    {
+        if (placementRes.status === 'fulfilled') {
+          setPlacements(Array.isArray(placementRes.value.data) ? placementRes.value.data : []);
+        }
+
+        if (logsRes.status === 'fulfilled') {
+          const payload = logsRes.value.data;
+          const rows = Array.isArray(payload?.results) ? payload.results : Array.isArray(payload) ? payload : [];
+          setLogs(rows);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  const stats = useMemo(() => {
+    const pendingReviews = logs.filter((log) => ['pending', 'under_review'].includes(log.review_status)).length;
+    const reviewedLogs = logs.filter((log) => !['pending', 'under_review'].includes(log.review_status));
+    const approvalsGiven = reviewedLogs.filter((log) => log.review_status === 'approved').length;
+    const rejections = reviewedLogs.filter((log) => log.review_status === 'rejected').length;
+    const ratingValues = reviewedLogs.map((log) => Number(log.supervisor_rating || 0)).filter((rating) => rating > 0);
+
+    return {
+      pendingReviews,
+      studentsAssigned: placements.length,
+      logsReviewed: reviewedLogs.length,
+      approvalsGiven,
+      rejections,
+      avgRating: ratingValues.length
+        ? (ratingValues.reduce((sum, value) => sum + value, 0) / ratingValues.length).toFixed(1)
+        : '0.0',
+    };
+  }, [placements, logs]);
+
+  const recentActivities = useMemo(() => {
+    const placementActivities = placements.slice(0, 3).map((placement) => ({
+      type: 'placement',
+      title: `Placement ${placement.current_lifecycle_status || placement.approval_status}`,
+      description: `${placement.student_name || 'Student'} • ${placement.organization?.name || 'Organization'}`,
+      time: timeAgo(placement.updated_at || placement.created_at),
+      status: placement.current_lifecycle_status || placement.approval_status,
+      sortAt: toDate(placement.updated_at || placement.created_at),
+    }));
+
+    const logActivities = logs.slice(0, 6).map((log) => ({
       type: 'log',
-      title: 'New Log Submission',
-      description: 'John Doe submitted Week 3 log',
-      time: '1 hour ago',
-      status: 'Pending Review',
-    },
-    {
-      type: 'evaluation',
-      title: 'Evaluation Completed',
-      description: 'Jane Smith completed mid-term evaluation',
-      time: '3 hours ago',
-      status: 'Completed',
-    },
-    {
-      type: 'approval',
-      title: 'Log Approved',
-      description: 'Week 2 log approved for Michael Chen',
-      time: 'Yesterday',
-      status: 'Approved',
-    },
-  ];
+      title: `Week ${log.week_number} log ${log.review_status}`,
+      description: `${log.student_name || 'Student'} • ${log.placement_summary || 'Placement log'}`,
+      time: timeAgo(log.updated_at || log.created_at),
+      status: log.review_status,
+      sortAt: toDate(log.updated_at || log.created_at),
+    }));
+
+    return [...placementActivities, ...logActivities]
+      .sort((a, b) => (b.sortAt?.getTime() || 0) - (a.sortAt?.getTime() || 0))
+      .slice(0, 5)
+      .map(({ sortAt, ...activity }) => activity);
+  }, [logs, placements]);
 
   const quickActions = [
     { label: 'Review Pending Logs', icon: <ReviewIcon sx={{ fontSize: 18 }} />, onClick: () => navigate('/logs') },
@@ -58,11 +120,31 @@ const WorkplaceSupervisorDashboard = () => {
     { label: 'Update Profile', icon: <AssignmentIcon sx={{ fontSize: 18 }} />, onClick: () => navigate('/profile') },
   ];
 
-  const students = [
-    { name: 'John Doe', progress: 75, status: 'Active', lastLog: '2 days ago' },
-    { name: 'Jane Smith', progress: 45, status: 'Active', lastLog: '5 days ago' },
-    { name: 'Michael Chen', progress: 90, status: 'Excellent', lastLog: 'Yesterday' },
-  ];
+  const students = useMemo(() => {
+    const logsByPlacement = logs.reduce((acc, log) => {
+      const key = String(log.placement);
+      acc[key] = acc[key] || [];
+      acc[key].push(log);
+      return acc;
+    }, {});
+
+    return placements.slice(0, 5).map((placement) => {
+      const placementLogs = logsByPlacement[String(placement.id)] || [];
+      const reviewedCount = placementLogs.filter((log) => log.review_status === 'approved').length;
+      const progress = placementLogs.length ? Math.round((reviewedCount / placementLogs.length) * 100) : 0;
+      const lastUpdated = placementLogs
+        .map((log) => toDate(log.updated_at || log.created_at))
+        .filter(Boolean)
+        .sort((a, b) => b.getTime() - a.getTime())[0];
+
+      return {
+        name: placement.student_name || 'Student',
+        progress,
+        status: progress >= 80 ? 'Excellent' : progress >= 40 ? 'Active' : 'Needs Follow-up',
+        lastLog: lastUpdated ? timeAgo(lastUpdated.toISOString()) : 'No logs yet',
+      };
+    });
+  }, [placements, logs]);
 
   return (
     <Box>
@@ -93,6 +175,7 @@ const WorkplaceSupervisorDashboard = () => {
             color="warning"
             actionLabel="Review Logs"
             onAction={() => navigate('/logs')}
+            loading={loading}
           />
         </Grid>
 
@@ -106,6 +189,7 @@ const WorkplaceSupervisorDashboard = () => {
             color="primary"
             actionLabel="View Students"
             onAction={() => navigate('/interns')}
+            loading={loading}
           />
         </Grid>
 
@@ -115,9 +199,9 @@ const WorkplaceSupervisorDashboard = () => {
             icon={TrendingUpIcon}
             title="Average Rating"
             value={stats.avgRating}
-            subtitle="Student performance rating"
+            subtitle="Average rating from reviewed logs"
             color="success"
-            trend={+8}
+            loading={loading}
           />
         </Grid>
 
@@ -154,7 +238,7 @@ const WorkplaceSupervisorDashboard = () => {
                 <Grid item xs={6} sm={3}>
                   <Box sx={{ textAlign: 'center', p: 2 }}>
                     <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--amber-600)' }}>
-                      {Math.round((stats.approvalsGiven / stats.logsReviewed) * 100)}%
+                      {stats.logsReviewed ? Math.round((stats.approvalsGiven / stats.logsReviewed) * 100) : 0}%
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'var(--gray-500)' }}>Approval Rate</Typography>
                   </Box>
@@ -170,7 +254,11 @@ const WorkplaceSupervisorDashboard = () => {
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Students Under Supervision</Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {students.map((student, index) => (
+                {students.length === 0 ? (
+                  <Typography variant="body2" sx={{ color: 'var(--gray-500)' }}>
+                    No students assigned yet.
+                  </Typography>
+                ) : students.map((student, index) => (
                   <Box key={index}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -232,7 +320,7 @@ const WorkplaceSupervisorDashboard = () => {
 
         {/* Recent Activity */}
         <Grid item xs={12} md={6}>
-          <RecentActivity activities={recentActivities} />
+          <RecentActivity activities={recentActivities} loading={loading} />
         </Grid>
 
         {/* Quick Actions */}

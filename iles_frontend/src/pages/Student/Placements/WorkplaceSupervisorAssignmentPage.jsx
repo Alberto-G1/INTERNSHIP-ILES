@@ -24,6 +24,27 @@ import {
 import PageScaffold from '../../../components/Common/PageScaffold';
 import { notifyError, notifySuccess } from '../../../components/Common/AppToast';
 import { extractErrorMessage, placementsAPI, supervisorAPI } from '../../../services/api';
+import { resolveMediaUrl } from '../../../utils/mediaUrl';
+
+const renderSupervisorRole = (supervisor) => {
+  if (!supervisor) return '';
+  if (supervisor.role === 'academic_supervisor') return 'Academic Supervisor';
+  if (supervisor.role === 'workplace_supervisor') return 'Workplace Supervisor';
+  return 'Supervisor';
+};
+
+const renderSupervisorMeta = (supervisor) => {
+  if (!supervisor) return [];
+
+  const lines = [
+    supervisor.position,
+    supervisor.department,
+    supervisor.organization_name,
+    supervisor.location,
+  ].filter(Boolean);
+
+  return lines;
+};
 
 const WorkplaceSupervisorAssignmentPage = () => {
   const { placementId } = useParams();
@@ -226,24 +247,80 @@ const WorkplaceSupervisorAssignmentPage = () => {
                   <Stack spacing={1.2}>
                     <Paper sx={{ p: 1.2, border: '1px solid #e5e7eb' }}>
                       <Typography sx={{ fontWeight: 600, mb: 0.5 }}>Academic Supervisor</Typography>
-                      <Typography sx={{ fontSize: 14 }}>
-                        {academicSupervisor?.full_name || 'Not assigned yet'}
-                      </Typography>
-                      {academicSupervisor?.email && (
-                        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                          {academicSupervisor.email}
-                        </Typography>
+                      {academicSupervisor ? (
+                        <>
+                          <Stack direction="row" spacing={1.2} alignItems="center" sx={{ mb: 0.5 }}>
+                            <Avatar src={resolveMediaUrl(academicSupervisor.profile_picture)}>
+                              {(academicSupervisor.full_name || 'A').charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Typography sx={{ fontSize: 15, fontWeight: 600 }}>{academicSupervisor.full_name}</Typography>
+                          </Stack>
+                          <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: 0.4 }}>
+                            {renderSupervisorRole(academicSupervisor)}
+                          </Typography>
+                          {renderSupervisorMeta(academicSupervisor).map((line) => (
+                            <Typography key={line} sx={{ fontSize: 12, color: 'text.secondary' }}>
+                              {line}
+                            </Typography>
+                          ))}
+                          {(academicSupervisor.work_email || academicSupervisor.email) && (
+                            <Typography sx={{ fontSize: 12, mt: 0.4 }}>
+                              Email: {academicSupervisor.work_email || academicSupervisor.email}
+                            </Typography>
+                          )}
+                          {(academicSupervisor.work_phone || academicSupervisor.phone || academicSupervisor.office_phone) && (
+                            <Typography sx={{ fontSize: 12 }}>
+                              Phone: {academicSupervisor.work_phone || academicSupervisor.phone || academicSupervisor.office_phone}
+                            </Typography>
+                          )}
+                          {academicSupervisor.specialization && (
+                            <Typography sx={{ fontSize: 12 }}>
+                              Expertise: {academicSupervisor.specialization}
+                            </Typography>
+                          )}
+                        </>
+                      ) : (
+                        <Typography sx={{ fontSize: 14 }}>Not assigned yet</Typography>
                       )}
                     </Paper>
 
                     <Paper sx={{ p: 1.2, border: '1px solid #e5e7eb' }}>
                       <Typography sx={{ fontWeight: 600, mb: 0.5 }}>Workplace Supervisor</Typography>
-                      <Typography sx={{ fontSize: 14 }}>
-                        {workplaceSupervisor?.full_name || (hasWorkplaceSupervisorAssigned ? 'Assigned' : 'Not assigned yet')}
-                      </Typography>
-                      {workplaceSupervisor?.email && (
-                        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                          {workplaceSupervisor.email}
+                      {workplaceSupervisor ? (
+                        <>
+                          <Stack direction="row" spacing={1.2} alignItems="center" sx={{ mb: 0.5 }}>
+                            <Avatar src={resolveMediaUrl(workplaceSupervisor.profile_picture)}>
+                              {(workplaceSupervisor.full_name || 'W').charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Typography sx={{ fontSize: 15, fontWeight: 600 }}>{workplaceSupervisor.full_name}</Typography>
+                          </Stack>
+                          <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: 0.4 }}>
+                            {renderSupervisorRole(workplaceSupervisor)}
+                          </Typography>
+                          {renderSupervisorMeta(workplaceSupervisor).map((line) => (
+                            <Typography key={line} sx={{ fontSize: 12, color: 'text.secondary' }}>
+                              {line}
+                            </Typography>
+                          ))}
+                          {(workplaceSupervisor.work_email || workplaceSupervisor.email) && (
+                            <Typography sx={{ fontSize: 12, mt: 0.4 }}>
+                              Email: {workplaceSupervisor.work_email || workplaceSupervisor.email}
+                            </Typography>
+                          )}
+                          {(workplaceSupervisor.work_phone || workplaceSupervisor.phone || workplaceSupervisor.office_phone) && (
+                            <Typography sx={{ fontSize: 12 }}>
+                              Phone: {workplaceSupervisor.work_phone || workplaceSupervisor.phone || workplaceSupervisor.office_phone}
+                            </Typography>
+                          )}
+                          {workplaceSupervisor.specialization && (
+                            <Typography sx={{ fontSize: 12 }}>
+                              Expertise: {workplaceSupervisor.specialization}
+                            </Typography>
+                          )}
+                        </>
+                      ) : (
+                        <Typography sx={{ fontSize: 14 }}>
+                          {hasWorkplaceSupervisorAssigned ? 'Assigned' : 'Not assigned yet'}
                         </Typography>
                       )}
                     </Paper>
@@ -272,14 +349,31 @@ const WorkplaceSupervisorAssignmentPage = () => {
                         }}
                       >
                         <Stack direction="row" spacing={1} alignItems="center">
-                          <Avatar sx={{ bgcolor: '#F59E0B' }}>
+                          <Avatar
+                            sx={{ bgcolor: '#F59E0B' }}
+                            src={resolveMediaUrl(supervisor.profile_picture)}
+                            alt={`${(supervisor.first_name || '').trim()} ${(supervisor.last_name || '').trim()}`}
+                          >
                             <PersonIcon />
                           </Avatar>
                           <Box>
                             <Typography sx={{ fontWeight: 600 }}>
                               {(supervisor.first_name || '').trim()} {(supervisor.last_name || '').trim()}
                             </Typography>
-                            <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{supervisor.email}</Typography>
+                            <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                              {supervisor.supervisor_profile?.position || 'Supervisor'}
+                              {supervisor.supervisor_profile?.organization_name ? ` • ${supervisor.supervisor_profile.organization_name}` : ''}
+                            </Typography>
+                            <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                              {supervisor.supervisor_profile?.department || 'Department not specified'}
+                              {supervisor.supervisor_profile?.location ? ` • ${supervisor.supervisor_profile.location}` : ''}
+                            </Typography>
+                            <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                              {supervisor.supervisor_profile?.work_email || supervisor.email}
+                              {(supervisor.supervisor_profile?.work_phone || supervisor.phone)
+                                ? ` • ${supervisor.supervisor_profile?.work_phone || supervisor.phone}`
+                                : ''}
+                            </Typography>
                           </Box>
                         </Stack>
                       </Paper>
