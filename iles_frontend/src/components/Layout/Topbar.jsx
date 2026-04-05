@@ -54,6 +54,7 @@ const iconByPath = {
   '/reports': ReportsIcon,
   '/notifications': NotificationsIcon,
   '/settings': SettingsIcon,
+  '/admin/audit-logs': LogsIcon,
   '/admin/approvals': ApprovalsIcon,
 };
 

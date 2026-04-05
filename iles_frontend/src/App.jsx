@@ -41,6 +41,7 @@ import AdminDashboard from './pages/Admin/Dashboard/AdminDashboard';
 import AdminProfileDisplayPage from './pages/Admin/Profile/AdminProfileDisplayPage';
 import AdminProfileEditPage from './pages/Admin/Profile/AdminProfileEditPage';
 import AdminLogsPage from './pages/Admin/LogsPage';
+import AdminAuditLogsPage from './pages/Admin/AuditLogsPage';
 import AdminPlacementsPage from './pages/Admin/Placements/AdminPlacementsPage';
 import AdminApprovalsPage from './pages/Admin/Approvals/AdminApprovalsPage';
 import AdminStaffManagementPage from './pages/Admin/UserManagement/AdminStaffManagementPage';
@@ -216,6 +217,7 @@ const AppShell = () => {
               <Route path="reports" element={<ReportsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="admin/audit-logs" element={<AdminAuditLogsRoute />} />
               <Route path="admin/approvals" element={<AdminApprovalsRoute />} />
               <Route path="admin/staff" element={<AdminStaffRoute />} />
             </Route>
@@ -343,6 +345,16 @@ const AdminStaffRoute = () => {
   }
 
   return <AdminStaffManagementPage />;
+};
+
+const AdminAuditLogsRoute = () => {
+  const { user } = useAuth();
+
+  if (user?.role !== 'admin') {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return <AdminAuditLogsPage />;
 };
 
 export default App;

@@ -56,6 +56,7 @@ const navigation = NAVIGATION.map((item) => {
     Settings: SettingsIcon,
     Placements: PlacementsIcon,
     Staff: InternsIcon,
+    'Audit Logs': LogsIcon,
     'Supervisor Assignment': PersonIcon,
   };
 
