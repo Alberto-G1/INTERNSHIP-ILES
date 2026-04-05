@@ -14,6 +14,7 @@ export const PAGE_TITLES = {
   '/notifications': { title: 'Notifications', subtitle: 'System updates and alerts' },
   '/profile': { title: 'Profile', subtitle: 'Your personal information' },
   '/settings': { title: 'Settings', subtitle: 'System configuration' },
+  '/admin/audit-logs': { title: 'Audit Logs', subtitle: 'Trace user and system actions for governance and diagnostics' },
   '/admin/approvals': { title: 'Supervisor Approvals', subtitle: 'Review and approve supervisor accounts' },
   '/admin/staff': { title: 'Staff Management', subtitle: 'Manage students and staff members' },
 };
@@ -28,6 +29,7 @@ export const NAVIGATION = [
   { section: 'Management', path: '/reports', label: 'Reports', roles: ['admin'] },
   { section: 'Management', path: '/notifications', label: 'Notifications', roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
   { section: 'System', path: '/profile', label: 'Profile', roles: ['student', 'workplace_supervisor', 'academic_supervisor', 'admin'] },
+  { section: 'System', path: '/admin/audit-logs', label: 'Audit Logs', roles: ['admin'] },
   { section: 'System', path: '/admin/approvals', label: 'Approvals', roles: ['admin'] },
   { section: 'System', path: '/admin/staff', label: 'Staff', roles: ['admin'] },
   { section: 'System', path: '/settings', label: 'Settings', roles: ['admin'] },
@@ -61,6 +63,7 @@ export const getUserMenuLinks = (role) => {
   if (role === 'admin') {
     return [
       ...baseLinks,
+      { path: '/admin/audit-logs', label: 'Audit Logs' },
       { path: '/admin/approvals', label: 'Supervisor Approvals' },
       { path: '/settings', label: 'Settings' },
     ];
