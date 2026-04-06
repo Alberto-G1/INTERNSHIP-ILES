@@ -1,7 +1,8 @@
 // frontend/src/pages/dashboard/AdminDashboard.jsx
-import { Typography, Box, Grid, Card, CardContent, LinearProgress, Button } from '@mui/material';
-import { 
-  People as PeopleIcon, 
+import { Typography, Box, Card, CardContent, Avatar, Chip, Divider, LinearProgress, Button } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
+import {
+  People as PeopleIcon,
   AssignmentInd as AssignmentIcon,
   Settings as SettingsIcon,
   TrendingUp as TrendingUpIcon,
@@ -11,13 +12,12 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import StatCard from '../../../components/dashboard/StatCard';
 import RecentActivity from '../../../components/dashboard/RecentActivity';
 import QuickActions from '../../../components/dashboard/QuickActions';
-import GreetingHeader from '../../../components/dashboard/GreetingHeader';
 import { adminAPI, adminPlacementsAPI, adminUsersAPI, evaluationsAPI, logbookAPI } from '../../../services/api';
+import { DashGreeting, SectionCard, ProgressRow, MiniStat, T } from '../../../components/dashboard/DashboardComponents';
 
 const toDate = (value) => {
   if (!value) return null;
@@ -38,132 +38,74 @@ const timeAgo = (value) => {
   return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
 };
 
+const ADMIN_STYLES = `
+  @keyframes dashFadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+`;
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [placements, setPlacements] = useState([]);
   const [pendingApprovals, setPendingApprovals] = useState([]);
-  const [overview, setOverview] = useState({
-    total_logs: 0,
-    pending_review: 0,
-    approved: 0,
-    revisions: 0,
-    late_submissions: 0,
-    approval_rate: 0,
-  });
+  const [overview, setOverview] = useState({ total_logs: 0, pending_review: 0, approved: 0, revisions: 0, late_submissions: 0, approval_rate: 0 });
   const [finalScores, setFinalScores] = useState([]);
-  const [profileInfo, setProfileInfo] = useState(null);
 
   useEffect(() => {
+    if (!document.getElementById('admin-dash-styles')) {
+      const tag = document.createElement('style');
+      tag.id = 'admin-dash-styles';
+      tag.textContent = ADMIN_STYLES;
+      document.head.appendChild(tag);
+    }
+
     const loadDashboard = async () => {
       try {
         setLoading(true);
-        const [usersRes, placementsRes, approvalsRes, overviewRes, finalScoresRes, profileRes] = await Promise.allSettled([
+        const [usersRes, placementsRes, approvalsRes, overviewRes, finalScoresRes] = await Promise.allSettled([
           adminUsersAPI.getUsers(),
           adminPlacementsAPI.getPlacements({ page_size: 200 }),
           adminAPI.getSupervisorApprovals(),
           logbookAPI.getAdminOverview(),
           evaluationsAPI.getAdminFinalScores(),
-          adminUsersAPI.getCurrentUser(),
         ]);
-
-        if (usersRes.status === 'fulfilled') {
-          setUsers(Array.isArray(usersRes.value.data) ? usersRes.value.data : []);
-        }
+        if (usersRes.status === 'fulfilled') setUsers(Array.isArray(usersRes.value.data) ? usersRes.value.data : []);
         if (placementsRes.status === 'fulfilled') {
           const data = placementsRes.value.data;
           setPlacements(Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : []);
         }
         if (approvalsRes.status === 'fulfilled') {
           const approvalUsers = Array.isArray(approvalsRes.value.data) ? approvalsRes.value.data : [];
-          setPendingApprovals(approvalUsers.filter((user) => !user.admin_approved));
+          setPendingApprovals(approvalUsers.filter((u) => !u.admin_approved));
         }
-        if (overviewRes.status === 'fulfilled') {
-          setOverview({ ...overview, ...overviewRes.value.data });
-        }
-        if (finalScoresRes.status === 'fulfilled') {
-          setFinalScores(Array.isArray(finalScoresRes.value.data) ? finalScoresRes.value.data : []);
-        }
-        if (profileRes.status === 'fulfilled') {
-          setProfileInfo(profileRes.value.data);
-        }
-      } finally {
-        setLoading(false);
-      }
+        if (overviewRes.status === 'fulfilled') setOverview({ ...overview, ...overviewRes.value.data });
+        if (finalScoresRes.status === 'fulfilled') setFinalScores(Array.isArray(finalScoresRes.value.data) ? finalScoresRes.value.data : []);
+      } finally { setLoading(false); }
     };
-
     loadDashboard();
   }, []);
 
   const stats = useMemo(() => {
-    const students = users.filter((user) => user.role === 'student').length;
-    const supervisors = users.filter((user) => ['academic_supervisor', 'workplace_supervisor'].includes(user.role)).length;
-    const admins = users.filter((user) => user.role === 'admin').length;
-    const activeInternships = placements.filter((placement) => ['active', 'approved'].includes(placement.current_lifecycle_status)).length;
-
-    const healthScore = Math.max(
-      0,
-      Math.min(
-        100,
-        Math.round((Number(overview.approval_rate || 0) * 0.7) + ((pendingApprovals.length ? 0 : 100) * 0.3))
-      )
-    );
-
-    return {
-      totalUsers: users.length,
-      totalPlacements: placements.length,
-      activeInternships,
-      pendingApprovals: pendingApprovals.length,
-      students,
-      supervisors,
-      admins,
-      systemHealth: healthScore,
-      totalLogs: overview.total_logs || 0,
-      pendingReviews: overview.pending_review || 0,
-      approvalRate: overview.approval_rate || 0,
-    };
-  }, [users, placements, pendingApprovals, overview]);
-
-  const greetingStats = [
-    { value: stats.students, label: 'Interns' },
-    { value: stats.totalLogs, label: 'Logs' },
-    { value: stats.approvalRate, label: 'Approval Rate' },
-    { value: stats.pendingReviews, label: 'Pending' },
-  ];
+    const students   = users.filter((u) => u.role === 'student').length;
+    const supervisors = users.filter((u) => ['academic_supervisor', 'workplace_supervisor'].includes(u.role)).length;
+    const admins      = users.filter((u) => u.role === 'admin').length;
+    const activeInternships = placements.filter((p) => ['active', 'approved'].includes(p.current_lifecycle_status)).length;
+    const healthScore = Math.max(0, Math.min(100,
+      Math.round((Number(overview.approval_rate || 0) * 0.7) + ((pendingApprovals.length ? 0 : 100) * 0.3))
+    ));
+    return { totalUsers: users.length, totalPlacements: placements.length, activeInternships, pendingApprovals: pendingApprovals.length, students, supervisors, admins, systemHealth: healthScore };
+  }, [users, placements, pendingApprovals, overview.approval_rate]);
 
   const recentActivities = useMemo(() => {
-    const approvalActivities = pendingApprovals.slice(0, 3).map((user) => ({
-      type: 'approval',
-      title: 'Supervisor approval pending',
-      description: `${user.full_name || user.username} (${user.role})`,
-      time: timeAgo(user.created_at),
-      status: 'pending',
-      sortAt: toDate(user.created_at),
-    }));
-
-    const placementActivities = placements.slice(0, 4).map((placement) => ({
-      type: 'placement',
-      title: `Placement ${placement.approval_status}`,
-      description: `${placement.student_name || 'Student'} • ${placement.organization?.name || 'Organization'}`,
-      time: timeAgo(placement.updated_at || placement.created_at),
-      status: placement.approval_status,
-      sortAt: toDate(placement.updated_at || placement.created_at),
-    }));
-
-    const scoreActivities = finalScores.slice(0, 3).map((score) => ({
-      type: 'evaluation',
-      title: 'Final score computed',
-      description: `${score.student_name || 'Student'} • Grade ${score.grade || 'N/A'}`,
-      time: timeAgo(score.computed_at || score.updated_at),
-      status: score.grade || 'graded',
-      sortAt: toDate(score.computed_at || score.updated_at),
-    }));
-
+    const approvalActivities = pendingApprovals.slice(0, 3).map((u) => ({ type: 'approval', title: 'Supervisor approval pending', description: `${u.full_name || u.username} (${u.role})`, time: timeAgo(u.created_at), status: 'pending', sortAt: toDate(u.created_at) }));
+    const placementActivities = placements.slice(0, 4).map((p) => ({ type: 'placement', title: `Placement ${p.approval_status}`, description: `${p.student_name || 'Student'} • ${p.organization?.name || 'Organization'}`, time: timeAgo(p.updated_at || p.created_at), status: p.approval_status, sortAt: toDate(p.updated_at || p.created_at) }));
+    const scoreActivities = finalScores.slice(0, 3).map((s) => ({ type: 'evaluation', title: 'Final score computed', description: `${s.student_name || 'Student'} • Grade ${s.grade || 'N/A'}`, time: timeAgo(s.computed_at || s.updated_at), status: s.grade || 'graded', sortAt: toDate(s.computed_at || s.updated_at) }));
     return [...approvalActivities, ...placementActivities, ...scoreActivities]
       .sort((a, b) => (b.sortAt?.getTime() || 0) - (a.sortAt?.getTime() || 0))
-      .slice(0, 5)
-      .map(({ sortAt, ...activity }) => activity);
+      .slice(0, 5).map(({ sortAt, ...activity }) => activity);
   }, [pendingApprovals, placements, finalScores]);
 
   const quickActions = [
@@ -176,179 +118,163 @@ const AdminDashboard = () => {
   ];
 
   const systemMetrics = [
-    { label: 'Active Users', value: users.filter((user) => user.is_active).length, change: `${users.length ? Math.round((users.filter((user) => user.is_active).length / users.length) * 100) : 0}% active` },
-    { label: 'Pending Log Reviews', value: overview.pending_review || 0, change: `${overview.total_logs || 0} total logs` },
-    { label: 'Late Submissions', value: overview.late_submissions || 0, change: `${overview.approval_rate || 0}% approval rate` },
-    { label: 'Final Scores Released', value: finalScores.length, change: `${finalScores.filter((score) => score.grade === 'A').length} grade A` },
+    { label: 'Active Users',         value: users.filter((u) => u.is_active).length,                                                          change: `${users.length ? Math.round((users.filter((u) => u.is_active).length / users.length) * 100) : 0}% active` },
+    { label: 'Pending Log Reviews',  value: overview.pending_review || 0,                                                                      change: `${overview.total_logs || 0} total logs` },
+    { label: 'Late Submissions',     value: overview.late_submissions || 0,                                                                    change: `${overview.approval_rate || 0}% approval rate` },
+    { label: 'Final Scores Released',value: finalScores.length,                                                                                change: `${finalScores.filter((s) => s.grade === 'A').length} grade A` },
   ];
 
   return (
-    <Box>
-      <GreetingHeader
-        greeting="Good morning"
-        name={profileInfo?.first_name || 'Administrator'}
+    <Box sx={{ fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* ── Greeting banner ───────────────────────────────────── */}
+      <DashGreeting
         role="admin"
-        stats={greetingStats}
-        subtitle="Live overview of all interns across departments this semester."
+        greeting="Good morning"
+        name="Administrator"
+        sub="Live overview of all interns across departments this semester."
+        roleTag={`Live · Spring 2025 Cohort`}
+        stats={[
+          { num: stats.totalUsers, label: 'Users' },
+          { num: stats.activeInternships, label: 'Active' },
+          { num: `${overview.approval_rate || 0}%`, label: 'Approval Rate' },
+          { num: stats.pendingApprovals, label: 'Pending' },
+        ]}
       />
 
-      <Grid container spacing={2.5}>
-        {/* Total Users */}
-        <Grid item xs={12} md={3}>
+      <Grid container spacing={2}>
+        {/* ── Metric cards ──────────────────────────────────────── */}
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            icon={PeopleIcon}
-            title="Total Users"
+            icon={<PeopleIcon sx={{ fontSize: 17 }} />}
+            label="Total Users"
             value={stats.totalUsers}
-            subtitle="Registered users across all roles"
-            color="primary"
+            sub="Registered across all roles"
+            variant="teal"
             actionLabel="Manage Users"
-            onAction={() => navigate('/admin/staff')}
+            onClick={() => navigate('/admin/staff')}
             loading={loading}
+            delay={0.05}
           />
         </Grid>
-
-        {/* Active Placements */}
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            icon={AssignmentIcon}
-            title="Active Placements"
+            icon={<AssignmentIcon sx={{ fontSize: 17 }} />}
+            label="Active Placements"
             value={stats.activeInternships}
-            subtitle="Current internship placements"
-            color="success"
+            sub="Current internship placements"
+            variant="indigo"
             actionLabel="View Placements"
-            onAction={() => navigate('/placements')}
+            onClick={() => navigate('/placements')}
             loading={loading}
+            delay={0.10}
           />
         </Grid>
-
-        {/* Pending Approvals */}
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            icon={VerifiedIcon}
-            title="Pending Approvals"
+            icon={<VerifiedIcon sx={{ fontSize: 17 }} />}
+            label="Pending Approvals"
             value={stats.pendingApprovals}
-            subtitle="Supervisor requests awaiting review"
-            color="warning"
+            sub="Supervisor requests awaiting review"
+            variant="amber"
             actionLabel="Review Approvals"
-            onAction={() => navigate('/admin/approvals')}
+            onClick={() => navigate('/admin/approvals')}
             loading={loading}
+            delay={0.15}
           />
         </Grid>
-
-        {/* System Health */}
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            icon={TimelineIcon}
-            title="System Health"
+            icon={<TimelineIcon sx={{ fontSize: 17 }} />}
+            label="System Health"
             value={`${stats.systemHealth}%`}
-            subtitle="Platform uptime and performance"
-            color="info"
-            progress={stats.systemHealth}
+            sub="Platform health score"
+            variant={stats.systemHealth >= 70 ? 'teal' : stats.systemHealth >= 40 ? 'amber' : 'danger'}
             loading={loading}
+            delay={0.20}
           />
         </Grid>
 
-        {/* User Distribution */}
+        {/* ── User Distribution ─────────────────────────────────── */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ border: '1px solid var(--border)', bgcolor: 'var(--surface)', borderRadius: '14px' }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'var(--tx1)' }}>User Distribution</Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={4}>
-                  <Box sx={{ textAlign: 'center', p: 2 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--t600)' }}>{stats.students}</Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Students</Typography>
-                    <LinearProgress variant="determinate" value={stats.totalUsers ? (stats.students / stats.totalUsers) * 100 : 0} sx={{ mt: 1, height: 4, borderRadius: 2 }} />
-                  </Box>
-                </Grid>
-                <Grid item xs={4}>
-                  <Box sx={{ textAlign: 'center', p: 2 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--i600)' }}>{stats.supervisors}</Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Supervisors</Typography>
-                    <LinearProgress variant="determinate" value={stats.totalUsers ? (stats.supervisors / stats.totalUsers) * 100 : 0} sx={{ mt: 1, height: 4, borderRadius: 2 }} />
-                  </Box>
-                </Grid>
-                <Grid item xs={4}>
-                  <Box sx={{ textAlign: 'center', p: 2 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--violet)' }}>{stats.admins}</Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Admins</Typography>
-                    <LinearProgress variant="determinate" value={stats.totalUsers ? (stats.admins / stats.totalUsers) * 100 : 0} sx={{ mt: 1, height: 4, borderRadius: 2 }} />
-                  </Box>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* System Overview */}
-        <Grid item xs={12} md={6}>
-          <Card sx={{ border: '1px solid var(--border)', bgcolor: 'var(--surface)', borderRadius: '14px' }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'var(--tx1)' }}>System Overview</Typography>
-              <Grid container spacing={2}>
-                {systemMetrics.map((metric, index) => (
-                  <Grid item xs={6} key={index}>
-                    <Box sx={{ p: 1 }}>
-                      <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>{metric.label}</Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, mt: 0.5, color: 'var(--tx1)' }}>{metric.value}</Typography>
-                      <Typography variant="caption" sx={{ color: 'var(--t600)', display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                        {metric.change}
-                        <TrendingUpIcon sx={{ fontSize: 12 }} />
-                      </Typography>
+          <SectionCard
+            title="User Distribution"
+            subtitle="Breakdown by role"
+            delay={0.25}
+          >
+            <Grid container spacing={2} sx={{ mt: 0 }}>
+              {[
+                { label: 'Students',    count: stats.students,    color: T.i600, bg: T.i50 },
+                { label: 'Supervisors', count: stats.supervisors,  color: T.t600, bg: T.t50 },
+                { label: 'Admins',      count: stats.admins,       color: T.violet, bg: T.violetL },
+              ].map(({ label, count, color, bg }) => (
+                <Grid item xs={4} key={label}>
+                  <Box sx={{ textAlign: 'center', p: '16px 8px', borderRadius: '12px', bgcolor: bg, border: `1px solid ${T.border}` }}>
+                    <Typography sx={{ fontSize: '24px', fontWeight: 700, color, letterSpacing: '-0.5px', fontVariantNumeric: 'tabular-nums', fontFamily: "'DM Sans', sans-serif" }}>{count}</Typography>
+                    <Typography sx={{ fontSize: '11px', color: T.tx3, mt: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: "'DM Sans', sans-serif" }}>{label}</Typography>
+                    <Box sx={{ mt: '8px', height: '4px', borderRadius: '99px', bgcolor: T.border2, overflow: 'hidden' }}>
+                      <Box sx={{ height: '100%', borderRadius: '99px', bgcolor: color, width: `${stats.totalUsers ? Math.round((count / stats.totalUsers) * 100) : 0}%`, transition: 'width 1s cubic-bezier(.34,1.2,.64,1)' }} />
                     </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </CardContent>
-          </Card>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </SectionCard>
         </Grid>
 
-        {/* Platform Analytics */}
+        {/* ── System Overview ───────────────────────────────────── */}
+        <Grid item xs={12} md={6}>
+          <SectionCard
+            title="System Overview"
+            subtitle="Key platform metrics"
+            delay={0.30}
+          >
+            <Grid container spacing={1.5} sx={{ mt: 0 }}>
+              {systemMetrics.map((metric, idx) => (
+                <Grid item xs={6} key={idx}>
+                  <Box sx={{ p: '12px 14px', borderRadius: '10px', bgcolor: T.surface2, border: `1px solid ${T.border}` }}>
+                    <Typography sx={{ fontSize: '10.5px', color: T.tx3, textTransform: 'uppercase', letterSpacing: '.6px', fontWeight: 600, mb: '4px', fontFamily: "'DM Sans', sans-serif" }}>{metric.label}</Typography>
+                    <Typography sx={{ fontSize: '22px', fontWeight: 700, color: T.tx1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.5px', fontFamily: "'DM Sans', sans-serif" }}>{metric.value}</Typography>
+                    <Typography sx={{ fontSize: '11px', color: T.t600, display: 'flex', alignItems: 'center', gap: '3px', mt: '4px', fontFamily: "'DM Sans', sans-serif" }}>
+                      <TrendingUpIcon sx={{ fontSize: 11 }} /> {metric.change}
+                    </Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </SectionCard>
+        </Grid>
+
+        {/* ── Platform Analytics ────────────────────────────────── */}
         <Grid item xs={12}>
-          <Card sx={{ border: '1px solid var(--border)', bgcolor: 'var(--surface)', borderRadius: '14px' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: 'var(--tx1)' }}>Platform Analytics</Typography>
-                <Button size="small" variant="outlined" onClick={() => navigate('/reports')} sx={{ textTransform: 'none' }}>
-                  View Detailed Report
-                </Button>
-              </Box>
-              <Grid container spacing={2}>
-                <Grid item xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--surface2)', borderRadius: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--tx1)' }}>{stats.totalPlacements}</Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Total Placements</Typography>
+          <SectionCard
+            title="Platform Analytics"
+            subtitle="Internship cycle summary"
+            action={<Box component="button" onClick={() => navigate('/reports')} sx={{ fontSize: '12px', color: T.t600, fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", px: '12px', py: '5px', borderRadius: '8px', border: `1px solid ${T.border2}`, bgcolor: 'transparent', transition: 'all .14s', '&:hover': { bgcolor: T.t50, borderColor: T.t400 } }}>View Detailed Report →</Box>}
+            delay={0.35}
+          >
+            <Grid container spacing={1.5}>
+              {[
+                { label: 'Total Placements',     value: stats.totalPlacements,                                                                     color: T.tx1 },
+                { label: 'Placement Rate',        value: `${stats.totalPlacements ? Math.round((stats.activeInternships / stats.totalPlacements) * 100) : 0}%`, color: T.t700 },
+                { label: 'Log Approval Rate',     value: `${overview.approval_rate || 0}%`,                                                        color: T.i700 },
+                { label: 'Final Scores Released', value: finalScores.length,                                                                       color: T.a700 },
+              ].map(({ label, value, color }) => (
+                <Grid item xs={6} sm={3} key={label}>
+                  <Box sx={{ textAlign: 'center', p: '14px 8px', bgcolor: T.surface2, borderRadius: '12px', border: `1px solid ${T.border}` }}>
+                    <Typography sx={{ fontSize: '22px', fontWeight: 700, color, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.5px', fontFamily: "'DM Sans', sans-serif" }}>{value}</Typography>
+                    <Typography sx={{ fontSize: '11px', color: T.tx3, mt: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: "'DM Sans', sans-serif" }}>{label}</Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--surface2)', borderRadius: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--tx1)' }}>{stats.totalPlacements ? Math.round((stats.activeInternships / stats.totalPlacements) * 100) : 0}%</Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Placement Rate</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--surface2)', borderRadius: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--tx1)' }}>{overview.approval_rate || 0}%</Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Log Approval Rate</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--surface2)', borderRadius: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--tx1)' }}>{finalScores.length}</Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Computed Final Scores</Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
+              ))}
+            </Grid>
+          </SectionCard>
         </Grid>
 
-        {/* Recent Activity */}
+        {/* ── Recent Activity + Quick Actions ───────────────────── */}
         <Grid item xs={12} md={6}>
           <RecentActivity activities={recentActivities} loading={loading} />
         </Grid>
-
-        {/* Quick Actions */}
         <Grid item xs={12} md={6}>
           <QuickActions actions={quickActions} />
         </Grid>

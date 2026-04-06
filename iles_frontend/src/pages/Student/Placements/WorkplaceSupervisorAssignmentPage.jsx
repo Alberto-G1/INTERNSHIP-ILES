@@ -9,13 +9,13 @@ import {
   CircularProgress,
   TextField,
   Divider,
-  Grid,
   Paper,
   Stack,
   Typography,
   Chip,
   Avatar,
 } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 import {
   Person as PersonIcon,
   Check as CheckIcon,
