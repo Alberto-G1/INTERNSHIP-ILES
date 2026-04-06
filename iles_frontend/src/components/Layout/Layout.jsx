@@ -33,7 +33,7 @@ const Layout = () => {
           sx={{
             flex: 1,
             minWidth: 0,
-            bgcolor: 'background.default',
+            bgcolor: 'var(--bg)',
             px: { xs: 2, sm: 3, md: 4 },
             pb: { xs: 3, md: 4 },
           }}
@@ -42,7 +42,7 @@ const Layout = () => {
           <Box
             sx={{
               width: '100%',
-              maxWidth: `calc(100vw - ${DRAWER_WIDTH}px)`,
+              maxWidth: isMobile ? '100%' : `calc(100vw - ${DRAWER_WIDTH}px)`,
               mx: 'auto',
             }}
           >

@@ -3,12 +3,12 @@ import {
   Alert,
   Box,
   Chip,
-  Grid,
   MenuItem,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 import PageScaffold from '../../components/Common/PageScaffold';
 import { auditingAPI } from '../../services/api';
 import { notifyError } from '../../components/Common/AppToast';

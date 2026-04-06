@@ -1,6 +1,7 @@
 // frontend/src/pages/Reports/ReportsPage.jsx
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Chip, Divider, Grid, LinearProgress, Stack, Typography } from '@mui/material';
+import { Alert, Box, Chip, Divider, LinearProgress, Stack, Typography } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 import PageScaffold from '../../components/Common/PageScaffold';
 import { adminPlacementsAPI, adminUsersAPI, evaluationsAPI, logbookAPI } from '../../services/api';
 

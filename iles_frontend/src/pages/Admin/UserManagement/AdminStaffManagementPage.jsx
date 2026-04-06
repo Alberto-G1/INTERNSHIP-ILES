@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Chip,
-  Grid,
   MenuItem,
   Paper,
   Stack,
@@ -18,6 +17,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 import PageScaffold from '../../../components/Common/PageScaffold';
 import { notifyError, notifySuccess } from '../../../components/Common/AppToast';
 import { adminUsersAPI } from '../../../services/api';
