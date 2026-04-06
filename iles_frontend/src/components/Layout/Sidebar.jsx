@@ -34,10 +34,11 @@ import {
 } from '@mui/icons-material';
 import {
   DRAWER_WIDTH,
-  COLLAPSED_DRAWER_WIDTH,
   NAVIGATION,
+  NAV_ICONS,
   getRoleColor,
   getRoleLabel,
+  getRoleGradient,
 } from './layoutConfig';
 import AppConfirmModal from '../Common/AppConfirmModal';
 import { resolveMediaUrl } from '../../utils/mediaUrl';
@@ -66,29 +67,6 @@ const navigation = NAVIGATION.map((item) => {
   };
 });
 
-const STYLES = `
-  @keyframes sidebarFadeIn {
-    from { opacity: 0; transform: translateX(-8px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes badgePulse {
-    0%, 100% { transform: scale(1); }
-    50%       { transform: scale(1.15); }
-  }
-  @keyframes activeGlow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(46,139,91,0.18); }
-    50%       { box-shadow: 0 0 0 4px rgba(46,139,91,0.10); }
-  }
-  @keyframes logoPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(46,139,91,0.35); }
-    60%       { box-shadow: 0 0 0 6px rgba(46,139,91,0); }
-  }
-  @keyframes avatarRing {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(46,139,91,0.4); }
-    60%       { box-shadow: 0 0 0 5px rgba(46,139,91,0); }
-  }
-`;
-
 const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile, profile }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -103,12 +81,6 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile, profile }) => {
   const [hasApprovedPlacement, setHasApprovedPlacement] = useState(false);
 
   useEffect(() => {
-    if (!document.getElementById('sidebar-keyframes')) {
-      const tag = document.createElement('style');
-      tag.id = 'sidebar-keyframes';
-      tag.textContent = STYLES;
-      document.head.appendChild(tag);
-    }
     const t = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(t);
   }, []);
@@ -137,11 +109,9 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile, profile }) => {
     if (!item.roles.includes(activeProfile?.role || 'student')) {
       return false;
     }
-
     if (item.path === '/placements/supervisor-assignment') {
       return hasApprovedPlacement;
     }
-
     return true;
   });
 
@@ -162,6 +132,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile, profile }) => {
       ? `${activeProfile.first_name} ${activeProfile.last_name || ''}`.trim()
       : activeProfile?.username);
   const userAvatarSrc = resolveMediaUrl(activeProfile?.profile_picture);
+  const roleGradient = getRoleGradient(activeProfile?.role);
 
   const drawerContent = (
     <Box
@@ -169,308 +140,300 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile, profile }) => {
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        bgcolor: 'background.paper',
+        bgcolor: 'var(--sb-bg, #080B18)',
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          background: `
+            radial-gradient(ellipse 200px 200px at 20% 10%, rgba(45,175,131,0.09) 0%, transparent 70%),
+            radial-gradient(ellipse 180px 180px at 80% 70%, rgba(85,105,224,0.07) 0%, transparent 70%),
+            radial-gradient(ellipse 150px 150px at 50% 40%, rgba(240,140,48,0.04) 0%, transparent 70%)
+          `,
+          pointerEvents: 'none',
+        },
       }}
     >
-      {/* Header with close button for mobile */}
-      <Box
-        sx={{
-          p: '18px 20px 16px',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 34,
-              height: 34,
-              background: 'linear-gradient(135deg, var(--green-600) 0%, var(--green-900) 100%)',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontWeight: 700,
-              fontSize: 15,
-              fontFamily: "'Poppins', sans-serif",
-              letterSpacing: '-0.5px',
-              flexShrink: 0,
-              animation: 'logoPulse 3s ease-in-out infinite',
-              cursor: 'default',
-              userSelect: 'none',
-            }}
-          >
-            A
-          </Box>
-          <Box>
-            <Typography
+      <Box sx={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Header with logo */}
+        <Box
+          sx={{
+            p: '20px 18px 16px',
+            borderBottom: '1px solid rgba(255,255,255,0.07)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
               sx={{
-                fontWeight: 700,
-                fontSize: '15px',
-                lineHeight: 1.1,
-                letterSpacing: '0.5px',
-                color: 'text.primary',
-                fontFamily: "'Poppins', sans-serif",
+                width: 38,
+                height: 38,
+                background: `linear-gradient(145deg, var(--t600, #22916A), var(--t400, #45C99A))`,
+                borderRadius: '11px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 14px rgba(45,175,131,0.35)',
               }}
             >
-              AILES
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
-              <DotIcon sx={{ fontSize: 6, color: 'var(--green-400)' }} />
-              <Typography sx={{ color: 'text.secondary', fontSize: '10px', letterSpacing: '0.6px' }}>
-                v2.4.0
+              <svg viewBox="0 0 24 24" width={20} height={20} stroke="#fff" fill="none" strokeWidth="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '16px', fontWeight: 700, color: '#fff', letterSpacing: '0.5px' }}>
+                AILES
+              </Typography>
+              <Typography sx={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.28)', letterSpacing: '1.4px', textTransform: 'uppercase', mt: '2.5px' }}>
+                Internship System
               </Typography>
             </Box>
           </Box>
+          {isMobile && (
+            <IconButton onClick={onDrawerToggle} size="small" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+              <ChevronLeftIcon />
+            </IconButton>
+          )}
         </Box>
-        {isMobile && (
-          <IconButton onClick={onDrawerToggle} size="small">
-            <ChevronLeftIcon />
-          </IconButton>
-        )}
-      </Box>
 
-      {/* Navigation */}
-      <Box sx={{ flex: 1, py: 1.5, overflowY: 'auto', overflowX: 'hidden' }}>
-        {groupedNav.map(({ section, items }, sectionIdx) =>
-          items.length > 0 ? (
-            <Box
-              key={section}
-              sx={{
-                px: 1.5,
-                pt: 0.6,
-                pb: 1.2,
-                opacity: mounted ? 1 : 0,
-                transform: mounted ? 'translateX(0)' : 'translateX(-10px)',
-                transition: `opacity 0.35s ease ${0.1 + sectionIdx * 0.06}s, transform 0.35s ease ${0.1 + sectionIdx * 0.06}s`,
-              }}
-            >
-              <Typography
-                sx={{
-                  px: 1,
-                  pb: 0.6,
-                  fontSize: '9.5px',
-                  color: 'text.secondary',
-                  letterSpacing: '1px',
-                  textTransform: 'uppercase',
-                  fontWeight: 600,
-                  fontFamily: "'Poppins', sans-serif",
-                }}
-              >
-                {section}
-              </Typography>
+        {/* Role pill */}
+        <Box
+          sx={{
+            m: '12px 14px',
+            p: '9px 12px',
+            borderRadius: '11px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '9px',
+            cursor: 'pointer',
+            transition: 'background .2s',
+            '&:hover': { background: 'rgba(255,255,255,0.09)' },
+          }}
+        >
+          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: getRoleColor(activeProfile?.role), flexShrink: 0 }} />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ fontSize: '11.5px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {getRoleLabel(activeProfile?.role)}
+            </Typography>
+            <Typography sx={{ fontSize: '10px', color: 'rgba(255,255,255,0.30)', mt: '1px' }}>
+              {userName}
+            </Typography>
+          </Box>
+          <Box sx={{ color: 'rgba(255,255,255,0.25)', fontSize: '12px' }}>⇅</Box>
+        </Box>
 
-              <List disablePadding>
-                {items.map((item, itemIdx) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
-                  const isHovered = hoveredPath === item.path;
-                  const badge =
-                    item.label === 'Evaluations' && pendingReviews > 0
-                      ? pendingReviews
-                      : item.label === 'Notifications' && unreadNotifications > 0
-                      ? unreadNotifications
-                      : null;
+        {/* Navigation */}
+        <Box sx={{ flex: 1, overflowY: 'auto', px: '10px', py: '6px' }}>
+          {groupedNav.map(({ section, items }, sectionIdx) =>
+            items.length > 0 ? (
+              <Box key={section} sx={{ mb: 2 }}>
+                <Typography
+                  sx={{
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    letterSpacing: '1.8px',
+                    textTransform: 'uppercase',
+                    color: 'rgba(255,255,255,0.18)',
+                    px: '10px',
+                    py: '12px 10px 4px',
+                  }}
+                >
+                  {section}
+                </Typography>
 
-                  return (
-                    <ListItem
-                      key={item.path}
-                      disablePadding
-                      sx={{
-                        mb: 0.4,
-                        opacity: mounted ? 1 : 0,
-                        transform: mounted ? 'translateX(0)' : 'translateX(-8px)',
-                        transition: `opacity 0.3s ease ${0.15 + sectionIdx * 0.06 + itemIdx * 0.04}s, transform 0.3s ease ${0.15 + sectionIdx * 0.06 + itemIdx * 0.04}s`,
-                      }}
-                    >
-                      <ListItemButton
-                        onClick={() => {
-                          navigate(item.path);
-                          if (isMobile) onDrawerToggle();
-                        }}
-                        onMouseEnter={() => setHoveredPath(item.path)}
-                        onMouseLeave={() => setHoveredPath(null)}
-                        sx={{
-                          py: 0.85,
-                          px: 1.1,
-                          borderRadius: '8px',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          bgcolor: isActive
-                            ? 'action.selected'
-                            : isHovered
-                            ? 'action.hover'
-                            : 'transparent',
-                          animation: isActive ? 'activeGlow 3s ease-in-out infinite' : 'none',
-                          transition: 'background-color 0.18s ease, box-shadow 0.18s ease',
-                          '&::before': isActive
-                            ? {
-                                content: '""',
-                                position: 'absolute',
-                                left: 0,
-                                top: '20%',
-                                height: '60%',
-                                width: '3px',
-                                borderRadius: '0 3px 3px 0',
-                                bgcolor: 'var(--green-600)',
-                                transition: 'height 0.2s ease',
-                              }
-                            : {},
-                        }}
-                      >
-                        <ListItemIcon
+                <List disablePadding>
+                  {items.map((item, itemIdx) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.path;
+                    const isHovered = hoveredPath === item.path;
+                    const badge =
+                      item.label === 'Evaluations' && pendingReviews > 0
+                        ? pendingReviews
+                        : item.label === 'Notifications' && unreadNotifications > 0
+                        ? unreadNotifications
+                        : null;
+
+                    return (
+                      <ListItem key={item.path} disablePadding sx={{ mb: '1px' }}>
+                        <ListItemButton
+                          onClick={() => {
+                            navigate(item.path);
+                            if (isMobile) onDrawerToggle();
+                          }}
+                          onMouseEnter={() => setHoveredPath(item.path)}
+                          onMouseLeave={() => setHoveredPath(null)}
                           sx={{
-                            minWidth: 28,
-                            color: isActive ? 'var(--green-700)' : isHovered ? 'var(--green-600)' : 'text.secondary',
-                            transition: 'color 0.18s ease, transform 0.18s ease',
-                            transform: isHovered && !isActive ? 'scale(1.1)' : 'scale(1)',
+                            py: '8px',
+                            px: '10px',
+                            borderRadius: '9px',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            color: isActive ? '#fff' : 'rgba(255,255,255,0.45)',
+                            transition: 'all 0.18s ease',
+                            '&::before': {
+                              content: '""',
+                              position: 'absolute',
+                              inset: 0,
+                              background: 'rgba(49,108,96,0.8)',
+                              opacity: isHovered && !isActive ? 0.6 : isActive ? 0.14 : 0,
+                              borderRadius: '9px',
+                              transition: 'opacity 0.18s',
+                            },
+                            '&::after': isActive ? {
+                              content: '""',
+                              position: 'absolute',
+                              left: 0,
+                              top: '20%',
+                              height: '60%',
+                              width: '3px',
+                              background: 'var(--t400, #45C99A)',
+                              borderRadius: '0 3px 3px 0',
+                            } : {},
+                            '&:hover': {
+                              transform: 'translateX(2px)',
+                            },
                           }}
                         >
-                          <Icon sx={{ fontSize: 17 }} />
-                        </ListItemIcon>
-
-                        <ListItemText
-                          primary={item.label}
-                          primaryTypographyProps={{
-                            fontSize: '13px',
-                            fontWeight: isActive ? 600 : 400,
-                            color: isActive ? 'var(--green-900)' : isHovered ? 'text.primary' : 'text.secondary',
-                            fontFamily: "'Poppins', sans-serif",
-                            transition: 'color 0.18s ease, font-weight 0.18s ease',
-                          }}
-                        />
-
-                        {badge && (
-                          <Chip
-                            label={badge}
-                            size="small"
+                          <ListItemIcon
                             sx={{
-                              height: 18,
-                              minWidth: 18,
-                              fontSize: '10px',
-                              bgcolor: '#F59E0B',
-                              color: '#fff',
-                              fontWeight: 700,
-                              fontFamily: "'Poppins', sans-serif",
-                              animation: 'badgePulse 2s ease-in-out infinite',
-                              '& .MuiChip-label': { px: '5px' },
+                              minWidth: 28,
+                              color: isActive ? '#fff' : 'rgba(255,255,255,0.5)',
+                              transition: 'color 0.18s ease',
+                            }}
+                          >
+                            <Icon sx={{ fontSize: 17 }} />
+                          </ListItemIcon>
+
+                          <ListItemText
+                            primary={item.label}
+                            primaryTypographyProps={{
+                              fontSize: '12.5px',
+                              fontWeight: isActive ? 500 : 400,
+                              fontFamily: "'DM Sans', sans-serif",
                             }}
                           />
-                        )}
-                      </ListItemButton>
-                    </ListItem>
-                  );
-                })}
-              </List>
-            </Box>
-          ) : null
-        )}
-      </Box>
 
-      {/* User Footer */}
-      <Box
-        sx={{
-          p: 1.5,
-          borderTop: '1px solid',
-          borderColor: 'divider',
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateY(0)' : 'translateY(8px)',
-          transition: 'opacity 0.4s ease 0.3s, transform 0.4s ease 0.3s',
-        }}
-      >
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <ListItemButton
-            onClick={() => {
-              navigate('/profile');
-              if (isMobile) onDrawerToggle();
-            }}
-            sx={{
-              borderRadius: '8px',
-              py: 0.85,
-              px: 1.1,
-              transition: 'background-color 0.18s ease',
-              '&:hover': { bgcolor: 'action.hover' },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 34 }}>
-              <Avatar
-                className="sidebar-avatar"
-                src={userAvatarSrc || undefined}
-                sx={{
-                  width: 28,
-                  height: 28,
-                  bgcolor: getRoleColor(activeProfile?.role),
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  fontFamily: "'Poppins', sans-serif",
-                  transition: 'transform 0.18s ease',
-                  '&:hover': { transform: 'scale(1.08)' },
+                          {badge && (
+                            <Chip
+                              label={badge}
+                              size="small"
+                              sx={{
+                                height: 18,
+                                minWidth: 18,
+                                fontSize: '9.5px',
+                                fontWeight: 700,
+                                bgcolor: '#D96B0E',
+                                color: '#fff',
+                                '& .MuiChip-label': { px: '5px' },
+                              }}
+                            />
+                          )}
+                        </ListItemButton>
+                      </ListItem>
+                    );
+                  })}
+                </List>
+              </Box>
+            ) : null
+          )}
+        </Box>
+
+        {/* User Footer */}
+        <Box sx={{ p: '10px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => {
+                navigate('/profile');
+                if (isMobile) onDrawerToggle();
+              }}
+              sx={{
+                borderRadius: '10px',
+                py: '8px',
+                px: '10px',
+                transition: 'background .18s',
+                '&:hover': { background: 'rgba(49,108,96,0.8)' },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 34 }}>
+                <Avatar
+                  src={userAvatarSrc || undefined}
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '9px',
+                    background: roleGradient,
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    position: 'relative',
+                  }}
+                >
+                  {userInitial}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: -1,
+                      right: -1,
+                      width: 9,
+                      height: 9,
+                      borderRadius: '50%',
+                      bgcolor: '#22C55E',
+                      border: '2px solid var(--sb-bg, #080B18)',
+                    }}
+                  />
+                </Avatar>
+              </ListItemIcon>
+              <ListItemText
+                primary={userName}
+                secondary={getRoleLabel(activeProfile?.role)}
+                primaryTypographyProps={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#fff',
+                  noWrap: true,
                 }}
-              >
-                {userInitial}
-              </Avatar>
-            </ListItemIcon>
-            <ListItemText
-              primary={userName}
-              secondary={getRoleLabel(activeProfile?.role)}
-              primaryTypographyProps={{
-                fontSize: '12.5px',
-                fontWeight: 500,
-                color: 'text.primary',
-                fontFamily: "'Poppins', sans-serif",
-                noWrap: true,
-              }}
-              secondaryTypographyProps={{
-                fontSize: '10.5px',
-                color: 'text.secondary',
-                fontFamily: "'Poppins', sans-serif",
-                noWrap: true,
-              }}
-            />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={() => setSignoutModalOpen(true)}
-            sx={{
-              borderRadius: '8px',
-              py: 0.85,
-              px: 1.1,
-              transition: 'background-color 0.18s ease',
-              '&:hover': {
-                bgcolor: 'var(--coral-100)',
-                '& .logout-icon': { transform: 'translateX(3px)' },
-                '& .logout-text': { color: 'var(--coral-700)' },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 28 }}>
-              <LogoutIcon
-                className="logout-icon"
-                sx={{
-                  fontSize: 16,
-                  color: 'text.secondary',
-                  transition: 'transform 0.2s ease, color 0.18s ease',
+                secondaryTypographyProps={{
+                  fontSize: '10px',
+                  color: 'rgba(255,255,255,0.3)',
+                  noWrap: true,
                 }}
               />
-            </ListItemIcon>
-            <ListItemText
-              primary="Logout"
-              primaryTypographyProps={{
-                fontSize: '13px',
-                color: 'text.secondary',
-                fontFamily: "'Poppins', sans-serif",
-                className: 'logout-text',
-                sx: { transition: 'color 0.18s ease' },
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding>
+            <ListItemButton
+              onClick={() => setSignoutModalOpen(true)}
+              sx={{
+                borderRadius: '10px',
+                py: '8px',
+                px: '10px',
+                transition: 'background .18s',
+                '&:hover': {
+                  background: 'rgba(232,69,69,0.15)',
+                },
               }}
-            />
-          </ListItemButton>
-        </ListItem>
+            >
+              <ListItemIcon sx={{ minWidth: 28 }}>
+                <LogoutIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.35)' }} />
+              </ListItemIcon>
+              <ListItemText
+                primary="Logout"
+                primaryTypographyProps={{
+                  fontSize: '12.5px',
+                  color: 'rgba(255,255,255,0.5)',
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+        </Box>
       </Box>
 
       <AppConfirmModal
@@ -492,18 +455,15 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isMobile, profile }) => {
       variant={isMobile ? 'temporary' : 'permanent'}
       open={isMobile ? mobileOpen : true}
       onClose={onDrawerToggle}
-      ModalProps={{
-        keepMounted: true, // Better mobile performance
-      }}
+      ModalProps={{ keepMounted: true }}
       sx={{
         width: DRAWER_WIDTH,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: DRAWER_WIDTH,
           boxSizing: 'border-box',
-          borderRight: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
+          borderRight: '1px solid rgba(255,255,255,0.07)',
+          bgcolor: '#080B18',
           overflow: 'hidden',
           ...(isMobile && {
             backgroundImage: 'none',

@@ -1,5 +1,5 @@
 // frontend/src/components/Dashboard/StatCard.jsx
-import { Card, CardContent, Box, Typography, IconButton, LinearProgress, Skeleton } from '@mui/material';
+import { Card, CardContent, Box, Typography, LinearProgress, Skeleton } from '@mui/material';
 import { motion } from 'framer-motion';
 
 const StatCard = ({ 
@@ -13,21 +13,21 @@ const StatCard = ({
   onAction,
   loading = false,
   trend,
-  trendValue
 }) => {
   const colorMap = {
-    primary: { main: 'var(--green-600)', light: 'var(--green-50)' },
-    warning: { main: '#F59E0B', light: '#FEF3C7' },
-    success: { main: '#10B981', light: '#D1FAE5' },
-    info: { main: '#3B82F6', light: '#DBEAFE' },
-    error: { main: '#EF4444', light: '#FEE2E2' },
+    primary: { main: 'var(--t700, #1A7A57)', light: 'var(--t100, #D4F7EE)', gradient: 'linear-gradient(90deg, var(--t700), var(--t400))', class: 'm-teal' },
+    warning: { main: 'var(--a600, #D96B0E)', light: 'var(--a100, #FEF0DC)', gradient: 'linear-gradient(90deg, var(--a700), var(--a400))', class: 'm-amber' },
+    success: { main: 'var(--t600, #22916A)', light: 'var(--t100, #D4F7EE)', gradient: 'linear-gradient(90deg, var(--t700), var(--t400))', class: 'm-teal' },
+    info: { main: 'var(--i600, #3D51C8)', light: 'var(--i100, #E0E5FB)', gradient: 'linear-gradient(90deg, var(--i700), var(--i400))', class: 'm-indigo' },
+    error: { main: 'var(--danger, #E84545)', light: 'var(--danger-l, #FDEAEA)', gradient: 'linear-gradient(90deg, #C0392B, #EF4444)', class: 'm-danger' },
+    violet: { main: 'var(--violet, #7C3AED)', light: 'var(--violet-l, #EDE9FE)', gradient: 'linear-gradient(90deg, var(--violet), #A855F7)', class: 'm-violet' },
   };
 
-  const colors = colorMap[color];
+  const colors = colorMap[color] || colorMap.primary;
 
   if (loading) {
     return (
-      <Card sx={{ height: '100%', border: '1px solid var(--gray-200)' }}>
+      <Card sx={{ height: '100%', border: '1px solid var(--border)', bgcolor: 'var(--surface)' }}>
         <CardContent>
           <Skeleton variant="rectangular" height={100} />
         </CardContent>
@@ -37,55 +37,85 @@ const StatCard = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.4 }}
     >
       <Card 
         sx={{ 
           height: '100%', 
-          border: '1px solid var(--gray-200)',
-          transition: 'all 0.3s ease',
+          border: '1px solid var(--border)', 
+          bgcolor: 'var(--surface)',
+          borderRadius: '14px',
+          position: 'relative',
+          overflow: 'hidden',
+          transition: 'transform 0.25s ease, box-shadow 0.25s ease',
           '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: '0 12px 24px -12px rgba(0,0,0,0.15)',
-          }
+            transform: 'translateY(-3px)',
+            boxShadow: 'var(--shl, 0 8px 30px rgba(13,16,32,.10))',
+          },
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            background: colors.gradient,
+            borderRadius: '14px 14px 0 0',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: -20,
+            right: -20,
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: colors.main,
+            opacity: 0.06,
+            transition: 'opacity 0.25s',
+          },
+          '&:hover::after': {
+            opacity: 0.1,
+          },
         }}
       >
-        <CardContent>
+        <CardContent sx={{ p: '18px 18px 16px' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box 
-                sx={{ 
-                  p: 1, 
-                  borderRadius: '10px', 
-                  bgcolor: colors.light,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon sx={{ color: colors.main, fontSize: 20 }} />
-              </Box>
-              <Typography variant="subtitle2" sx={{ color: 'var(--gray-600)', fontWeight: 500 }}>
-                {title}
-              </Typography>
+            <Box 
+              sx={{ 
+                width: 38, 
+                height: 38, 
+                borderRadius: '10px', 
+                bgcolor: colors.light,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: colors.main,
+              }}
+            >
+              <Icon sx={{ fontSize: 17 }} />
             </Box>
             {trend && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Typography variant="caption" sx={{ color: trend > 0 ? 'var(--green-600)' : 'var(--red-500)' }}>
+                <Typography variant="caption" sx={{ color: trend > 0 ? 'var(--t600)' : 'var(--danger)' }}>
                   {trend > 0 ? `+${trend}%` : `${trend}%`}
                 </Typography>
-                <Typography variant="caption" sx={{ color: 'var(--gray-400)' }}>vs last month</Typography>
+                <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>vs last month</Typography>
               </Box>
             )}
           </Box>
 
-          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, color: 'var(--ink)' }}>
+          <Typography sx={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '0.6px', mb: '3px' }}>
+            {title}
+          </Typography>
+          
+          <Typography sx={{ fontSize: '28px', fontWeight: 700, color: 'var(--tx1)', letterSpacing: '-1px', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
             {value}
           </Typography>
 
-          <Typography variant="caption" sx={{ color: 'var(--gray-500)', display: 'block', mb: progress ? 2 : 0 }}>
+          <Typography variant="caption" sx={{ color: 'var(--tx3)', display: 'block', mt: '6px', fontSize: '11.5px' }}>
             {subtitle}
           </Typography>
 
@@ -95,12 +125,12 @@ const StatCard = ({
                 variant="determinate" 
                 value={progress} 
                 sx={{ 
-                  height: 6, 
-                  borderRadius: 3,
-                  bgcolor: colors.light,
+                  height: 7, 
+                  borderRadius: 99,
+                  bgcolor: 'var(--surface2)',
                   '& .MuiLinearProgress-bar': {
                     bgcolor: colors.main,
-                    borderRadius: 3,
+                    borderRadius: 99,
                   }
                 }} 
               />
@@ -108,18 +138,25 @@ const StatCard = ({
           )}
 
           {actionLabel && onAction && (
-            <Box sx={{ mt: 2 }}>
+            <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid var(--border)' }}>
               <Typography
                 variant="caption"
                 sx={{ 
                   color: colors.main, 
                   cursor: 'pointer',
                   fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
                   '&:hover': { textDecoration: 'underline' }
                 }}
                 onClick={onAction}
               >
-                {actionLabel} →
+                {actionLabel}
+                <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
               </Typography>
             </Box>
           )}
