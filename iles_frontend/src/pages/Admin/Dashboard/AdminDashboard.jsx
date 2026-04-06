@@ -1,5 +1,5 @@
 // frontend/src/pages/dashboard/AdminDashboard.jsx
-import { Typography, Box, Grid, Card, CardContent, Avatar, Chip, Divider, LinearProgress, Button } from '@mui/material';
+import { Typography, Box, Grid, Card, CardContent, LinearProgress, Button } from '@mui/material';
 import { 
   People as PeopleIcon, 
   AssignmentInd as AssignmentIcon,
@@ -16,6 +16,7 @@ import { useEffect, useMemo, useState } from 'react';
 import StatCard from '../../../components/dashboard/StatCard';
 import RecentActivity from '../../../components/dashboard/RecentActivity';
 import QuickActions from '../../../components/dashboard/QuickActions';
+import GreetingHeader from '../../../components/dashboard/GreetingHeader';
 import { adminAPI, adminPlacementsAPI, adminUsersAPI, evaluationsAPI, logbookAPI } from '../../../services/api';
 
 const toDate = (value) => {
@@ -27,15 +28,12 @@ const toDate = (value) => {
 const timeAgo = (value) => {
   const date = toDate(value);
   if (!date) return 'Recently';
-
   const diffMs = Date.now() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   if (diffMins < 1) return 'Just now';
   if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
-
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-
   const diffDays = Math.floor(diffHours / 24);
   return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
 };
@@ -55,17 +53,19 @@ const AdminDashboard = () => {
     approval_rate: 0,
   });
   const [finalScores, setFinalScores] = useState([]);
+  const [profileInfo, setProfileInfo] = useState(null);
 
   useEffect(() => {
     const loadDashboard = async () => {
       try {
         setLoading(true);
-        const [usersRes, placementsRes, approvalsRes, overviewRes, finalScoresRes] = await Promise.allSettled([
+        const [usersRes, placementsRes, approvalsRes, overviewRes, finalScoresRes, profileRes] = await Promise.allSettled([
           adminUsersAPI.getUsers(),
           adminPlacementsAPI.getPlacements({ page_size: 200 }),
           adminAPI.getSupervisorApprovals(),
           logbookAPI.getAdminOverview(),
           evaluationsAPI.getAdminFinalScores(),
+          adminUsersAPI.getCurrentUser(),
         ]);
 
         if (usersRes.status === 'fulfilled') {
@@ -84,6 +84,9 @@ const AdminDashboard = () => {
         }
         if (finalScoresRes.status === 'fulfilled') {
           setFinalScores(Array.isArray(finalScoresRes.value.data) ? finalScoresRes.value.data : []);
+        }
+        if (profileRes.status === 'fulfilled') {
+          setProfileInfo(profileRes.value.data);
         }
       } finally {
         setLoading(false);
@@ -116,8 +119,18 @@ const AdminDashboard = () => {
       supervisors,
       admins,
       systemHealth: healthScore,
+      totalLogs: overview.total_logs || 0,
+      pendingReviews: overview.pending_review || 0,
+      approvalRate: overview.approval_rate || 0,
     };
-  }, [users, placements, pendingApprovals, overview.approval_rate]);
+  }, [users, placements, pendingApprovals, overview]);
+
+  const greetingStats = [
+    { value: stats.students, label: 'Interns' },
+    { value: stats.totalLogs, label: 'Logs' },
+    { value: stats.approvalRate, label: 'Approval Rate' },
+    { value: stats.pendingReviews, label: 'Pending' },
+  ];
 
   const recentActivities = useMemo(() => {
     const approvalActivities = pendingApprovals.slice(0, 3).map((user) => ({
@@ -163,47 +176,23 @@ const AdminDashboard = () => {
   ];
 
   const systemMetrics = [
-    {
-      label: 'Active Users',
-      value: users.filter((user) => user.is_active).length,
-      change: `${users.length ? Math.round((users.filter((user) => user.is_active).length / users.length) * 100) : 0}% active`,
-    },
-    {
-      label: 'Pending Log Reviews',
-      value: overview.pending_review || 0,
-      change: `${overview.total_logs || 0} total logs`,
-    },
-    {
-      label: 'Late Submissions',
-      value: overview.late_submissions || 0,
-      change: `${overview.approval_rate || 0}% approval rate`,
-    },
-    {
-      label: 'Final Scores Released',
-      value: finalScores.length,
-      change: `${finalScores.filter((score) => score.grade === 'A').length} grade A`,
-    },
+    { label: 'Active Users', value: users.filter((user) => user.is_active).length, change: `${users.length ? Math.round((users.filter((user) => user.is_active).length / users.length) * 100) : 0}% active` },
+    { label: 'Pending Log Reviews', value: overview.pending_review || 0, change: `${overview.total_logs || 0} total logs` },
+    { label: 'Late Submissions', value: overview.late_submissions || 0, change: `${overview.approval_rate || 0}% approval rate` },
+    { label: 'Final Scores Released', value: finalScores.length, change: `${finalScores.filter((score) => score.grade === 'A').length} grade A` },
   ];
 
   return (
     <Box>
-      {/* Welcome Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--ink)', mb: 1 }}>
-            Administration Dashboard
-          </Typography>
-          <Typography variant="body1" sx={{ color: 'var(--gray-500)' }}>
-            System overview, user management, and platform analytics
-          </Typography>
-        </Box>
-      </motion.div>
+      <GreetingHeader
+        greeting="Good morning"
+        name={profileInfo?.first_name || 'Administrator'}
+        role="admin"
+        stats={greetingStats}
+        subtitle="Live overview of all interns across departments this semester."
+      />
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2.5}>
         {/* Total Users */}
         <Grid item xs={12} md={3}>
           <StatCard
@@ -261,47 +250,29 @@ const AdminDashboard = () => {
 
         {/* User Distribution */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ border: '1px solid var(--gray-200)', height: '100%' }}>
+          <Card sx={{ border: '1px solid var(--border)', bgcolor: 'var(--surface)', borderRadius: '14px' }}>
             <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>User Distribution</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'var(--tx1)' }}>User Distribution</Typography>
               <Grid container spacing={2}>
                 <Grid item xs={4}>
                   <Box sx={{ textAlign: 'center', p: 2 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--blue-600)' }}>
-                      {stats.students}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--gray-500)' }}>Students</Typography>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={stats.totalUsers ? (stats.students / stats.totalUsers) * 100 : 0} 
-                      sx={{ mt: 1, height: 4, borderRadius: 2 }} 
-                    />
+                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--t600)' }}>{stats.students}</Typography>
+                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Students</Typography>
+                    <LinearProgress variant="determinate" value={stats.totalUsers ? (stats.students / stats.totalUsers) * 100 : 0} sx={{ mt: 1, height: 4, borderRadius: 2 }} />
                   </Box>
                 </Grid>
                 <Grid item xs={4}>
                   <Box sx={{ textAlign: 'center', p: 2 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--green-600)' }}>
-                      {stats.supervisors}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--gray-500)' }}>Supervisors</Typography>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={stats.totalUsers ? (stats.supervisors / stats.totalUsers) * 100 : 0} 
-                      sx={{ mt: 1, height: 4, borderRadius: 2 }} 
-                    />
+                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--i600)' }}>{stats.supervisors}</Typography>
+                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Supervisors</Typography>
+                    <LinearProgress variant="determinate" value={stats.totalUsers ? (stats.supervisors / stats.totalUsers) * 100 : 0} sx={{ mt: 1, height: 4, borderRadius: 2 }} />
                   </Box>
                 </Grid>
                 <Grid item xs={4}>
                   <Box sx={{ textAlign: 'center', p: 2 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--purple-600)' }}>
-                      {stats.admins}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--gray-500)' }}>Admins</Typography>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={stats.totalUsers ? (stats.admins / stats.totalUsers) * 100 : 0} 
-                      sx={{ mt: 1, height: 4, borderRadius: 2 }} 
-                    />
+                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--violet)' }}>{stats.admins}</Typography>
+                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Admins</Typography>
+                    <LinearProgress variant="determinate" value={stats.totalUsers ? (stats.admins / stats.totalUsers) * 100 : 0} sx={{ mt: 1, height: 4, borderRadius: 2 }} />
                   </Box>
                 </Grid>
               </Grid>
@@ -311,29 +282,16 @@ const AdminDashboard = () => {
 
         {/* System Overview */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ border: '1px solid var(--gray-200)', height: '100%' }}>
+          <Card sx={{ border: '1px solid var(--border)', bgcolor: 'var(--surface)', borderRadius: '14px' }}>
             <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>System Overview</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'var(--tx1)' }}>System Overview</Typography>
               <Grid container spacing={2}>
                 {systemMetrics.map((metric, index) => (
                   <Grid item xs={6} key={index}>
                     <Box sx={{ p: 1 }}>
-                      <Typography variant="caption" sx={{ color: 'var(--gray-500)' }}>
-                        {metric.label}
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, mt: 0.5 }}>
-                        {metric.value}
-                      </Typography>
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
-                          color: 'var(--green-600)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          mt: 0.5,
-                        }}
-                      >
+                      <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>{metric.label}</Typography>
+                      <Typography variant="h5" sx={{ fontWeight: 700, mt: 0.5, color: 'var(--tx1)' }}>{metric.value}</Typography>
+                      <Typography variant="caption" sx={{ color: 'var(--t600)', display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                         {metric.change}
                         <TrendingUpIcon sx={{ fontSize: 12 }} />
                       </Typography>
@@ -347,42 +305,37 @@ const AdminDashboard = () => {
 
         {/* Platform Analytics */}
         <Grid item xs={12}>
-          <Card sx={{ border: '1px solid var(--gray-200)' }}>
+          <Card sx={{ border: '1px solid var(--border)', bgcolor: 'var(--surface)', borderRadius: '14px' }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>Platform Analytics</Typography>
-                <Button 
-                  size="small" 
-                  variant="outlined" 
-                  onClick={() => navigate('/reports')}
-                  sx={{ textTransform: 'none' }}
-                >
+                <Typography variant="h6" sx={{ fontWeight: 600, color: 'var(--tx1)' }}>Platform Analytics</Typography>
+                <Button size="small" variant="outlined" onClick={() => navigate('/reports')} sx={{ textTransform: 'none' }}>
                   View Detailed Report
                 </Button>
               </Box>
               <Grid container spacing={2}>
                 <Grid item xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--gray-50)', borderRadius: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>{stats.totalPlacements}</Typography>
-                    <Typography variant="caption">Total Placements</Typography>
+                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--surface2)', borderRadius: 2 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--tx1)' }}>{stats.totalPlacements}</Typography>
+                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Total Placements</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--gray-50)', borderRadius: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>{stats.totalPlacements ? Math.round((stats.activeInternships / stats.totalPlacements) * 100) : 0}%</Typography>
-                    <Typography variant="caption">Placement Rate</Typography>
+                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--surface2)', borderRadius: 2 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--tx1)' }}>{stats.totalPlacements ? Math.round((stats.activeInternships / stats.totalPlacements) * 100) : 0}%</Typography>
+                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Placement Rate</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--gray-50)', borderRadius: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>{overview.approval_rate || 0}%</Typography>
-                    <Typography variant="caption">Log Approval Rate</Typography>
+                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--surface2)', borderRadius: 2 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--tx1)' }}>{overview.approval_rate || 0}%</Typography>
+                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Log Approval Rate</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6} sm={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--gray-50)', borderRadius: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>{finalScores.length}</Typography>
-                    <Typography variant="caption">Computed Final Scores</Typography>
+                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'var(--surface2)', borderRadius: 2 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--tx1)' }}>{finalScores.length}</Typography>
+                    <Typography variant="caption" sx={{ color: 'var(--tx3)' }}>Computed Final Scores</Typography>
                   </Box>
                 </Grid>
               </Grid>

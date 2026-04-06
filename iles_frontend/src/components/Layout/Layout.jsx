@@ -1,100 +1,53 @@
-// frontend/src/components/Layout/Layout.jsx
-import { Outlet, useLocation } from 'react-router-dom';
-import { Box, useMediaQuery, useTheme } from '@mui/material';
+import { useState } from 'react';
+import { Box, Toolbar, useMediaQuery, useTheme } from '@mui/material';
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
-import { DRAWER_WIDTH, COLLAPSED_DRAWER_WIDTH } from './layoutConfig';
-import { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { profileAPI } from '../../services/api';
+import { DRAWER_WIDTH } from './layoutConfig';
 
 const Layout = () => {
-  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { user } = useAuth();
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [displayLocation, setDisplayLocation] = useState(location);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [profile, setProfile] = useState(null);
-
-  useEffect(() => {
-    if (location !== displayLocation) {
-      setIsTransitioning(true);
-      const timer = setTimeout(() => {
-        setDisplayLocation(location);
-        setIsTransitioning(false);
-      }, 180);
-      return () => clearTimeout(timer);
-    }
-  }, [location]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadProfile = async () => {
-      if (!user) {
-        setProfile(null);
-        return;
-      }
-
-      try {
-        const response = await profileAPI.getProfile();
-        if (isMounted) {
-          setProfile(response.data);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setProfile(user);
-        }
-      }
-    };
-
-    loadProfile();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
 
   const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+    setMobileOpen((current) => !current);
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Sidebar 
-        mobileOpen={mobileOpen} 
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <Sidebar
+        mobileOpen={mobileOpen}
         onDrawerToggle={handleDrawerToggle}
         isMobile={isMobile}
-        profile={profile || user}
       />
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          transition: theme.transitions.create(['margin', 'width'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-          }),
-        }}
-      >
-        <Topbar onMenuClick={handleDrawerToggle} isMobile={isMobile} profile={profile || user} />
+
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <Topbar
+          onMenuClick={handleDrawerToggle}
+          isMobile={isMobile}
+        />
+
         <Box
+          component="main"
           sx={{
             flex: 1,
+            minWidth: 0,
+            bgcolor: 'background.default',
             px: { xs: 2, sm: 3, md: 4 },
-            py: { xs: 2, sm: 3, md: 4 },
-            opacity: isTransitioning ? 0 : 1,
-            transform: isTransitioning ? 'translateY(6px)' : 'translateY(0)',
-            transition: 'opacity 0.18s ease, transform 0.18s ease',
+            pb: { xs: 3, md: 4 },
           }}
         >
-          <Outlet />
+          <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
+          <Box
+            sx={{
+              width: '100%',
+              maxWidth: `calc(100vw - ${DRAWER_WIDTH}px)`,
+              mx: 'auto',
+            }}
+          >
+            <Outlet />
+          </Box>
         </Box>
       </Box>
     </Box>
