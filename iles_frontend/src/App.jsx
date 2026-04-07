@@ -52,6 +52,7 @@ import InternsPage from './pages/Interns/InternsPage';
 import ReportsPage from './pages/Reports/ReportsPage';
 import NotificationsPage from './pages/Notifications/NotificationsPage';
 import SettingsPage from './pages/Settings/SettingsPage';
+import ReferencePage from './pages/Reference/ReferencePage';
 
 // Components
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -189,6 +190,8 @@ const AppShell = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reference" element={<ReferencePage />} />
+            <Route path="/pops-and-messages" element={<ReferencePage />} />
             
             {/* Protected routes */}
             <Route

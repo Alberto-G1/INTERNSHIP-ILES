@@ -67,7 +67,7 @@ const TOPBAR_STYLES = `
   }
 `;
 
-const Topbar = ({ onMenuClick, isMobile, profile }) => {
+const Topbar = ({ onMenuClick, isMobile, profile, showMobileMenuButton = true }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -183,7 +183,7 @@ const Topbar = ({ onMenuClick, isMobile, profile }) => {
         >
           {/* ── Left: breadcrumb + page title ─────────────────────── */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-            {isMobile && (
+            {isMobile && showMobileMenuButton && (
               <IconButton
                 color="inherit"
                 aria-label="open drawer"
