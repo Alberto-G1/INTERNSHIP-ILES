@@ -1,5 +1,6 @@
 import { Box, IconButton, Stack, Typography } from '@mui/material';
 import { useThemeMode } from '../../context/ThemeModeContext';
+import authRightLogo from '../../assets/logos/logo.png';
 
 /* ── Per-page left-panel content ── */
 const LEFT_CONTENT = {
@@ -309,6 +310,20 @@ const AuthShell = ({ mode = 'signin', children }) => {
         >
           {isDark ? <SunIcon /> : <MoonIcon />}
         </IconButton>
+
+        <Box
+          component="img"
+          src={authRightLogo}
+          alt="AILES logo"
+          sx={{
+            width: { xs: 170, md: 220 },
+            height: 'auto',
+            mb: { xs: 2.5, md: 2 },
+            mt: { xs: 0, md: 1 },
+            objectFit: 'contain',
+            filter: isDark ? 'drop-shadow(0 8px 18px rgba(0,0,0,0.35))' : 'drop-shadow(0 8px 18px rgba(26,92,58,0.18))',
+          }}
+        />
 
         {/* Mobile logo (hidden on md+) */}
         <Stack
