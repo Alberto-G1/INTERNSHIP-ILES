@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AILES — Profile Pages</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════ */
+:root {
+  --t900:#0D3D2E;--t800:#155E44;--t700:#1A7A57;--t600:#22916A;--t500:#2DAF83;
+  --t400:#45C99A;--t300:#74DBBA;--t200:#A8EDDB;--t100:#D4F7EE;--t50:#EDFBF7;
+  --a900:#7A3000;--a800:#AA4500;--a700:#C05500;--a600:#D96B0E;--a500:#F08C30;
+  --a400:#F5A855;--a300:#FAC27D;--a100:#FEF0DC;--a50:#FFF8EF;
+  --i900:#1A1F5E;--i800:#252C82;--i700:#2F3DAA;--i600:#3D51C8;--i500:#5569E0;
+  --i400:#7389EA;--i300:#9BACED;--i200:#C0CCF5;--i100:#E0E5FB;--i50:#F0F3FF;
+  --danger:#E84545;--danger-l:#FDEAEA;
+  --violet:#7C3AED;--violet-l:#EDE9FE;
+  --bg:#ECEEF6;--surface:#FFFFFF;--surface2:#F4F5FB;--surface3:#ECEEF7;
+  --border:rgba(55,65,120,0.08);--border2:rgba(55,65,120,0.15);
+  --glass:rgba(255,255,255,0.78);
+  --tx1:#0D1020;--tx2:#3D4466;--tx3:#8A90B4;
+  --sb-w:264px;--sb-bg:#0F1635;--sb-border:rgba(255,255,255,0.07);--sb-tx:rgba(255,255,255,0.45);
+  --tb-h:64px;
+  --r:10px;--rl:14px;--rxl:20px;
+  --sh:0 1px 3px rgba(13,16,32,.05),0 4px 18px rgba(13,16,32,.06);
+  --shl:0 8px 30px rgba(13,16,32,.10);--shxl:0 20px 60px rgba(13,16,32,.16);
+  --font:'DM Sans',sans-serif;--serif:'Fraunces',serif;
+  --ease:cubic-bezier(.4,0,.2,1);--spring:cubic-bezier(.34,1.56,.64,1);
+}
+[data-theme="dark"]{
+  --bg:#0A0D1C;--surface:#111427;--surface2:#171C31;--surface3:#1C2238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --glass:rgba(17,20,39,0.85);
+  --tx1:#EDF0FF;--tx2:#7C83AA;--tx3:#424B72;
+  --sb-bg:#070A18;
+  --t50:rgba(45,175,131,0.08);--t100:rgba(45,175,131,0.14);
+  --a50:rgba(240,140,48,0.08);--a100:rgba(240,140,48,0.14);
+  --i50:rgba(85,105,224,0.08);--i100:rgba(85,105,224,0.14);
+  --danger-l:rgba(232,69,69,0.12);--violet-l:rgba(124,58,237,0.12);
+  --sh:0 1px 3px rgba(0,0,0,.25),0 4px 18px rgba(0,0,0,.2);
+  --shl:0 8px 30px rgba(0,0,0,.38);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--tx1);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font-family:var(--font);border:none;background:none}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ── LAYOUT ── */
+.shell{display:flex;min-height:100vh}
+
+/* ════════════════════════════
+   SIDEBAR
+════════════════════════════ */
+.sidebar{width:var(--sb-w);background:var(--sb-bg);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;border-right:1px solid var(--sb-border);transition:transform .3s var(--ease);overflow:hidden}
+.sidebar::before{content:'';position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 200px 200px at 20% 10%,rgba(45,175,131,0.09) 0%,transparent 70%),radial-gradient(ellipse 180px 180px at 80% 70%,rgba(85,105,224,0.07) 0%,transparent 70%);pointer-events:none}
+.sidebar>*{position:relative;z-index:1}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid var(--sb-border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.sb-logom{width:38px;height:38px;background:linear-gradient(145deg,var(--t600),var(--t400));border-radius:11px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(45,175,131,0.35);flex-shrink:0}
+.sb-logom svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sb-brand-name{font-size:16px;font-weight:700;color:#fff;letter-spacing:.5px}
+.sb-brand-sub{font-size:9.5px;color:rgba(255,255,255,0.28);letter-spacing:1.4px;text-transform:uppercase;margin-top:2px}
+.sb-role-pill{margin:12px 14px;padding:9px 12px;border-radius:11px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:9px;cursor:pointer;transition:background .2s}
+.sb-role-pill:hover{background:rgba(255,255,255,0.09)}
+.sb-role-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .3s}
+.sb-role-name{font-size:11.5px;font-weight:600;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-role-sub{font-size:10px;color:rgba(255,255,255,0.3);margin-top:1px}
+.sb-nav{flex:1;overflow-y:auto;padding:6px 10px 8px;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.sb-sec-lbl{font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,0.18);padding:12px 10px 4px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;color:var(--sb-tx);font-size:12.5px;cursor:pointer;user-select:none;margin-bottom:1px;position:relative;overflow:hidden;transition:all .18s var(--ease)}
+.sb-item:hover{color:rgba(255,255,255,0.85);transform:translateX(2px);background:rgba(255,255,255,0.06)}
+.sb-item.act{color:#fff;font-weight:500;background:rgba(45,175,131,0.14)}
+.sb-item.act::after{content:'';position:absolute;left:0;top:20%;height:60%;width:3px;background:var(--t400);border-radius:0 3px 3px 0}
+.sb-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);flex-shrink:0}
+.sb-item.act .sb-icon{background:rgba(45,175,131,0.2)}
+.sb-icon svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.sb-item-lbl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-badge{font-size:9.5px;font-weight:700;padding:1.5px 6.5px;border-radius:99px;flex-shrink:0;min-width:18px;text-align:center;line-height:1.6}
+.sb-badge.t{background:var(--t600);color:#fff}.sb-badge.a{background:var(--a600);color:#fff}.sb-badge.r{background:var(--danger);color:#fff}
+.sb-foot{padding:10px;border-top:1px solid var(--sb-border);flex-shrink:0}
+.sb-user-row{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;transition:background .18s}
+.sb-user-row:hover{background:rgba(255,255,255,0.06)}
+.sb-av{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;position:relative}
+.sb-av-dot{position:absolute;bottom:-1px;right:-1px;width:9px;height:9px;border-radius:50%;background:#22C55E;border:2px solid var(--sb-bg)}
+.sb-uname{font-size:12px;font-weight:600;color:#fff}
+.sb-urole{font-size:10px;color:rgba(255,255,255,0.3)}
+.sb-cog{color:rgba(255,255,255,0.25);padding:4px;border-radius:6px;margin-left:auto;transition:all .15s;flex-shrink:0}
+.sb-cog:hover{background:rgba(255,255,255,0.08);color:#fff}
+.sb-cog svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+
+/* ════════════════════════════
+   TOPBAR
+════════════════════════════ */
+.main{margin-left:var(--sb-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:var(--tb-h);background:var(--glass);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px 0 28px;gap:12px;position:sticky;top:0;z-index:100}
+.tb-pi{flex:1;min-width:0}
+.tb-bc{display:flex;align-items:center;gap:4px;font-size:10.5px;color:var(--tx3);margin-bottom:1px}
+.tb-bc svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tb-title{font-size:15px;font-weight:600;color:var(--tx1);letter-spacing:-.3px}
+.tb-search{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 14px;width:220px;transition:all .22s}
+.tb-search:focus-within{width:260px;border-color:var(--t400);box-shadow:0 0 0 3px rgba(45,175,131,0.12);background:var(--surface)}
+.tb-search svg{width:13px;height:13px;stroke:var(--tx3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.tb-search input{background:none;border:none;outline:none;font-size:12.5px;color:var(--tx1);font-family:var(--font);width:100%}
+.tb-search input::placeholder{color:var(--tx3)}
+.tb-acts{display:flex;align-items:center;gap:6px}
+.tb-ib{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);color:var(--tx2);position:relative;transition:all .18s}
+.tb-ib:hover{background:var(--t50);border-color:var(--t200);color:var(--t700)}
+.tb-ib svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tb-nd{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--danger);border:1.5px solid var(--surface)}
+.tb-user{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 5px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .2s}
+.tb-user:hover{border-color:var(--border2);background:var(--surface)}
+.tb-uav{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;position:relative}
+.tb-uav-dot{position:absolute;bottom:-1px;right:-1px;width:9px;height:9px;border-radius:50%;background:#22C55E;border:2px solid var(--surface)}
+.tb-uname{font-size:12px;font-weight:600;color:var(--tx1)}
+.tb-usub{font-size:10.5px;color:var(--tx3)}
+.tb-chev svg{width:12px;height:12px;stroke:var(--tx3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+
+/* ════════════════════════════
+   CONTROLS
+════════════════════════════ */
+.role-tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:4px;width:fit-content;box-shadow:var(--sh)}
+.role-tab{padding:7px 18px;border-radius:10px;font-size:12px;font-weight:500;color:var(--tx2);cursor:pointer;transition:all .2s var(--ease)}
+.role-tab.act{background:var(--t700);color:#fff;box-shadow:0 2px 8px rgba(22,122,87,0.25)}
+.role-tab:not(.act):hover{background:var(--surface2);color:var(--tx1)}
+.mode-tabs{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:3px}
+.mode-tab{padding:5px 16px;border-radius:7px;font-size:12px;font-weight:500;color:var(--tx3);cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:5px}
+.mode-tab svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mode-tab.act{background:var(--surface);color:var(--tx1);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.controls-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+
+/* ════════════════════════════
+   CONTENT
+════════════════════════════ */
+.content{flex:1;padding:28px 32px;max-width:1000px}
+.view{display:none}
+.view.act{display:block}
+.pane{display:none}
+.pane.act{display:block}
+
+/* ════════════════════════════
+   HERO (PRESERVED / UNCHANGED)
+════════════════════════════ */
+.profile-hero{position:relative;border-radius:var(--rxl);overflow:hidden;margin-bottom:28px;box-shadow:var(--shl)}
+.hero-banner{height:148px;position:relative;display:flex;align-items:flex-end;padding:0 32px 0}
+.hero-banner-pattern{position:absolute;inset:0;opacity:.5;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,0.04) 0px,rgba(255,255,255,0.04) 1px,transparent 1px,transparent 12px)}
+.hero-body{background:var(--surface);padding:0 32px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.hero-left{display:flex;align-items:flex-end;gap:18px;margin-top:-36px;position:relative;z-index:2}
+.hero-avatar-wrap{position:relative;flex-shrink:0}
+.hero-avatar{width:88px;height:88px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;border:4px solid var(--surface);box-shadow:var(--shl);position:relative}
+.hero-av-online{position:absolute;bottom:4px;right:4px;width:14px;height:14px;border-radius:50%;background:#22C55E;border:3px solid var(--surface)}
+.hero-name-wrap{padding-bottom:4px}
+.hero-name{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--tx1);letter-spacing:-.3px;line-height:1.1}
+.hero-role{font-size:12px;color:var(--tx3);margin-top:3px}
+.hero-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.hero-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:10.5px;font-weight:600}
+.hero-chip svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hero-right{display:flex;align-items:center;gap:8px;padding-top:16px;flex-shrink:0}
+.completion-bar-wrap{background:var(--surface);border-top:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;gap:16px}
+.comp-label{font-size:12px;font-weight:500;color:var(--tx2);white-space:nowrap}
+.comp-track{flex:1;height:7px;background:var(--surface2);border-radius:99px;border:1px solid var(--border);overflow:hidden}
+.comp-fill{height:100%;border-radius:99px;transition:width 1.2s var(--ease)}
+.comp-pct{font-size:13px;font-weight:700;color:var(--tx1);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:36px;text-align:right}
+.comp-hint{font-size:11px;color:var(--tx3);margin-top:4px;display:flex;align-items:center;gap:5px}
+.comp-hint svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.hero-admin .hero-banner{background:linear-gradient(135deg,#0F1635 0%,#1A2D5A 60%,#162840 100%)}
+.hero-workplace .hero-banner{background:linear-gradient(135deg,#1A1050 0%,#2C1A6E 60%,#1A2A5E 100%)}
+.hero-academic .hero-banner{background:linear-gradient(135deg,#2A0A5E 0%,#1A1050 60%,#0F1635 100%)}
+.hero-student .hero-banner{background:linear-gradient(135deg,#0A2B1A 0%,#0F3522 60%,#0A2520 100%)}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.35}}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#22C55E;display:inline-block;animation:pulse-dot 2s ease-in-out infinite}
+
+/* Badges */
+.bdg-t{background:var(--t100);color:var(--t800)}.bdg-i{background:var(--i100);color:var(--i700)}.bdg-a{background:var(--a100);color:var(--a800)}.bdg-v{background:var(--violet-l);color:var(--violet)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:9px;font-size:12.5px;font-weight:600;transition:all .18s;font-family:var(--font)}
+.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn-primary{background:linear-gradient(135deg,var(--t700),var(--t500));color:#fff;box-shadow:0 2px 10px rgba(22,122,87,0.28)}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(22,122,87,0.38)}
+.btn-outline{background:transparent;color:var(--tx2);border:1.5px solid var(--border2)}.btn-outline:hover{background:var(--surface2);color:var(--tx1)}
+.btn-danger-o{background:transparent;color:var(--danger);border:1.5px solid rgba(232,69,69,.25)}.btn-danger-o:hover{background:var(--danger-l)}
+.btn-sm{padding:5px 12px;font-size:11.5px}
+
+/* ════════════════════════════════════════════
+   ██  NEW SECTION DESIGN SYSTEM  ██
+════════════════════════════════════════════ */
+
+/* ── Animate-in base ── */
+@keyframes slideInUp   {from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInLeft {from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeIn      {from{opacity:0}to{opacity:1}}
+@keyframes shimmer     {0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes countPop    {0%{transform:scale(.7);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@keyframes lineGrow    {from{width:0}to{width:100%}}
+@keyframes floatUp     {0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes glowPulse   {0%,100%{box-shadow:0 0 0 0 rgba(45,175,131,0)}50%{box-shadow:0 0 0 6px rgba(45,175,131,0.08)}}
+
+.info-block {
+  opacity: 0;
+  animation: slideInUp .5s var(--ease) forwards;
+}
+.info-block:nth-child(1){animation-delay:.05s}
+.info-block:nth-child(2){animation-delay:.12s}
+.info-block:nth-child(3){animation-delay:.19s}
+.info-block:nth-child(4){animation-delay:.26s}
+.info-block:nth-child(5){animation-delay:.33s}
+
+/* ── SECTION WRAPPER ── */
+.info-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 18px;
+  box-shadow: var(--sh);
+  transition: box-shadow .3s var(--ease), transform .3s var(--ease);
+}
+.info-block:hover {
+  box-shadow: var(--shl);
+  transform: translateY(-2px);
+}
+
+/* ── SECTION HEADER — the unique part ── */
+.ib-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 16px;
+  position: relative;
+  overflow: hidden;
+}
+/* Decorative gradient band behind header */
+.ib-head::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: .055;
+}
+/* Color variants */
+.ibc-teal  .ib-head::before{background:linear-gradient(110deg,var(--t400) 0%,transparent 60%)}
+.ibc-amber .ib-head::before{background:linear-gradient(110deg,var(--a400) 0%,transparent 60%)}
+.ibc-indigo.ib-head::before{background:linear-gradient(110deg,var(--i400) 0%,transparent 60%)}
+.ibc-violet.ib-head::before{background:linear-gradient(110deg,var(--violet) 0%,transparent 60%)}
+.ibc-danger.ib-head::before{background:linear-gradient(110deg,var(--danger) 0%,transparent 60%)}
+
+/* Decorative dot cluster top-right */
+.ib-head::after {
+  content: '';
+  position: absolute;
+  right: 20px; top: 50%;
+  transform: translateY(-50%);
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  opacity: .06;
+  pointer-events: none;
+}
+.ibc-teal  .ib-head::after{background:var(--t400)}
+.ibc-amber .ib-head::after{background:var(--a500)}
+.ibc-indigo.ib-head::after{background:var(--i500)}
+.ibc-violet.ib-head::after{background:var(--violet)}
+.ibc-danger.ib-head::after{background:var(--danger)}
+
+.ib-head-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+.ib-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform .3s var(--spring);
+  animation: floatUp 3s ease-in-out infinite;
+}
+.info-block:hover .ib-icon { transform: scale(1.1); animation: none; }
+.ib-icon svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ibc-teal  .ib-icon{background:var(--t100);color:var(--t700)}
+.ibc-amber .ib-icon{background:var(--a100);color:var(--a700)}
+.ibc-indigo.ib-icon{background:var(--i100);color:var(--i700)}
+.ibc-violet.ib-icon{background:var(--violet-l);color:var(--violet)}
+.ibc-danger.ib-icon{background:var(--danger-l);color:var(--danger)}
+
+.ib-title   { font-size: 14px; font-weight: 700; color: var(--tx1); letter-spacing: -.2px; }
+.ib-subtitle{ font-size: 11px; color: var(--tx3); margin-top: 2px; }
+
+/* Section number badge */
+.ib-num {
+  position: relative; z-index: 1;
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1px;
+  opacity: .12;
+  user-select: none;
+  animation: countPop .6s var(--spring) backwards;
+}
+.ibc-teal  .ib-num{color:var(--t700)}
+.ibc-amber .ib-num{color:var(--a700)}
+.ibc-indigo.ib-num{color:var(--i700)}
+.ibc-violet.ib-num{color:var(--violet)}
+.ibc-danger.ib-num{color:var(--danger)}
+
+/* Separator line with gradient */
+.ib-divider {
+  height: 1px;
+  margin: 0 24px;
+  position: relative;
+  overflow: hidden;
+}
+.ib-divider::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--border2) 30%, var(--border2) 70%, transparent);
+}
+/* Animated shimmer line */
+.ib-divider::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(45,175,131,0.4), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+  animation-delay: inherit;
+}
+.ibc-amber .ib-divider::after{background:linear-gradient(90deg,transparent,rgba(240,140,48,0.4),transparent)}
+.ibc-indigo.ib-divider::after{background:linear-gradient(90deg,transparent,rgba(85,105,224,0.4),transparent)}
+.ibc-violet.ib-divider::after{background:linear-gradient(90deg,transparent,rgba(124,58,237,0.4),transparent)}
+
+/* ── FIELDS CONTAINER ── */
+.ib-body { padding: 22px 24px 24px; }
+
+/* ── FIELD ITEM — the big redesign ── */
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px 24px;
+}
+.field-row.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.field-row.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.field-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Individual field — floating label style display card */
+.fd {
+  position: relative;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px 11px;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+  overflow: hidden;
+  opacity: 0;
+  animation: slideInUp .4s var(--ease) forwards;
+}
+.fd::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 2px;
+  width: 0;
+  border-radius: 0 0 12px 12px;
+  transition: width .4s var(--ease);
+}
+.ibc-teal  .fd::before{background:var(--t400)}
+.ibc-amber .fd::before{background:var(--a400)}
+.ibc-indigo.fd::before{background:var(--i400)}
+.ibc-violet.fd::before{background:var(--violet)}
+.ibc-danger.fd::before{background:var(--danger)}
+
+.info-block:hover .fd::before { width: 100%; }
+.fd:hover {
+  border-color: var(--border2);
+  background: var(--surface);
+  box-shadow: 0 2px 12px rgba(13,16,32,.06);
+}
+
+/* Stagger each field's entrance */
+.fd:nth-child(1){animation-delay:.08s}.fd:nth-child(2){animation-delay:.13s}
+.fd:nth-child(3){animation-delay:.18s}.fd:nth-child(4){animation-delay:.23s}
+.fd:nth-child(5){animation-delay:.28s}.fd:nth-child(6){animation-delay:.33s}
+.fd:nth-child(7){animation-delay:.38s}.fd:nth-child(8){animation-delay:.43s}
+.fd:nth-child(9){animation-delay:.48s}
+
+.fd-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ibc-teal  .fd-label{color:var(--t600)}
+.ibc-amber .fd-label{color:var(--a600)}
+.ibc-indigo.fd-label{color:var(--i600)}
+.ibc-violet.fd-label{color:var(--violet)}
+.ibc-danger.fd-label{color:var(--danger)}
+
+/* tiny dot beside label */
+.fd-label::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: .5;
+}
+.ibc-teal  .fd-label::before{background:var(--t500)}
+.ibc-amber .fd-label::before{background:var(--a500)}
+.ibc-indigo.fd-label::before{background:var(--i500)}
+.ibc-violet.fd-label::before{background:var(--violet)}
+.ibc-danger.fd-label::before{background:var(--danger)}
+
+.fd-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tx1);
+  line-height: 1.35;
+  word-break: break-word;
+}
+.fd-val.mono {
+  font-family: 'Courier New', monospace;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--tx2);
+  letter-spacing: .3px;
+}
+.fd-val.empty {
+  color: var(--tx3);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* Wide field — spans 2 cols */
+.fd.wide { grid-column: span 2; }
+.fd.full { grid-column: 1 / -1; }
+
+/* ── SPECIAL FIELDS ── */
+
+/* Permissions / tag list field */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 2px;
+}
+.perm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px 5px 8px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--t50);
+  color: var(--t800);
+  border: 1px solid var(--t200);
+  transition: all .18s var(--spring);
+  opacity: 0;
+  animation: slideInLeft .4s var(--ease) forwards;
+}
+.perm-chip:nth-child(1){animation-delay:.1s}.perm-chip:nth-child(2){animation-delay:.18s}
+.perm-chip:nth-child(3){animation-delay:.26s}.perm-chip:nth-child(4){animation-delay:.34s}
+.perm-chip:nth-child(5){animation-delay:.42s}
+.perm-chip:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 3px 10px rgba(22,122,87,0.15); }
+.perm-chip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--t500); flex-shrink: 0; }
+
+/* Admin level indicator */
+.level-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+.level-pip {
+  display: flex;
+  gap: 4px;
+}
+.level-pip span {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: block;
+  transition: transform .2s var(--spring);
+}
+.level-pip span.on { background: var(--t500); animation: glowPulse 2.5s ease-in-out infinite; }
+.level-pip span.off { background: var(--border2); }
+.info-block:hover .level-pip span.on { transform: scale(1.2); }
+.level-name { font-size: 14px; font-weight: 700; color: var(--tx1); }
+
+/* ── SECTION CONNECTOR ── */
+/* Thin vertical connector between blocks */
+.section-stack {
+  position: relative;
+}
+.section-stack::before {
+  content: '';
+  position: absolute;
+  left: 36px;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent 0%, var(--border2) 10%, var(--border2) 90%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+.info-block { position: relative; z-index: 1; }
+
+/* ── EDIT FORM ── */
+.edit-section{background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--sh);overflow:hidden;margin-bottom:16px;opacity:0;animation:slideInUp .4s var(--ease) forwards}
+.edit-section:nth-child(1){animation-delay:.04s}.edit-section:nth-child(2){animation-delay:.09s}
+.edit-section:nth-child(3){animation-delay:.14s}.edit-section:nth-child(4){animation-delay:.19s}
+.edit-section:nth-child(5){animation-delay:.24s}
+.edit-section-head{display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.edit-section-title{font-size:13px;font-weight:700;color:var(--tx1)}
+.edit-esn{font-family:var(--serif);font-size:11px;color:var(--tx3);margin-left:auto;font-style:italic}
+.photo-upload{display:flex;align-items:center;gap:20px;padding:20px 24px}
+.photo-av-wrap{position:relative;flex-shrink:0}
+.photo-av{width:80px;height:80px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;border:3px solid var(--border2);box-shadow:var(--sh)}
+.photo-av-overlay{position:absolute;inset:0;border-radius:20px;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;cursor:pointer}
+.photo-av-wrap:hover .photo-av-overlay{opacity:1}
+.photo-av-overlay svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.photo-actions{display:flex;gap:8px;flex-wrap:wrap}
+.form-grid{padding:20px 24px;display:grid;gap:16px 20px}
+.fg2{grid-template-columns:1fr 1fr}.fg3{grid-template-columns:1fr 1fr 1fr}.fg1{grid-template-columns:1fr}
+.form-field{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:11px;font-weight:600;color:var(--tx2);letter-spacing:.3px}
+.form-label span{color:var(--danger);margin-left:2px}
+.form-input{padding:9px 13px;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-weight:400;color:var(--tx1);font-family:var(--font);transition:all .18s;outline:none;width:100%}
+.form-input:focus{border-color:var(--t400);background:var(--surface);box-shadow:0 0 0 3px rgba(45,175,131,0.1)}
+.form-input:hover:not(:focus){border-color:var(--border2)}
+.form-input::placeholder{color:var(--tx3)}
+.form-textarea{resize:vertical;min-height:88px;line-height:1.55}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238A90B4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:14px;padding-right:36px;cursor:pointer}
+.edit-actions{display:flex;justify-content:flex-end;gap:10px;padding:18px 24px;background:var(--surface2);border-top:1px solid var(--border);border-radius:0 0 18px 18px;position:sticky;bottom:0;z-index:50}
+
+/* ── RESPONSIVE ── */
+@media(max-width:960px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}.content{padding:20px 16px}.topbar{padding:0 16px}
+  .field-row,.fg2,.fg3{grid-template-columns:1fr 1fr}
+  .tb-uname,.tb-usub{display:none}
+}
+@media(max-width:640px){
+  .field-row,.fg2,.fg3{grid-template-columns:1fr}
+  .hero-banner{height:100px}.hero-avatar{width:70px;height:70px;font-size:22px}
+  .controls-bar{flex-direction:column;align-items:flex-start}
+  .role-tabs{flex-wrap:wrap}
+}
+.mobile-toggle{display:none;position:fixed;bottom:20px;right:20px;z-index:300;width:48px;height:48px;border-radius:50%;background:var(--t700);box-shadow:0 4px 16px rgba(22,122,87,0.38);align-items:center;justify-content:center}
+.mobile-toggle svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:960px){.mobile-toggle{display:flex}}
+#overlay{position:fixed;inset:0;z-index:150;display:none}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logom"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+    <div><div class="sb-brand-name">AILES</div><div class="sb-brand-sub">Internship System · v2.4</div></div>
+  </div>
+  <div class="sb-role-pill" onclick="cycleRole()">
+    <div class="sb-role-dot" id="sb-dot"></div>
+    <div style="flex:1;min-width:0"><div class="sb-role-name" id="sb-role-name">System Administrator</div><div class="sb-role-sub">Click to switch role</div></div>
+    <div style="color:rgba(255,255,255,0.25);font-size:13px">⇅</div>
+  </div>
+  <nav class="sb-nav" id="sb-nav"></nav>
+  <div class="sb-foot">
+    <div class="sb-user-row">
+      <div class="sb-av" id="sb-av"><span id="sb-av-txt">AD</span><div class="sb-av-dot"></div></div>
+      <div style="flex:1;min-width:0" color = "white"><div class="sb-uname" id="sb-uname">Admin User</div><div class="sb-urole" id="sb-urole">Administrator</div></div>
+      <button class="sb-cog"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="main">
+  <header class="topbar">
+    <div class="tb-pi">
+      <div class="tb-bc"><span>AILES</span><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg><span id="tb-crumb">Profile</span></div>
+      <div class="tb-title" id="tb-title">My Profile</div>
+    </div>
+    <div class="tb-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search interns, logs…"></div>
+    <div class="tb-acts">
+      <button class="tb-ib" onclick="toggleTheme()"><svg viewBox="0 0 24 24" id="theme-icon"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
+      <div class="tb-user">
+        <div class="tb-uav" id="tb-uav"><span id="tb-av-txt">AD</span><div class="tb-uav-dot"></div></div>
+        <div><div class="tb-uname" id="tb-uname">Admin User</div><div class="tb-usub" id="tb-usub">Administrator</div></div>
+        <div class="tb-chev"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="controls-bar">
+      <div class="role-tabs">
+        <div class="role-tab act"     onclick="switchRole('admin',this)">Admin</div>
+        <div class="role-tab"         onclick="switchRole('workplace',this)">Workplace Sup.</div>
+        <div class="role-tab"         onclick="switchRole('academic',this)">Academic Sup.</div>
+        <div class="role-tab"         onclick="switchRole('student',this)">Student</div>
+      </div>
+      <div class="mode-tabs">
+        <div class="mode-tab act" id="mode-view" onclick="switchMode('view',this)">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View Profile
+        </div>
+        <div class="mode-tab" id="mode-edit" onclick="switchMode('edit',this)">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Profile
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         ADMIN
+    ════════════════════════════════════ -->
+    <div class="view act" id="view-admin">
+      <!-- VIEW -->
+      <div class="pane act" id="pane-admin-view">
+        <!-- Hero (unchanged) -->
+        <div class="profile-hero hero-admin">
+          <div class="hero-banner"><div class="hero-banner-pattern"></div>
+            <div style="position:absolute;right:60px;top:20px;width:100px;height:100px;border-radius:50%;border:1px solid rgba(45,175,131,0.25);pointer-events:none"></div>
+            <div style="position:absolute;right:20px;top:-10px;width:160px;height:160px;border-radius:50%;border:1px solid rgba(85,105,224,0.15);pointer-events:none"></div>
+          </div>
+          <div class="hero-body">
+            <div class="hero-left">
+              <div class="hero-avatar-wrap"><div class="hero-avatar" style="background:linear-gradient(135deg,#1A7A57,#2DAF83)">AD<div class="hero-av-online"></div></div></div>
+              <div class="hero-name-wrap">
+                <div class="hero-name">Administrator</div>
+                <div class="hero-role">System Administrator · admin@ailes.edu</div>
+                <div class="hero-chips">
+                  <span class="hero-chip bdg-t"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Super Admin</span>
+                  <span class="hero-chip" style="background:var(--i100);color:var(--i700)"><span class="live-dot" style="width:5px;height:5px;margin-right:2px"></span>Active Session</span>
+                </div>
+              </div>
+            </div>
+            <div class="hero-right"><button class="btn btn-primary" onclick="switchMode('edit',document.getElementById('mode-edit'))"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Profile</button></div>
+          </div>
+          <div class="completion-bar-wrap">
+            <span class="comp-label">Profile Completion</span>
+            <div class="comp-track"><div class="comp-fill" style="width:72%;background:linear-gradient(90deg,var(--t700),var(--t400))"></div></div>
+            <span class="comp-pct">72%</span>
+          </div>
+          <div style="padding:0 32px 14px;background:var(--surface)"><div class="comp-hint" style="color:var(--a700)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Complete remaining fields to unlock all system features</div></div>
+        </div>
+
+        <!-- Redesigned info sections -->
+        <div class="section-stack">
+
+          <!-- § 1 · Core Identity -->
+          <div class="info-block ibc-teal">
+            <div class="ib-head">
+              <div class="ib-head-left">
+                <div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <div><div class="ib-title">Core Identity & Contact</div><div class="ib-subtitle">Personal and contact information</div></div>
+              </div>
+              <div class="ib-num">01</div>
+            </div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="field-row cols-4">
+                <div class="fd"><div class="fd-label">First Name</div><div class="fd-val empty">—</div></div>
+                <div class="fd"><div class="fd-label">Last Name</div><div class="fd-val empty">—</div></div>
+                <div class="fd"><div class="fd-label">Other Names</div><div class="fd-val empty">—</div></div>
+                <div class="fd"><div class="fd-label">Phone Number</div><div class="fd-val empty">—</div></div>
+                <div class="fd"><div class="fd-label">Alternative Phone</div><div class="fd-val empty">—</div></div>
+                <div class="fd wide"><div class="fd-label">Email Address</div><div class="fd-val mono">admin@ailes.edu</div></div>
+                <div class="fd"><div class="fd-label">Country</div><div class="fd-val empty">—</div></div>
+                <div class="fd"><div class="fd-label">City</div><div class="fd-val empty">—</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- § 2 · Admin Info -->
+          <div class="info-block ibc-indigo">
+            <div class="ib-head">
+              <div class="ib-head-left">
+                <div class="ib-icon"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg></div>
+                <div><div class="ib-title">Admin Information</div><div class="ib-subtitle">Role and access level</div></div>
+              </div>
+              <div class="ib-num">02</div>
+            </div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="field-row cols-2">
+                <div class="fd">
+                  <div class="fd-label">Admin Level</div>
+                  <div class="level-display">
+                    <div class="level-pip">
+                      <span class="on"></span><span class="on"></span><span class="on"></span><span class="off"></span><span class="off"></span>
+                    </div>
+                    <div class="level-name">Super Administrator</div>
+                  </div>
+                </div>
+                <div class="fd"><div class="fd-label">Department</div><div class="fd-val empty">—</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- § 3 · Permissions -->
+          <div class="info-block ibc-violet">
+            <div class="ib-head">
+              <div class="ib-head-left">
+                <div class="ib-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+                <div><div class="ib-title">Permissions</div><div class="ib-subtitle">System access rights granted to this account</div></div>
+              </div>
+              <div class="ib-num">03</div>
+            </div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="tag-list">
+                <span class="perm-chip"><span class="perm-chip-dot"></span>Can Manage Users</span>
+                <span class="perm-chip"><span class="perm-chip-dot"></span>Can Assign Placements</span>
+                <span class="perm-chip"><span class="perm-chip-dot"></span>Can View Reports</span>
+                <span class="perm-chip"><span class="perm-chip-dot"></span>Can Manage Settings</span>
+                <span class="perm-chip"><span class="perm-chip-dot"></span>Access Audit Logs</span>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /section-stack -->
+      </div><!-- /pane-admin-view -->
+
+      <!-- EDIT -->
+      <div class="pane" id="pane-admin-edit">
+        <div class="edit-section">
+          <div class="edit-section-head"><div class="ib-icon" style="background:var(--t100);color:var(--t700);width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;animation:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div><div class="edit-section-title" style="margin-left:8px">Profile Picture</div></div>
+          <div class="photo-upload">
+            <div class="photo-av-wrap"><div class="photo-av" style="background:linear-gradient(135deg,#1A7A57,#2DAF83)">AD</div><div class="photo-av-overlay"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>
+            <div><div style="font-size:13px;font-weight:500;color:var(--tx1);margin-bottom:8px">Upload a profile photo</div><div style="font-size:11.5px;color:var(--tx3);margin-bottom:12px">JPG or PNG · max 2MB · min 200×200px</div><div class="photo-actions"><button class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Change Photo</button><button class="btn btn-danger-o btn-sm">Remove</button></div></div>
+          </div>
+        </div>
+        <div class="edit-section">
+          <div class="edit-section-head"><div class="edit-section-title">Core Identity & Contact</div><span class="edit-esn">Section 01</span></div>
+          <div class="form-grid fg2">
+            <div class="form-field"><label class="form-label">First Name<span>*</span></label><input class="form-input" type="text" placeholder="Enter first name"></div>
+            <div class="form-field"><label class="form-label">Last Name<span>*</span></label><input class="form-input" type="text" placeholder="Enter last name"></div>
+            <div class="form-field"><label class="form-label">Other Names</label><input class="form-input" type="text" placeholder="Middle or other names"></div>
+            <div class="form-field"><label class="form-label">Phone Number</label><input class="form-input" type="tel" placeholder="+256…"></div>
+            <div class="form-field"><label class="form-label">Alternative Phone</label><input class="form-input" type="tel" placeholder="+256…"></div>
+            <div class="form-field"><label class="form-label">Email<span>*</span></label><input class="form-input" type="email" value="admin@ailes.edu"></div>
+            <div class="form-field"><label class="form-label">Country</label><input class="form-input" type="text" placeholder="Country"></div>
+            <div class="form-field"><label class="form-label">City</label><input class="form-input" type="text" placeholder="City"></div>
+          </div>
+        </div>
+        <div class="edit-section">
+          <div class="edit-section-head"><div class="edit-section-title">Admin Information</div><span class="edit-esn">Section 02</span></div>
+          <div class="form-grid fg2">
+            <div class="form-field"><label class="form-label">Department</label><input class="form-input" type="text" placeholder="Assigned department"></div>
+            <div class="form-field"><label class="form-label">Admin Level</label><select class="form-input form-select"><option>Super Administrator</option><option>Administrator</option><option>Moderator</option></select></div>
+          </div>
+        </div>
+        <div class="edit-actions">
+          <button class="btn btn-outline" onclick="switchMode('view',document.getElementById('mode-view'))">Cancel</button>
+          <button class="btn btn-primary"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         WORKPLACE SUPERVISOR
+    ════════════════════════════════════ -->
+    <div class="view" id="view-workplace">
+      <div class="pane act" id="pane-workplace-view">
+        <div class="profile-hero hero-workplace">
+          <div class="hero-banner"><div class="hero-banner-pattern"></div>
+            <div style="position:absolute;right:80px;top:15px;width:120px;height:120px;border-radius:50%;border:1px solid rgba(115,137,234,0.2);pointer-events:none"></div>
+          </div>
+          <div class="hero-body">
+            <div class="hero-left">
+              <div class="hero-avatar-wrap"><div class="hero-avatar" style="background:linear-gradient(135deg,#2F3DAA,#5569E0)">AT<div class="hero-av-online"></div></div></div>
+              <div class="hero-name-wrap">
+                <div class="hero-name">Albert Test</div>
+                <div class="hero-role">Workplace Supervisor · academic@gmail.com</div>
+                <div class="hero-chips">
+                  <span class="hero-chip bdg-i">Nexus Company</span>
+                  <span class="hero-chip" style="background:var(--surface2);color:var(--tx2)">Manager</span>
+                  <span class="hero-chip" style="background:var(--a50);color:var(--a700)">8 Interns</span>
+                </div>
+              </div>
+            </div>
+            <div class="hero-right"><button class="btn btn-primary" onclick="switchMode('edit',document.getElementById('mode-edit'))"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Profile</button></div>
+          </div>
+          <div class="completion-bar-wrap">
+            <span class="comp-label">Profile Completion</span>
+            <div class="comp-track"><div class="comp-fill" style="width:28%;background:linear-gradient(90deg,var(--a600),var(--a400))"></div></div>
+            <span class="comp-pct" style="color:var(--a700)">28%</span>
+          </div>
+          <div style="padding:0 32px 14px;background:var(--surface)"><div class="comp-hint" style="color:var(--danger)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Profile is incomplete — fill in organisation details to get started</div></div>
+        </div>
+
+        <div class="section-stack">
+          <div class="info-block ibc-indigo">
+            <div class="ib-head">
+              <div class="ib-head-left"><div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div><div class="ib-title">Core Identity & Contact</div><div class="ib-subtitle">Personal details</div></div></div>
+              <div class="ib-num">01</div>
+            </div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="field-row cols-4">
+                <div class="fd"><div class="fd-label">First Name</div><div class="fd-val">Albert</div></div>
+                <div class="fd"><div class="fd-label">Last Name</div><div class="fd-val">Test</div></div>
+                <div class="fd"><div class="fd-label">Other Names</div><div class="fd-val empty">N/A</div></div>
+                <div class="fd"><div class="fd-label">Phone Number</div><div class="fd-val mono">+256763085855</div></div>
+                <div class="fd"><div class="fd-label">Alternative Phone</div><div class="fd-val empty">N/A</div></div>
+                <div class="fd wide"><div class="fd-label">Email Address</div><div class="fd-val mono">academic@gmail.com</div></div>
+                <div class="fd"><div class="fd-label">Country</div><div class="fd-val">Uganda</div></div>
+                <div class="fd"><div class="fd-label">City</div><div class="fd-val">Kampala</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-block ibc-amber">
+            <div class="ib-head">
+              <div class="ib-head-left"><div class="ib-icon"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg></div><div><div class="ib-title">Organisation Information</div><div class="ib-subtitle">Workplace and company details</div></div></div>
+              <div class="ib-num">02</div>
+            </div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="field-row">
+                <div class="fd"><div class="fd-label">Company Name</div><div class="fd-val">Nexus</div></div>
+                <div class="fd"><div class="fd-label">Organisation Type</div><div class="fd-val empty">N/A</div></div>
+                <div class="fd"><div class="fd-label">Industry</div><div class="fd-val empty">N/A</div></div>
+                <div class="fd"><div class="fd-label">Location</div><div class="fd-val empty">To be updated</div></div>
+                <div class="fd"><div class="fd-label">Department</div><div class="fd-val empty">To be updated</div></div>
+                <div class="fd"><div class="fd-label">Position / Title</div><div class="fd-val">Manager</div></div>
+                <div class="fd"><div class="fd-label">Years of Experience</div><div class="fd-val empty">N/A</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-block ibc-teal">
+            <div class="ib-head">
+              <div class="ib-head-left"><div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.0 1.17 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg></div><div><div class="ib-title">Contact Information</div><div class="ib-subtitle">Work and office contact details</div></div></div>
+              <div class="ib-num">03</div>
+            </div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="field-row cols-3">
+                <div class="fd"><div class="fd-label">Work Email</div><div class="fd-val mono">academic@gmail.com</div></div>
+                <div class="fd"><div class="fd-label">Office Phone</div><div class="fd-val empty">N/A</div></div>
+                <div class="fd"><div class="fd-label">Work Phone</div><div class="fd-val empty">N/A</div></div>
+                <div class="fd wide"><div class="fd-label">Office Address</div><div class="fd-val empty">N/A</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-block ibc-violet">
+            <div class="ib-head">
+              <div class="ib-head-left"><div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg></div><div><div class="ib-title">Professional Information</div><div class="ib-subtitle">Background and expertise</div></div></div>
+              <div class="ib-num">04</div>
+            </div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="fd full"><div class="fd-label">Professional Background</div><div class="fd-val empty">N/A — Please update your professional background</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDIT -->
+      <div class="pane" id="pane-workplace-edit">
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Profile Picture</div></div><div class="photo-upload"><div class="photo-av-wrap"><div class="photo-av" style="background:linear-gradient(135deg,#2F3DAA,#5569E0)">AT</div><div class="photo-av-overlay"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div><div><div style="font-size:13px;font-weight:500;color:var(--tx1);margin-bottom:8px">Upload a profile photo</div><div style="font-size:11.5px;color:var(--tx3);margin-bottom:12px">JPG or PNG · max 2MB</div><div class="photo-actions"><button class="btn btn-outline btn-sm">Change Photo</button><button class="btn btn-danger-o btn-sm">Remove</button></div></div></div></div>
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Core Identity & Contact</div><span class="edit-esn">Section 01</span></div><div class="form-grid fg2"><div class="form-field"><label class="form-label">First Name<span>*</span></label><input class="form-input" type="text" value="Albert"></div><div class="form-field"><label class="form-label">Last Name<span>*</span></label><input class="form-input" type="text" value="Test"></div><div class="form-field"><label class="form-label">Other Names</label><input class="form-input" type="text" placeholder="N/A"></div><div class="form-field"><label class="form-label">Phone Number</label><input class="form-input" type="tel" value="+256763085855"></div><div class="form-field"><label class="form-label">Alternative Phone</label><input class="form-input" type="tel" placeholder="N/A"></div><div class="form-field"><label class="form-label">Email<span>*</span></label><input class="form-input" type="email" value="academic@gmail.com"></div><div class="form-field"><label class="form-label">Country</label><input class="form-input" type="text" value="Uganda"></div><div class="form-field"><label class="form-label">City</label><input class="form-input" type="text" value="Kampala"></div></div></div>
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Organisation Information</div><span class="edit-esn">Section 02</span></div><div class="form-grid fg2"><div class="form-field"><label class="form-label">Company Name<span>*</span></label><input class="form-input" type="text" value="Nexus"></div><div class="form-field"><label class="form-label">Organisation Type</label><input class="form-input" type="text" placeholder="e.g. Private, NGO, Government"></div><div class="form-field"><label class="form-label">Industry</label><input class="form-input" type="text" placeholder="e.g. Technology, Finance"></div><div class="form-field"><label class="form-label">Location</label><input class="form-input" type="text" placeholder="Office location"></div><div class="form-field"><label class="form-label">Department</label><input class="form-input" type="text" placeholder="Your department"></div><div class="form-field"><label class="form-label">Position / Title<span>*</span></label><input class="form-input" type="text" value="Manager"></div><div class="form-field"><label class="form-label">Years of Experience</label><input class="form-input" type="number" placeholder="0" min="0"></div></div></div>
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Contact Information</div><span class="edit-esn">Section 03</span></div><div class="form-grid fg2"><div class="form-field"><label class="form-label">Work Email</label><input class="form-input" type="email" value="academic@gmail.com"></div><div class="form-field"><label class="form-label">Office Phone</label><input class="form-input" type="tel" placeholder="N/A"></div><div class="form-field"><label class="form-label">Work Phone</label><input class="form-input" type="tel" placeholder="N/A"></div><div class="form-field"><label class="form-label">Office Address</label><input class="form-input" type="text" placeholder="Office address"></div></div></div>
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Professional Information</div><span class="edit-esn">Section 04</span></div><div class="form-grid fg1"><div class="form-field"><label class="form-label">Professional Background / Bio</label><textarea class="form-input form-textarea" placeholder="Describe your professional background, experience, and expertise…"></textarea></div></div></div>
+        <div class="edit-actions"><button class="btn btn-outline" onclick="switchMode('view',document.getElementById('mode-view'))">Cancel</button><button class="btn btn-primary"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Changes</button></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         ACADEMIC SUPERVISOR
+    ════════════════════════════════════ -->
+    <div class="view" id="view-academic">
+      <div class="pane act" id="pane-academic-view">
+        <div class="profile-hero hero-academic">
+          <div class="hero-banner"><div class="hero-banner-pattern"></div>
+            <div style="position:absolute;right:50px;top:10px;width:140px;height:140px;border-radius:50%;border:1px solid rgba(168,85,247,0.2);pointer-events:none"></div>
+          </div>
+          <div class="hero-body">
+            <div class="hero-left">
+              <div class="hero-avatar-wrap"><div class="hero-avatar" style="background:linear-gradient(135deg,#6D28D9,#9C4AFF)">KT<div class="hero-av-online"></div></div></div>
+              <div class="hero-name-wrap">
+                <div class="hero-name">Kubi Test</div>
+                <div class="hero-role">Academic Supervisor · test@gmail.com</div>
+                <div class="hero-chips">
+                  <span class="hero-chip" style="background:var(--violet-l);color:var(--violet)">Makerere University</span>
+                  <span class="hero-chip" style="background:var(--surface2);color:var(--tx2)">Senior Lecturer</span>
+                  <span class="hero-chip" style="background:var(--t50);color:var(--t700)">CS · Networks</span>
+                </div>
+              </div>
+            </div>
+            <div class="hero-right"><button class="btn btn-primary" onclick="switchMode('edit',document.getElementById('mode-edit'))"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Profile</button></div>
+          </div>
+          <div class="completion-bar-wrap"><span class="comp-label">Profile Completion</span><div class="comp-track"><div class="comp-fill" style="width:64%;background:linear-gradient(90deg,var(--violet),#A855F7)"></div></div><span class="comp-pct" style="color:var(--violet)">64%</span></div>
+          <div style="padding:0 32px 14px;background:var(--surface)"><div class="comp-hint" style="color:var(--a700)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Update faculty and specialisation to improve your profile score</div></div>
+        </div>
+
+        <div class="section-stack">
+          <div class="info-block ibc-violet">
+            <div class="ib-head"><div class="ib-head-left"><div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div><div class="ib-title">Core Identity & Contact</div><div class="ib-subtitle">Personal details</div></div></div><div class="ib-num">01</div></div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="field-row cols-4">
+                <div class="fd"><div class="fd-label">First Name</div><div class="fd-val">Kubi</div></div>
+                <div class="fd"><div class="fd-label">Last Name</div><div class="fd-val">Test</div></div>
+                <div class="fd"><div class="fd-label">Other Names</div><div class="fd-val">None</div></div>
+                <div class="fd"><div class="fd-label">Phone</div><div class="fd-val mono">+256763085855</div></div>
+                <div class="fd"><div class="fd-label">Alt. Phone</div><div class="fd-val mono">0763055855</div></div>
+                <div class="fd wide"><div class="fd-label">Email Address</div><div class="fd-val mono">test@gmail.com</div></div>
+                <div class="fd"><div class="fd-label">Country</div><div class="fd-val">Uganda</div></div>
+                <div class="fd"><div class="fd-label">City</div><div class="fd-val">Kampala</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-block ibc-indigo">
+            <div class="ib-head"><div class="ib-head-left"><div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div><div><div class="ib-title">Institution Information</div><div class="ib-subtitle">Academic placement details</div></div></div><div class="ib-num">02</div></div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="field-row">
+                <div class="fd"><div class="fd-label">Institution Name</div><div class="fd-val">Makerere University</div></div>
+                <div class="fd"><div class="fd-label">Faculty</div><div class="fd-val empty">To be updated</div></div>
+                <div class="fd"><div class="fd-label">Department</div><div class="fd-val">Networks</div></div>
+                <div class="fd"><div class="fd-label">Academic Position</div><div class="fd-val">Senior Lecturer</div></div>
+                <div class="fd"><div class="fd-label">Years in Academia</div><div class="fd-val">5</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-block ibc-teal">
+            <div class="ib-head"><div class="ib-head-left"><div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07"/></svg></div><div><div class="ib-title">Contact Information</div><div class="ib-subtitle">Office and institutional contact</div></div></div><div class="ib-num">03</div></div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="field-row cols-3">
+                <div class="fd"><div class="fd-label">Office Email</div><div class="fd-val mono">test@gmail.com</div></div>
+                <div class="fd"><div class="fd-label">Office Phone</div><div class="fd-val mono">0763085855</div></div>
+                <div class="fd"><div class="fd-label">Office Address</div><div class="fd-val">MAKERERE — KIKONI</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-block ibc-amber">
+            <div class="ib-head"><div class="ib-head-left"><div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div><div><div class="ib-title">Academic Specialisation</div><div class="ib-subtitle">Research and teaching focus</div></div></div><div class="ib-num">04</div></div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="fd full"><div class="fd-label">Research / Teaching Specialisation</div><div class="fd-val">Data Communication</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDIT -->
+      <div class="pane" id="pane-academic-edit">
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Profile Picture</div></div><div class="photo-upload"><div class="photo-av-wrap"><div class="photo-av" style="background:linear-gradient(135deg,#6D28D9,#9C4AFF)">KT</div><div class="photo-av-overlay"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div><div><div style="font-size:13px;font-weight:500;color:var(--tx1);margin-bottom:8px">Upload a profile photo</div><div style="font-size:11.5px;color:var(--tx3);margin-bottom:12px">JPG or PNG · max 2MB</div><div class="photo-actions"><button class="btn btn-outline btn-sm">Change Photo</button><button class="btn btn-danger-o btn-sm">Remove</button></div></div></div></div>
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Core Identity & Contact</div><span class="edit-esn">Section 01</span></div><div class="form-grid fg2"><div class="form-field"><label class="form-label">First Name<span>*</span></label><input class="form-input" type="text" value="Kubi"></div><div class="form-field"><label class="form-label">Last Name<span>*</span></label><input class="form-input" type="text" value="Test"></div><div class="form-field"><label class="form-label">Other Names</label><input class="form-input" type="text" value="None"></div><div class="form-field"><label class="form-label">Phone Number</label><input class="form-input" type="tel" value="+256763085855"></div><div class="form-field"><label class="form-label">Alternative Phone</label><input class="form-input" type="tel" value="0763055855"></div><div class="form-field"><label class="form-label">Email<span>*</span></label><input class="form-input" type="email" value="test@gmail.com"></div><div class="form-field"><label class="form-label">Country</label><input class="form-input" type="text" value="Uganda"></div><div class="form-field"><label class="form-label">City</label><input class="form-input" type="text" value="Kampala"></div></div></div>
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Institution Information</div><span class="edit-esn">Section 02</span></div><div class="form-grid fg2"><div class="form-field"><label class="form-label">Institution Name<span>*</span></label><input class="form-input" type="text" value="Makerere University"></div><div class="form-field"><label class="form-label">Faculty</label><input class="form-input" type="text" placeholder="To be updated"></div><div class="form-field"><label class="form-label">Department</label><input class="form-input" type="text" value="Networks"></div><div class="form-field"><label class="form-label">Academic Position/Title<span>*</span></label><input class="form-input" type="text" value="Senior Lecturer"></div><div class="form-field"><label class="form-label">Years in Academia</label><input class="form-input" type="number" value="5" min="0"></div></div></div>
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Contact Information</div><span class="edit-esn">Section 03</span></div><div class="form-grid fg2"><div class="form-field"><label class="form-label">Office Email</label><input class="form-input" type="email" value="test@gmail.com"></div><div class="form-field"><label class="form-label">Office Phone</label><input class="form-input" type="tel" value="0763085855"></div><div class="form-field"><label class="form-label">Office Address</label><input class="form-input" type="text" value="MAKERERE — KIKONI"></div></div></div>
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Academic Specialisation</div><span class="edit-esn">Section 04</span></div><div class="form-grid fg1"><div class="form-field"><label class="form-label">Research/Teaching Specialisation</label><textarea class="form-input form-textarea">Data Communication</textarea></div></div></div>
+        <div class="edit-actions"><button class="btn btn-outline" onclick="switchMode('view',document.getElementById('mode-view'))">Cancel</button><button class="btn btn-primary"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Changes</button></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         STUDENT
+    ════════════════════════════════════ -->
+    <div class="view" id="view-student">
+      <div class="pane act" id="pane-student-view">
+        <div class="profile-hero hero-student">
+          <div class="hero-banner"><div class="hero-banner-pattern"></div>
+            <div style="position:absolute;right:70px;top:15px;width:110px;height:110px;border-radius:50%;border:1px solid rgba(45,175,131,0.3);pointer-events:none"></div>
+          </div>
+          <div class="hero-body">
+            <div class="hero-left">
+              <div class="hero-avatar-wrap"><div class="hero-avatar" style="background:linear-gradient(135deg,#C05500,#F08C30)">AT<div class="hero-av-online"></div></div></div>
+              <div class="hero-name-wrap">
+                <div class="hero-name">Annet Tester</div>
+                <div class="hero-role">Student Intern · annet@iles.com</div>
+                <div class="hero-chips">
+                  <span class="hero-chip bdg-t">BCSC · Year 2</span>
+                  <span class="hero-chip" style="background:var(--i50);color:var(--i700)">Makerere University</span>
+                  <span class="hero-chip" style="background:var(--a50);color:var(--a700)">Reg: 23U156275EVE</span>
+                </div>
+              </div>
+            </div>
+            <div class="hero-right"><button class="btn btn-primary" onclick="switchMode('edit',document.getElementById('mode-edit'))"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Profile</button></div>
+          </div>
+          <div class="completion-bar-wrap"><span class="comp-label">Profile Completion</span><div class="comp-track"><div class="comp-fill" style="width:93%;background:linear-gradient(90deg,var(--t700),var(--t400))"></div></div><span class="comp-pct">93%</span></div>
+          <div style="padding:0 32px 14px;background:var(--surface)"><div class="comp-hint" style="color:var(--i700)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Complete all fields to unlock internship opportunities</div></div>
+        </div>
+
+        <div class="section-stack">
+          <div class="info-block ibc-teal">
+            <div class="ib-head"><div class="ib-head-left"><div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div><div class="ib-title">Core Identity & Contact</div><div class="ib-subtitle">Personal and contact information</div></div></div><div class="ib-num">01</div></div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="field-row cols-4">
+                <div class="fd"><div class="fd-label">First Name</div><div class="fd-val">Annet</div></div>
+                <div class="fd"><div class="fd-label">Last Name</div><div class="fd-val">Tester</div></div>
+                <div class="fd"><div class="fd-label">Other Names</div><div class="fd-val">K</div></div>
+                <div class="fd"><div class="fd-label">Phone Number</div><div class="fd-val mono">+256763086755</div></div>
+                <div class="fd"><div class="fd-label">Alt. Phone</div><div class="fd-val mono">0763086766</div></div>
+                <div class="fd wide"><div class="fd-label">Email Address</div><div class="fd-val mono">annet@iles.com</div></div>
+                <div class="fd"><div class="fd-label">Country</div><div class="fd-val">Uganda</div></div>
+                <div class="fd"><div class="fd-label">City</div><div class="fd-val">Kampala</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-block ibc-indigo">
+            <div class="ib-head"><div class="ib-head-left"><div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div><div><div class="ib-title">Academic Information</div><div class="ib-subtitle">University, programme and enrolment details</div></div></div><div class="ib-num">02</div></div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="field-row">
+                <div class="fd"><div class="fd-label">Registration No.</div><div class="fd-val mono">23U156275EVE</div></div>
+                <div class="fd"><div class="fd-label">Student Number</div><div class="fd-val mono">23007156275</div></div>
+                <div class="fd"><div class="fd-label">Institution</div><div class="fd-val">Makerere University</div></div>
+                <div class="fd"><div class="fd-label">Faculty / School</div><div class="fd-val">COCIS</div></div>
+                <div class="fd"><div class="fd-label">Department</div><div class="fd-val">Computer Science</div></div>
+                <div class="fd"><div class="fd-label">Course / Program</div><div class="fd-val">BCSC</div></div>
+                <div class="fd"><div class="fd-label">Year of Study</div><div class="fd-val">Year 2</div></div>
+                <div class="fd"><div class="fd-label">Semester</div><div class="fd-val">Semester 2</div></div>
+                <div class="fd"><div class="fd-label">Expected Graduation</div><div class="fd-val">2027</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-block ibc-amber">
+            <div class="ib-head"><div class="ib-head-left"><div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 11v2M12 15h.01"/></svg></div><div><div class="ib-title">Personal Information</div><div class="ib-subtitle">Demographics and personal details</div></div></div><div class="ib-num">03</div></div>
+            <div class="ib-divider"></div>
+            <div class="ib-body">
+              <div class="field-row">
+                <div class="fd"><div class="fd-label">Date of Birth</div><div class="fd-val mono">1992-05-13</div></div>
+                <div class="fd"><div class="fd-label">Gender</div><div class="fd-val">Male</div></div>
+                <div class="fd"><div class="fd-label">Nationality</div><div class="fd-val">Ugandan</div></div>
+                <div class="fd"><div class="fd-label">Disability Status</div><div class="fd-val">No</div></div>
+                <div class="fd"><div class="fd-label">Special Needs</div><div class="fd-val">None</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDIT -->
+      <div class="pane" id="pane-student-edit">
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Profile Picture</div></div><div class="photo-upload"><div class="photo-av-wrap"><div class="photo-av" style="background:linear-gradient(135deg,#C05500,#F08C30)">AT</div><div class="photo-av-overlay"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div><div><div style="font-size:13px;font-weight:500;color:var(--tx1);margin-bottom:8px">Upload a profile photo</div><div style="font-size:11.5px;color:var(--tx3);margin-bottom:12px">JPG or PNG · max 2MB · min 200×200px</div><div class="photo-actions"><button class="btn btn-outline btn-sm">Change Photo</button><button class="btn btn-danger-o btn-sm">Remove</button></div></div></div></div>
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Core Identity & Contact</div><span class="edit-esn">Section 01</span></div><div class="form-grid fg2"><div class="form-field"><label class="form-label">First Name<span>*</span></label><input class="form-input" type="text" value="Annet"></div><div class="form-field"><label class="form-label">Last Name<span>*</span></label><input class="form-input" type="text" value="Tester"></div><div class="form-field"><label class="form-label">Other Names</label><input class="form-input" type="text" value="K"></div><div class="form-field"><label class="form-label">Phone Number<span>*</span></label><input class="form-input" type="tel" value="+256763086755"></div><div class="form-field"><label class="form-label">Alternative Phone</label><input class="form-input" type="tel" value="0763086766"></div><div class="form-field"><label class="form-label">Email<span>*</span></label><input class="form-input" type="email" value="annet@iles.com"></div><div class="form-field"><label class="form-label">Country</label><input class="form-input" type="text" value="Uganda"></div><div class="form-field"><label class="form-label">City</label><input class="form-input" type="text" value="Kampala"></div></div></div>
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Academic Information</div><span class="edit-esn">Section 02</span></div><div class="form-grid fg2"><div class="form-field"><label class="form-label">Registration Number<span>*</span></label><input class="form-input" type="text" value="23U156275EVE"></div><div class="form-field"><label class="form-label">Student Number<span>*</span></label><input class="form-input" type="text" value="23007156275"></div><div class="form-field"><label class="form-label">Institution<span>*</span></label><input class="form-input" type="text" value="Makerere University"></div><div class="form-field"><label class="form-label">Faculty / School</label><input class="form-input" type="text" value="COCIS"></div><div class="form-field"><label class="form-label">Department</label><input class="form-input" type="text" value="Computer Science"></div><div class="form-field"><label class="form-label">Course / Program<span>*</span></label><input class="form-input" type="text" value="BCSC"></div><div class="form-field"><label class="form-label">Year of Study<span>*</span></label><select class="form-input form-select"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select></div><div class="form-field"><label class="form-label">Semester</label><select class="form-input form-select"><option>1</option><option selected>2</option></select></div><div class="form-field"><label class="form-label">Expected Graduation Year</label><input class="form-input" type="number" value="2027" min="2024" max="2035"></div></div></div>
+        <div class="edit-section"><div class="edit-section-head"><div class="edit-section-title">Personal Information</div><span class="edit-esn">Section 03</span></div><div class="form-grid fg2"><div class="form-field"><label class="form-label">Date of Birth</label><input class="form-input" type="date" value="1992-05-13"></div><div class="form-field"><label class="form-label">Gender</label><select class="form-input form-select"><option selected>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option></select></div><div class="form-field"><label class="form-label">Nationality</label><input class="form-input" type="text" value="Ugandan"></div><div class="form-field"><label class="form-label">Disability Status</label><select class="form-input form-select"><option selected>No</option><option>Yes</option></select></div><div class="form-field"><label class="form-label">Special Needs</label><input class="form-input" type="text" value="None"></div></div></div>
+        <div class="edit-actions"><button class="btn btn-outline" onclick="switchMode('view',document.getElementById('mode-view'))">Cancel</button><button class="btn btn-primary"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Changes</button></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">
+  <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div id="overlay" onclick="document.getElementById('sidebar').classList.remove('open')"></div>
+
+<script>
+const NAV = {
+  admin:[
+    {s:'Overview',i:[{ic:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',l:'Dashboard'},{ic:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>',l:'Logs'},{ic:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',l:'Evaluations'}]},
+    {s:'Management',i:[{ic:'<rect x="2" y="7" width="20" height="14" rx="2"/>',l:'Placements'},{ic:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>',l:'Interns'},{ic:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',l:'Reports'},{ic:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>',l:'Notifications',b:'5',bc:'r'}]},
+    {s:'System',i:[{ic:'<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',l:'Profile',act:true},{ic:'<polyline points="9 11 12 14 22 4"/>',l:'Approvals',b:'3',bc:'a'},{ic:'<circle cx="12" cy="12" r="3"/>',l:'Settings'}]},
+  ],
+  workplace:[
+    {s:'Overview',i:[{ic:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',l:'Dashboard'},{ic:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>',l:'Logs'},{ic:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',l:'Evaluations'}]},
+    {s:'Management',i:[{ic:'<rect x="2" y="7" width="20" height="14" rx="2"/>',l:'Placements'},{ic:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>',l:'Interns',b:'8',bc:'t'},{ic:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>',l:'Notifications',b:'5',bc:'r'}]},
+    {s:'System',i:[{ic:'<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',l:'Profile',act:true}]},
+  ],
+  academic:[
+    {s:'Overview',i:[{ic:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',l:'Dashboard'},{ic:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>',l:'Logs'},{ic:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',l:'Evaluations'}]},
+    {s:'Management',i:[{ic:'<rect x="2" y="7" width="20" height="14" rx="2"/>',l:'Placements'},{ic:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>',l:'Interns'},{ic:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>',l:'Notifications',b:'5',bc:'r'}]},
+    {s:'System',i:[{ic:'<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',l:'Profile',act:true}]},
+  ],
+  student:[
+    {s:'Overview',i:[{ic:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',l:'Dashboard'},{ic:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>',l:'Logs'},{ic:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',l:'Evaluations'}]},
+    {s:'Management',i:[{ic:'<rect x="2" y="7" width="20" height="14" rx="2"/>',l:'Placements'},{ic:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>',l:'Supervisor Assignment'},{ic:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>',l:'Notifications',b:'5',bc:'r'}]},
+    {s:'System',i:[{ic:'<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',l:'Profile',act:true}]},
+  ],
+};
+
+const META = {
+  admin:     {role:'System Administrator',dot:'#45C99A',av:'AD',name:'Admin User',    sub:'Administrator',        color:'linear-gradient(135deg,#1A7A57,#2DAF83)'},
+  workplace: {role:'Workplace Supervisor', dot:'#7389EA',av:'AT',name:'Albert Test',  sub:'Workplace Supervisor', color:'linear-gradient(135deg,#2F3DAA,#5569E0)'},
+  academic:  {role:'Academic Supervisor',  dot:'#A855F7',av:'KT',name:'Kubi Test',    sub:'Academic Supervisor',  color:'linear-gradient(135deg,#6D28D9,#9C4AFF)'},
+  student:   {role:'Student Intern',       dot:'#F08C30',av:'AT',name:'Annet Tester', sub:'Student Intern',       color:'linear-gradient(135deg,#C05500,#F08C30)'},
+};
+
+const roleOrder = ['admin','workplace','academic','student'];
+let currentRole = 'admin';
+
+function buildNav(role) {
+  let h = '';
+  NAV[role].forEach(s => {
+    h += `<div><div class="sb-sec-lbl">${s.s}</div>`;
+    s.i.forEach(it => {
+      h += `<div class="sb-item${it.act?' act':''}"><div class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${it.ic}</svg></div><span class="sb-item-lbl">${it.l}</span>${it.b?`<span class="sb-badge ${it.bc||'t'}">${it.b}</span>`:''}</div>`;
+    });
+    h += '</div>';
+  });
+  document.getElementById('sb-nav').innerHTML = h;
+}
+
+function updateMeta(role) {
+  const m = META[role];
+  ['sb-av','tb-uav'].forEach(id => { const e=document.getElementById(id); if(e) e.style.background=m.color; });
+  ['sb-av-txt','tb-av-txt'].forEach(id => { const e=document.getElementById(id); if(e) e.textContent=m.av; });
+  set('sb-uname',m.name); set('sb-urole',m.role); set('sb-role-name',m.role);
+  set('tb-uname',m.name); set('tb-usub',m.sub);
+  document.getElementById('sb-dot').style.background = m.dot;
+}
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+
+function switchRole(role, btn) {
+  currentRole = role;
+  document.querySelectorAll('.role-tab').forEach(b => b.classList.remove('act'));
+  btn.classList.add('act');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('act'));
+  document.getElementById('view-'+role).classList.add('act');
+  switchMode('view', document.getElementById('mode-view'));
+  buildNav(role); updateMeta(role);
+  // re-trigger animations by cloning the section-stack
+  const stack = document.querySelector('#view-'+role+' .pane.act .section-stack');
+  if(stack) { stack.style.animation='none'; void stack.offsetWidth; stack.style.animation=''; }
+}
+
+function switchMode(mode, btn) {
+  document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('act'));
+  btn.classList.add('act');
+  const viewEl = document.getElementById('view-'+currentRole);
+  viewEl.querySelectorAll('.pane').forEach(p => p.classList.remove('act'));
+  const pane = document.getElementById('pane-'+currentRole+'-'+mode);
+  if(pane) pane.classList.add('act');
+}
+
+function cycleRole() {
+  const next = roleOrder[(roleOrder.indexOf(currentRole)+1)%roleOrder.length];
+  switchRole(next, document.querySelectorAll('.role-tab')[roleOrder.indexOf(next)]);
+}
+
+function toggleTheme() {
+  const t = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  const moon='<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
+  const sun='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>';
+  document.getElementById('theme-icon').innerHTML = t==='dark'?sun:moon;
+}
+
+buildNav('admin'); updateMeta('admin');
+</script>
+</body>
+</html>
