@@ -229,6 +229,12 @@ export const evaluationsAPI = {
   getStudentFinalScores: () => api.get('/evaluations/final-scores/student/'),
 };
 
+export const insightsAPI = {
+  getDashboard: () => api.get('/insights/dashboard/'),
+  getAdminReport: (params = {}) => api.get('/insights/reports/admin/', { params }),
+  exportAdminReport: (params = {}) => api.get('/insights/reports/admin/export/', { params, responseType: 'blob' }),
+};
+
 export const auditingAPI = {
   getAdminAuditLogs: (params = {}) => api.get('/auditing/admin/logs/', { params }),
   

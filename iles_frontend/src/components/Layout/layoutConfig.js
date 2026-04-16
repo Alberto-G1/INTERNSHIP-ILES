@@ -11,7 +11,7 @@ export const PAGE_TITLES = {
   '/placements/supervisor-assignment':   { title: 'Supervisor Assignment', subtitle: 'Assign and manage workplace supervisor for approved placement' },
   '/evaluations':                        { title: 'Evaluations',          subtitle: 'Supervisor reviews and assessments' },
   '/interns':                            { title: 'Interns',              subtitle: 'Cohort intern management' },
-  '/reports':                            { title: 'Reports',              subtitle: 'Cohort analytics and insights' },
+  '/reports':                            { title: 'Reports',              subtitle: 'Executive insights, KPIs, and downloadable reports' },
   '/notifications':                      { title: 'Notifications',        subtitle: 'System updates and alerts' },
   '/profile':                            { title: 'Profile',              subtitle: 'Your personal information' },
   '/settings':                           { title: 'Settings',             subtitle: 'System configuration' },
