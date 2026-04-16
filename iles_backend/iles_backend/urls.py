@@ -39,6 +39,7 @@ urlpatterns = [
     path('api/logbook/', include('logbook.urls')),
     path('api/evaluations/', include('evaluations.urls')),
     path('api/auditing/', include('auditing.urls')),
+    path('api/insights/', include('insights.urls')),
 
     # Future apps will be added here:
     # path('api/logs/', include('logs.urls')),
