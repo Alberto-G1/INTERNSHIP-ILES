@@ -10,7 +10,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import Grid from '@mui/material/GridLegacy';
+import { Grid } from '@mui/material';
 import {
   Assessment as AssessmentIcon,
   Download as DownloadIcon,
@@ -29,6 +29,23 @@ import RecentActivity from '../../components/dashboard/RecentActivity';
 import QuickActions from '../../components/dashboard/QuickActions';
 import { DashGreeting, SectionCard, ProgressRow, MiniStat, T } from '../../components/dashboard/DashboardComponents';
 import { insightsAPI } from '../../services/api';
+import {
+  Bar,
+  BarChart,
+  Cell,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+const CHART_COLORS = [T.t700, T.i700, T.a700, T.violet, '#118AB2', '#EF476F'];
 
 const toDate = (value) => {
   if (!value) return null;
@@ -152,10 +169,22 @@ const ReportsPage = () => {
       try {
         setLoading(true);
         setError('');
-        const response = await insightsAPI.getAdminReport({
-          date_from: dateFrom || undefined,
-          date_to: dateTo || undefined,
-        });
+        let response;
+        try {
+          response = await insightsAPI.getAdminReport({
+            date_from: dateFrom || undefined,
+            date_to: dateTo || undefined,
+          });
+        } catch (primaryError) {
+          if (primaryError?.response?.status === 404) {
+            response = await insightsAPI.getAdminReportAlias({
+              date_from: dateFrom || undefined,
+              date_to: dateTo || undefined,
+            });
+          } else {
+            throw primaryError;
+          }
+        }
         setReport(response.data || null);
       } catch (err) {
         setReport(null);
@@ -218,13 +247,68 @@ const ReportsPage = () => {
     { label: 'Review Approvals', icon: <WarningIcon sx={{ fontSize: 18 }} />, onClick: () => navigate('/admin/approvals') },
   ];
 
+  const placementOrgChart = (placements.by_organization || []).slice(0, 8).map((item) => ({
+    name: item.label,
+    value: Number(item.value || 0),
+  }));
+
+  const regionChart = (placements.by_region || []).slice(0, 8).map((item) => ({
+    name: item.label,
+    value: Number(item.value || 0),
+  }));
+
+  const gradeChart = (performance.grade_distribution || []).map((item) => ({
+    name: item.label,
+    value: Number(item.value || 0),
+  }));
+
+  const logbookChart = [
+    { name: 'Approved', value: Number(logbook.approved || 0) },
+    { name: 'Pending', value: Number(logbook.pending_review || 0) },
+    { name: 'Late', value: Number(logbook.late_submissions || 0) },
+  ].filter((item) => item.value > 0);
+
+  const activityTrendChart = useMemo(() => {
+    const buckets = {};
+    (data.recent_activity || []).forEach((item) => {
+      const date = toDate(item.when || item.created_at || item.updated_at);
+      const key = date ? date.toISOString().slice(0, 10) : 'Unknown';
+      if (!buckets[key]) {
+        buckets[key] = { date: key, submissions: 0, evaluations: 0, placements: 0 };
+      }
+      const title = `${item.title || ''} ${item.description || ''}`.toLowerCase();
+      if (title.includes('log')) buckets[key].submissions += 1;
+      else if (title.includes('evaluation') || title.includes('score')) buckets[key].evaluations += 1;
+      else buckets[key].placements += 1;
+    });
+    return Object.values(buckets).sort((a, b) => a.date.localeCompare(b.date)).slice(-10);
+  }, [data.recent_activity]);
+
+  const topPerformersChart = filteredPerformers.slice(0, 8).map((item) => ({
+    name: item.student_name,
+    score: Number(item.final_score || 0),
+  }));
+
   const downloadReport = async (format = 'csv') => {
     try {
-      const response = await insightsAPI.exportAdminReport({
-        format,
-        date_from: dateFrom || undefined,
-        date_to: dateTo || undefined,
-      });
+      let response;
+      try {
+        response = await insightsAPI.exportAdminReport({
+          format,
+          date_from: dateFrom || undefined,
+          date_to: dateTo || undefined,
+        });
+      } catch (primaryError) {
+        if (primaryError?.response?.status === 404) {
+          response = await insightsAPI.exportAdminReportAlias({
+            format,
+            date_from: dateFrom || undefined,
+            date_to: dateTo || undefined,
+          });
+        } else {
+          throw primaryError;
+        }
+      }
       const mimeType = format === 'pdf'
         ? 'application/pdf'
         : format === 'xlsx'
@@ -278,7 +362,7 @@ const ReportsPage = () => {
         </Box>
 
         <Grid container spacing={1.5} alignItems="center">
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               fullWidth
               size="small"
@@ -295,7 +379,7 @@ const ReportsPage = () => {
               }}
             />
           </Grid>
-          <Grid item xs={6} md={2}>
+          <Grid size={{ xs: 6, md: 2 }}>
             <TextField
               fullWidth
               size="small"
@@ -306,7 +390,7 @@ const ReportsPage = () => {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={6} md={2}>
+          <Grid size={{ xs: 6, md: 2 }}>
             <TextField
               fullWidth
               size="small"
@@ -317,7 +401,7 @@ const ReportsPage = () => {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
               <Button variant="contained" startIcon={<DownloadIcon />} onClick={() => downloadReport('csv')} sx={{ bgcolor: T.t700, '&:hover': { bgcolor: T.t800 } }}>
                 Export CSV
@@ -349,7 +433,7 @@ const ReportsPage = () => {
           { label: 'Pending Reviews', value: logbook.pending_review || 0, helper: 'Logs awaiting action', accent: '#F08C30' },
           { label: 'System Health', value: '100%', helper: 'Operational visibility score', accent: '#0F7B5C' },
         ]).map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={stat.label}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={stat.label}>
             <StatCard
               value={stat.value}
               label={stat.label}
@@ -367,31 +451,61 @@ const ReportsPage = () => {
           </Grid>
         ))}
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <SectionCard
             title="Placement Analytics"
             subtitle="Where the internship pipeline is concentrated"
             delay={0.15}
           >
             <Stack spacing={2}>
-              <BarList
-                title="Top Organizations"
-                items={placements.by_organization || []}
-                emptyText="No placement data is available for the selected range."
-                color={T.t700}
-              />
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: T.tx1, fontFamily: "'DM Sans', sans-serif" }}>
+                Students per Organization
+              </Typography>
+              <Box sx={{ height: 230 }}>
+                {placementOrgChart.length === 0 ? (
+                  <Typography sx={{ color: T.tx3, fontSize: '13px' }}>No placement data is available for the selected range.</Typography>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={placementOrgChart} margin={{ top: 8, right: 8, left: 8, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={T.border2} />
+                      <XAxis dataKey="name" angle={-25} textAnchor="end" interval={0} height={60} tick={{ fontSize: 11 }} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                        {placementOrgChart.map((entry, index) => (
+                          <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </Box>
               <Divider />
-              <BarList
-                title="Region Distribution"
-                items={placements.by_region || []}
-                emptyText="No regional distribution found."
-                color={T.i700}
-              />
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: T.tx1, fontFamily: "'DM Sans', sans-serif" }}>
+                Region Distribution
+              </Typography>
+              <Box sx={{ height: 230 }}>
+                {regionChart.length === 0 ? (
+                  <Typography sx={{ color: T.tx3, fontSize: '13px' }}>No regional distribution found.</Typography>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={regionChart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={74} label>
+                        {regionChart.map((entry, index) => (
+                          <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </Box>
             </Stack>
           </SectionCard>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <SectionCard
             title="Logbook Health"
             subtitle="Submission flow and approval cadence"
@@ -405,14 +519,28 @@ const ReportsPage = () => {
                 sublabel={`${fmt(logbook.approved || 0)} approved logs out of ${fmt(logbook.total || 0)} total logs.`}
               />
               <Divider />
-              <ProgressRow label="Approved" value={Math.round(Number(logbook.approved || 0) / Math.max(Number(logbook.total || 0), 1) * 100)} color={T.t700} count={logbook.approved || 0} total={logbook.total || 0} />
-              <ProgressRow label="Pending Review" value={Math.round(Number(logbook.pending_review || 0) / Math.max(Number(logbook.total || 0), 1) * 100)} color={T.a600} count={logbook.pending_review || 0} total={logbook.total || 0} />
-              <ProgressRow label="Late Submissions" value={Math.round(Number(logbook.late_submissions || 0) / Math.max(Number(logbook.total || 0), 1) * 100)} color={T.danger} count={logbook.late_submissions || 0} total={logbook.total || 0} />
+              <Box sx={{ height: 220 }}>
+                {logbookChart.length === 0 ? (
+                  <Typography sx={{ color: T.tx3, fontSize: '13px' }}>No logbook breakdown available.</Typography>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={logbookChart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label>
+                        {logbookChart.map((entry, index) => (
+                          <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </Box>
             </Stack>
           </SectionCard>
         </Grid>
 
-        <Grid item xs={12} md={5}>
+        <Grid size={{ xs: 12, md: 5 }}>
           <SectionCard
             title="Performance Snapshot"
             subtitle="Final score distribution and completion"
@@ -431,17 +559,28 @@ const ReportsPage = () => {
                 <MiniStat value={fmt(performance.evaluation_completion_rate || 0)} label="Coverage %" color={T.a700} bg={T.a50} />
               </Box>
               <Divider />
-              <BarList
-                title="Grade Distribution"
-                items={performance.grade_distribution || []}
-                emptyText="No final scores were generated for the selected range."
-                color={T.a700}
-              />
+              <Box sx={{ height: 220 }}>
+                {gradeChart.length === 0 ? (
+                  <Typography sx={{ color: T.tx3, fontSize: '13px' }}>No final scores were generated for the selected range.</Typography>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={gradeChart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label>
+                        {gradeChart.map((entry, index) => (
+                          <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </Box>
             </Stack>
           </SectionCard>
         </Grid>
 
-        <Grid item xs={12} md={7}>
+        <Grid size={{ xs: 12, md: 7 }}>
           <SectionCard
             title="Top Performers"
             subtitle="Students ranked by released final score"
@@ -452,45 +591,55 @@ const ReportsPage = () => {
                 No performers match the current search or reporting window.
               </Typography>
             ) : (
-              <Stack spacing={1.3}>
-                {filteredPerformers.map((item, index) => (
-                  <Box key={`${item.student_name}-${index}`} sx={{ p: 1.5, borderRadius: '12px', border: `1px solid ${T.border}`, bgcolor: T.surface2 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'flex-start' }}>
-                      <Box>
-                        <Typography sx={{ fontSize: '13px', fontWeight: 600, color: T.tx1, fontFamily: "'DM Sans', sans-serif" }}>
-                          {item.student_name}
-                        </Typography>
-                        <Typography sx={{ fontSize: '11.5px', color: T.tx3, mt: '2px', fontFamily: "'DM Sans', sans-serif" }}>
-                          {item.organization}
-                        </Typography>
-                      </Box>
-                      <Chip size="small" label={`Grade ${item.grade || 'N/A'}`} sx={{ bgcolor: T.t50, color: T.t700 }} />
-                    </Box>
-                    <Box sx={{ mt: 1.2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography sx={{ fontSize: '14px', fontWeight: 700, color: T.tx1, fontFamily: "'DM Sans', sans-serif" }}>
-                        {item.final_score}
-                      </Typography>
-                      <Box sx={{ flex: 1, height: 6, bgcolor: T.border2, borderRadius: '999px', overflow: 'hidden' }}>
-                        <Box sx={{ width: `${Math.max(8, Math.min(100, (Number(item.final_score || 0) / 100) * 100))}%`, height: '100%', bgcolor: T.a700, borderRadius: '999px' }} />
-                      </Box>
-                    </Box>
-                    {item.remarks && (
-                      <Typography sx={{ mt: 1, fontSize: '11.5px', color: T.tx3, fontFamily: "'DM Sans', sans-serif" }}>
-                        {item.remarks}
-                      </Typography>
-                    )}
-                  </Box>
-                ))}
-              </Stack>
+              <Box sx={{ height: 250 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topPerformersChart} layout="vertical" margin={{ top: 8, right: 12, left: 12, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={T.border2} />
+                    <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="score" fill={T.a700} radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
             )}
           </SectionCard>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12 }}>
+          <SectionCard
+            title="System Trend"
+            subtitle="Submission, evaluation, and placement activity over time"
+            delay={0.35}
+          >
+            <Box sx={{ height: 260 }}>
+              {activityTrendChart.length === 0 ? (
+                <Typography sx={{ color: T.tx3, fontSize: '13px' }}>
+                  No time-series activity available in the selected range.
+                </Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={activityTrendChart} margin={{ top: 8, right: 10, left: 0, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={T.border2} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="submissions" stroke={T.t700} strokeWidth={2.2} dot={false} />
+                    <Line type="monotone" dataKey="evaluations" stroke={T.a700} strokeWidth={2.2} dot={false} />
+                    <Line type="monotone" dataKey="placements" stroke={T.i700} strokeWidth={2.2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
+          </SectionCard>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
           <RecentActivity activities={filteredActivity} loading={loading} />
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <SectionCard
             title="System Alerts"
             subtitle="Items that need the administrator's attention"
@@ -529,7 +678,7 @@ const ReportsPage = () => {
           </SectionCard>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <QuickActions actions={quickActions} />
         </Grid>
       </Grid>

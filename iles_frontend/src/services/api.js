@@ -232,7 +232,9 @@ export const evaluationsAPI = {
 export const insightsAPI = {
   getDashboard: () => api.get('/insights/dashboard/'),
   getAdminReport: (params = {}) => api.get('/insights/reports/admin/', { params }),
+  getAdminReportAlias: (params = {}) => api.get('/reports/admin/', { params }),
   exportAdminReport: (params = {}) => api.get('/insights/reports/admin/export/', { params, responseType: 'blob' }),
+  exportAdminReportAlias: (params = {}) => api.get('/reports/admin/export/', { params, responseType: 'blob' }),
 };
 
 export const auditingAPI = {

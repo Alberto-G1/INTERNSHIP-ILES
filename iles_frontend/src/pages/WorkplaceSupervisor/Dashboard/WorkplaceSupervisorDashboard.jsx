@@ -10,10 +10,27 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import RecentActivity from '../../../components/dashboard/RecentActivity';
 import QuickActions from '../../../components/dashboard/QuickActions';
 import { logbookAPI, placementsAPI } from '../../../services/api';
 import { DashGreeting, SectionCard, ProgressRow, T } from '../../../components/dashboard/DashboardComponents';
+
+const CHART_COLORS = [T.a700, T.t700, T.i700, T.violet, '#118AB2'];
 
 /* ─── Helpers ────────────────────────────────────────────────── */
 const toDate = (value) => {
@@ -213,6 +230,29 @@ const WorkplaceSupervisorDashboard = () => {
     ? Math.round((stats.approvalsGiven / stats.logsReviewed) * 100)
     : 0;
 
+  const performanceComparison = students.map((student) => ({
+    name: student.name,
+    score: Number(student.progress || 0),
+  }));
+
+  const workloadChart = [
+    { name: 'Pending', value: Number(stats.pendingReviews || 0) },
+    { name: 'Reviewed', value: Number(stats.logsReviewed || 0) },
+  ].filter((item) => item.value > 0);
+
+  const weeklySubmissionTrend = useMemo(() => {
+    const buckets = {};
+    logs.forEach((log) => {
+      const week = `W${Number(log.week_number || 0)}`;
+      if (!buckets[week]) buckets[week] = { week, submissions: 0, approved: 0 };
+      buckets[week].submissions += 1;
+      if (log.review_status === 'approved') buckets[week].approved += 1;
+    });
+    return Object.values(buckets)
+      .sort((a, b) => Number(a.week.slice(1)) - Number(b.week.slice(1)))
+      .slice(-8);
+  }, [logs]);
+
   /* ─────────────────────────────────────────────────────────────── */
   return (
     <Box sx={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -382,6 +422,70 @@ const WorkplaceSupervisorDashboard = () => {
         {/* ── Recent Activity ──────────────────────────────────── */}
         <Grid item xs={12} md={6}>
           <RecentActivity activities={recentActivities} loading={loading} />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <SectionCard title="Review Workload" subtitle="Pending vs reviewed logs" delay={0.28}>
+            <Box sx={{ height: 220 }}>
+              {workloadChart.length === 0 ? (
+                <Typography sx={{ fontSize: '12.5px', color: T.tx3 }}>No workload data yet.</Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={workloadChart} dataKey="value" nameKey="name" outerRadius={72} label>
+                      {workloadChart.map((entry, index) => (
+                        <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
+          </SectionCard>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <SectionCard title="Student Performance Comparison" subtitle="Average log approval progress by student" delay={0.3}>
+            <Box sx={{ height: 230 }}>
+              {performanceComparison.length === 0 ? (
+                <Typography sx={{ fontSize: '12.5px', color: T.tx3 }}>No student comparison data available.</Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={performanceComparison.slice(0, 8)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={T.border2} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="score" fill={T.t700} radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
+          </SectionCard>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <SectionCard title="Weekly Submission Trend" subtitle="Incoming logs and approvals by week" delay={0.32}>
+            <Box sx={{ height: 230 }}>
+              {weeklySubmissionTrend.length === 0 ? (
+                <Typography sx={{ fontSize: '12.5px', color: T.tx3 }}>No trend data is available yet.</Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={weeklySubmissionTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={T.border2} />
+                    <XAxis dataKey="week" tick={{ fontSize: 11 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="submissions" stroke={T.i700} strokeWidth={2.2} dot={false} />
+                    <Line type="monotone" dataKey="approved" stroke={T.t700} strokeWidth={2.2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
+          </SectionCard>
         </Grid>
 
         {/* ── Quick Actions ─────────────────────────────────────── */}
