@@ -20,6 +20,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenRefreshView
+from insights import views as insight_views
 
 """
 Main URL Configuration.
@@ -40,6 +41,9 @@ urlpatterns = [
     path('api/evaluations/', include('evaluations.urls')),
     path('api/auditing/', include('auditing.urls')),
     path('api/insights/', include('insights.urls')),
+    # Report aliases to support existing clients and avoid endpoint mismatch.
+    path('api/reports/admin/', insight_views.AdminReportSummaryView.as_view(), name='admin-report-summary-alias'),
+    path('api/reports/admin/export/', insight_views.AdminReportExportView.as_view(), name='admin-report-export-alias'),
 
     # Future apps will be added here:
     # path('api/logs/', include('logs.urls')),

@@ -72,7 +72,7 @@ const QuickActions = ({ actions = [], loading = false }) => {
             const accent = ACCENTS[index % ACCENTS.length];
 
             return (
-              <Grid item xs={12} sm={6} key={index}>
+              <Grid size={{ xs: 12, sm: 6 }} key={index}>
                 <Box
                   component="button"
                   onClick={action.onClick}

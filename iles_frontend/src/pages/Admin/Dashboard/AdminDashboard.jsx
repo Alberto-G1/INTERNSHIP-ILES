@@ -13,11 +13,28 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import StatCard from '../../../components/dashboard/StatCard';
 import RecentActivity from '../../../components/dashboard/RecentActivity';
 import QuickActions from '../../../components/dashboard/QuickActions';
 import { adminAPI, adminPlacementsAPI, adminUsersAPI, evaluationsAPI, logbookAPI } from '../../../services/api';
 import { DashGreeting, SectionCard, ProgressRow, MiniStat, T } from '../../../components/dashboard/DashboardComponents';
+
+const CHART_COLORS = [T.t700, T.i700, T.a700, T.violet, '#118AB2', '#EF476F'];
 
 const toDate = (value) => {
   if (!value) return null;
@@ -123,6 +140,46 @@ const AdminDashboard = () => {
     { label: 'Late Submissions',     value: overview.late_submissions || 0,                                                                    change: `${overview.approval_rate || 0}% approval rate` },
     { label: 'Final Scores Released',value: finalScores.length,                                                                                change: `${finalScores.filter((s) => s.grade === 'A').length} grade A` },
   ];
+
+  const gradeDistributionChart = useMemo(() => {
+    const bucket = {};
+    finalScores.forEach((score) => {
+      const grade = score.grade || 'N/A';
+      bucket[grade] = (bucket[grade] || 0) + 1;
+    });
+    return Object.entries(bucket).map(([name, value]) => ({ name, value }));
+  }, [finalScores]);
+
+  const placementDistributionChart = useMemo(() => {
+    const bucket = {};
+    placements.forEach((placement) => {
+      const org = placement.organization?.name || 'Unknown';
+      bucket[org] = (bucket[org] || 0) + 1;
+    });
+    return Object.entries(bucket)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+  }, [placements]);
+
+  const activityTrendChart = useMemo(() => {
+    const bucket = {};
+    const addBucket = (dateValue, field) => {
+      const date = toDate(dateValue);
+      const key = date ? date.toISOString().slice(0, 7) : 'Unknown';
+      if (!bucket[key]) bucket[key] = { month: key, submissions: 0, evaluations: 0, placements: 0 };
+      bucket[key][field] += 1;
+    };
+    placements.forEach((item) => addBucket(item.updated_at || item.created_at, 'placements'));
+    finalScores.forEach((item) => addBucket(item.computed_at || item.updated_at, 'evaluations'));
+    const estSubmissions = Number(overview.total_logs || 0);
+    if (estSubmissions > 0) {
+      const now = new Date().toISOString().slice(0, 7);
+      if (!bucket[now]) bucket[now] = { month: now, submissions: 0, evaluations: 0, placements: 0 };
+      bucket[now].submissions = estSubmissions;
+    }
+    return Object.values(bucket).sort((a, b) => a.month.localeCompare(b.month)).slice(-8);
+  }, [placements, finalScores, overview.total_logs]);
 
   return (
     <Box sx={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -268,6 +325,71 @@ const AdminDashboard = () => {
                 </Grid>
               ))}
             </Grid>
+          </SectionCard>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <SectionCard title="Grade Distribution" subtitle="A-F outcomes across finalized scores" delay={0.37}>
+            <Box sx={{ height: 220 }}>
+              {gradeDistributionChart.length === 0 ? (
+                <Typography sx={{ color: T.tx3, fontSize: '13px' }}>No finalized grades yet.</Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={gradeDistributionChart} dataKey="value" nameKey="name" outerRadius={72} label>
+                      {gradeDistributionChart.map((entry, index) => (
+                        <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
+          </SectionCard>
+        </Grid>
+
+        <Grid item xs={12} md={8}>
+          <SectionCard title="Placement Distribution" subtitle="Students per organization" delay={0.39}>
+            <Box sx={{ height: 220 }}>
+              {placementDistributionChart.length === 0 ? (
+                <Typography sx={{ color: T.tx3, fontSize: '13px' }}>No placement distribution data yet.</Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={placementDistributionChart}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={T.border2} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="value" fill={T.i700} radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
+          </SectionCard>
+        </Grid>
+
+        <Grid item xs={12}>
+          <SectionCard title="System Trend" subtitle="Monthly submissions, evaluations, and placements" delay={0.41}>
+            <Box sx={{ height: 230 }}>
+              {activityTrendChart.length === 0 ? (
+                <Typography sx={{ color: T.tx3, fontSize: '13px' }}>No trend data available.</Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={activityTrendChart}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={T.border2} />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="submissions" stroke={T.t700} strokeWidth={2.2} dot={false} />
+                    <Line type="monotone" dataKey="evaluations" stroke={T.a700} strokeWidth={2.2} dot={false} />
+                    <Line type="monotone" dataKey="placements" stroke={T.i700} strokeWidth={2.2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
           </SectionCard>
         </Grid>
 
